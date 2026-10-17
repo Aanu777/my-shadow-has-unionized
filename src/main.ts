@@ -792,7 +792,7 @@ class GameScene extends Phaser.Scene {
     g.fillStyle(0x050813,1);g.fillRect(0,0,W,H);
     g.fillStyle(0x11152b,0.7);g.fillEllipse(270,170,480,150);g.fillStyle(0x17223a,0.45);g.fillEllipse(340,160,320,88);g.fillStyle(0x111e2c,0.65);g.fillEllipse(720,240,540,120);
     g.fillStyle(0x172b3c,1);g.fillCircle(770,138,92);g.fillStyle(0x203d4c,1);g.fillCircle(748,120,78);g.fillStyle(0x91d4d0,0.12);g.fillCircle(730,111,62);
-    g.lineStyle(2,0x5b879b,0.48);g.beginPath();g.ellipse(770,145,139,29,-0.18,0,Math.PI*2);g.strokePath();g.lineStyle(1,0x8bc7c5,0.24);g.beginPath();g.ellipse(770,145,153,34,-0.18,0,Math.PI*2);g.strokePath();
+    g.lineStyle(2,0x5b879b,0.48);g.strokeEllipse(631,116,278,58);g.lineStyle(1,0x8bc7c5,0.24);g.strokeEllipse(617,111,306,68);
     for(let i=0;i<74;i++){const x=(i*137+31)%W,y=22+((i*67+19)%295);g.fillStyle(i%7===0?0x9ce2c4:0xd2e5f5,i%5===0?0.8:0.48);g.fillCircle(x,y,i%13===0?1.8:i%4===0?1.2:0.65);}
     g.fillStyle(0x101b2a,1);g.fillRect(0,366,W,134);g.fillStyle(0x172738,1);g.fillRect(32,337,160,82);g.fillRect(220,358,112,61);g.fillRect(392,327,176,92);g.fillRect(617,354,122,65);g.fillRect(788,337,140,82);
     g.fillStyle(0x233b4b,1);g.fillRect(48,347,126,4);g.fillRect(407,337,145,4);g.fillRect(803,347,110,4);g.fillStyle(0x9ce2c4,0.62);
