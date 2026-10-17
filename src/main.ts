@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import "./style.css";
-import { drawShift01Background } from "./levels/shift-01/background";
+import { drawShift01Background, preloadShift01Background } from "./levels/shift-01/background";
 
 const W = 960;
 const H = 600;
@@ -42,6 +42,10 @@ class GameScene extends Phaser.Scene {
 
   constructor() {
     super("GameScene");
+  }
+
+  preload(): void {
+    preloadShift01Background(this);
   }
 
   create(): void {
