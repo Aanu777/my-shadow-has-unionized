@@ -1009,23 +1009,120 @@ class GameScene extends Phaser.Scene {
   private transitionToShiftTwo(): void {
     if (this.transitioning) return;
     this.transitioning = true;
-    // Shift 02 is now a separate, real-time 3D first-person page.
-    // Keep Shift 01 in Phaser and hand off only after the transition beat.
-    const cover = this.add.rectangle(W / 2, H / 2, W, H, 0x0b0914, 1)
-      .setDepth(100).setScrollFactor(0).setAlpha(0);
-    const title = this.add.text(W / 2, H / 2 - 12, "ENTERING THE FOUNDRY", {
-      fontFamily: "monospace", fontSize: "21px", color: "#e4aa73",
-      fontStyle: "bold", letterSpacing: 3, align: "center"
-    }).setOrigin(0.5).setDepth(101).setScrollFactor(0).setAlpha(0);
-    const sub = this.add.text(W / 2, H / 2 + 22, "FIRST-PERSON MODE // SHIFT 02", {
-      fontFamily: "monospace", fontSize: "10px", color: "#c5b8d3",
-      letterSpacing: 2, align: "center"
-    }).setOrigin(0.5).setDepth(101).setScrollFactor(0).setAlpha(0);
+
+    // Freeze the room and push the camera toward the activated exit before the
+    // world tears open. The tear is screen-space, so it stays clean while the
+    // camera follows the player in the final moments.
+    this.cameras.main.stopFollow();
+    this.cameras.main.shake(240, 0.0035);
+    this.cameras.main.flash(180, 244, 184, 107, false);
     this.tweens.add({
-      targets: cover, alpha: 1, duration: 380, ease: "Cubic.in",
+      targets: this.cameras.main,
+      zoom: 1.12,
+      duration: 820,
+      ease: "Cubic.inOut"
+    });
+
+    const cover = this.add.rectangle(W / 2, H / 2, W, H, 0x080711, 1)
+      .setDepth(100).setScrollFactor(0).setAlpha(0);
+
+    // A jagged, glowing split echoes the game's ink-rip visual language.
+    const rip = this.add.container(W / 2, H / 2).setDepth(101).setScrollFactor(0);
+    const ripArt = this.add.graphics();
+    ripArt.fillStyle(0x100d1b, 1);
+    ripArt.beginPath();
+    ripArt.moveTo(-22, -H / 2 - 24);
+    ripArt.lineTo(8, -238); ripArt.lineTo(-13, -190);
+    ripArt.lineTo(22, -142); ripArt.lineTo(-5, -92);
+    ripArt.lineTo(17, -40); ripArt.lineTo(-19, 12);
+    ripArt.lineTo(12, 67); ripArt.lineTo(-10, 118);
+    ripArt.lineTo(18, 171); ripArt.lineTo(-8, 222);
+    ripArt.lineTo(24, H / 2 + 24);
+    ripArt.lineTo(68, H / 2 + 24);
+    ripArt.lineTo(43, 206); ripArt.lineTo(59, 151);
+    ripArt.lineTo(34, 99); ripArt.lineTo(57, 43);
+    ripArt.lineTo(31, -10); ripArt.lineTo(55, -62);
+    ripArt.lineTo(30, -117); ripArt.lineTo(51, -169);
+    ripArt.lineTo(28, -220); ripArt.lineTo(43, -H / 2 - 24);
+    ripArt.closePath();
+    ripArt.fillPath();
+
+    ripArt.lineStyle(3, 0xc5a8ff, 0.98);
+    ripArt.beginPath();
+    ripArt.moveTo(0, -H / 2 - 20);
+    ripArt.lineTo(8, -238); ripArt.lineTo(-13, -190);
+    ripArt.lineTo(22, -142); ripArt.lineTo(-5, -92);
+    ripArt.lineTo(17, -40); ripArt.lineTo(-19, 12);
+    ripArt.lineTo(12, 67); ripArt.lineTo(-10, 118);
+    ripArt.lineTo(18, 171); ripArt.lineTo(-8, 222);
+    ripArt.lineTo(8, H / 2 + 20);
+    ripArt.strokePath();
+    ripArt.lineStyle(1, 0xf39a45, 0.78);
+    ripArt.beginPath();
+    ripArt.moveTo(16, -H / 2 - 20);
+    ripArt.lineTo(26, -238); ripArt.lineTo(5, -190);
+    ripArt.lineTo(39, -142); ripArt.lineTo(12, -92);
+    ripArt.lineTo(34, -40); ripArt.lineTo(-2, 12);
+    ripArt.lineTo(29, 67); ripArt.lineTo(7, 118);
+    ripArt.lineTo(35, 171); ripArt.lineTo(9, 222);
+    ripArt.lineTo(25, H / 2 + 20);
+    ripArt.strokePath();
+    rip.add(ripArt);
+    rip.setScale(0.025, 1).setAlpha(0);
+
+    const title = this.add.text(W / 2, H / 2 - 13, "THE NIGHT SHIFT", {
+      fontFamily: "monospace", fontSize: "25px", color: "#f0e8d8",
+      fontStyle: "bold", letterSpacing: 4, align: "center"
+    }).setOrigin(0.5).setDepth(103).setScrollFactor(0).setAlpha(0);
+    const sub = this.add.text(W / 2, H / 2 + 24, "THE FOUNDRY IS STILL AWAKE  //  SHIFT 02", {
+      fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff",
+      letterSpacing: 2, align: "center"
+    }).setOrigin(0.5).setDepth(103).setScrollFactor(0).setAlpha(0);
+
+    // Loose sparks are pulled into the split as the old room collapses away.
+    for (let i = 0; i < 30; i++) {
+      const angle = (i / 30) * Math.PI * 2;
+      const radiusX = 95 + (i % 4) * 27;
+      const radiusY = 115 + (i % 5) * 24;
+      const spark = this.add.circle(
+        W / 2 + Math.cos(angle) * radiusX,
+        H / 2 + Math.sin(angle) * radiusY,
+        i % 5 === 0 ? 2.8 : 1.6,
+        i % 3 === 0 ? 0xf39a45 : 0xc5a8ff,
+        0.95
+      ).setDepth(102).setScrollFactor(0);
+      this.tweens.add({
+        targets: spark,
+        x: W / 2 + Math.cos(angle + 0.55) * 8,
+        y: H / 2 + Math.sin(angle + 0.55) * 14,
+        alpha: 0,
+        scale: 0.15,
+        duration: 520 + (i % 6) * 75,
+        delay: 100 + (i % 7) * 35,
+        ease: "Cubic.in",
+        onComplete: () => spark.destroy()
+      });
+    }
+
+    this.tweens.add({
+      targets: cover, alpha: 0.78, duration: 360, ease: "Cubic.in"
+    });
+    this.tweens.add({
+      targets: rip, alpha: 1, scaleX: 1.45, duration: 690, delay: 180,
+      ease: "Cubic.inOut"
+    });
+    this.tweens.add({
+      targets: [title, sub], alpha: 1, y: "-=5",
+      duration: 380, delay: 590, ease: "Cubic.out"
+    });
+    this.tweens.add({
+      targets: [title, sub], alpha: 0, duration: 180, delay: 1330,
+      ease: "Cubic.in"
+    });
+    this.tweens.add({
+      targets: cover, alpha: 1, duration: 340, delay: 1420, ease: "Cubic.in",
       onComplete: () => { window.location.href = "./shift-02-3d.html"; }
     });
-    this.tweens.add({ targets: [title, sub], alpha: 1, duration: 260, delay: 180, ease: "Cubic.out" });
   }
   private triggerMissionFailed(): void {
     if (this.dead) return;
