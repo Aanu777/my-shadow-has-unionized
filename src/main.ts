@@ -68,7 +68,7 @@ class GameScene extends Phaser.Scene {
     this.won = false;
     this.dead = false;
     this.checkpointReached = false;
-    this.checkpointX = 105;
+    this.checkpointX = this.level === 2 ? 1000 : 105;
     this.deathOverlay = [];
     this.hasCoffee = false;
     this.coffeeHintShown = false;
