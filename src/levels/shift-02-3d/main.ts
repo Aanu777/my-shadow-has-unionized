@@ -506,7 +506,7 @@ function addSetDressing(): void {
 }
 addSetDressing();
 const relays: Relay[] = [makeRelay("triangle", -4.2, -6.8), makeRelay("circle", 0, -6.8), makeRelay("diamond", 4.2, -6.8)];
-const sequence: Relay["kind"][] = ["triangle", "circle", "diamond"];
+const sequence: Relay["kind"][] = ["triangle", "diamond", "circle", "diamond", "triangle", "circle"];
 let nextRelay = 0;
 let gateOpen = false;
 let ended = false;
@@ -570,13 +570,13 @@ function notify(message: string): void {
   toastTimer.id = window.setTimeout(() => toast.classList.remove("visible"), 1900);
 }
 function updateObjective(): void {
-  relayProgress.innerHTML = `RELAYS <strong>${nextRelay} / 3</strong>`;
+  relayProgress.innerHTML = `SIGNAL <strong>${nextRelay} / ${sequence.length}</strong>`;
   if (gateOpen) {
     objectiveTitle.textContent = "The exit is unlocked";
     objectiveCopy.textContent = "Reach the bulkhead and press E. Management has lost control.";
   } else {
-    objectiveTitle.textContent = nextRelay === 0 ? "Restore the relay sequence" : nextRelay === 1 ? "One relay is online" : "Two relays are online";
-    objectiveCopy.textContent = "Activate the terminals in order: triangle, circle, then diamond.";
+    objectiveTitle.textContent = nextRelay === 0 ? "Decode the maintenance rhythm" : nextRelay < sequence.length ? "Signal pattern in progress" : "Signal accepted";
+    objectiveCopy.textContent = "Begin with the pointed mark, then the solid mark, then the ring. Reverse the first pair before the ring returns.";
   }
 }
 function startGame(): void {
@@ -673,7 +673,7 @@ function interact(): void {
   }
   const relay = target.relay;
   if (!relay) return;
-  if (relay.active) { notify("THIS RELAY IS ALREADY ONLINE."); return; }
+  // Relays may be selected more than once: this is a six-beat signal, not a one-touch checklist.
   if (relay.kind !== sequence[nextRelay]) {
     nextRelay = 0;
     for (const item of relays) {
@@ -687,7 +687,7 @@ function interact(): void {
   relay.active = true;
   relay.group.scale.setScalar(1.08);
   nextRelay++;
-  notify(`${relay.kind.toUpperCase()} RELAY ACCEPTED.`);
+  notify(`SIGNAL BEAT ${nextRelay} / ${sequence.length} ACCEPTED.`);
   if (nextRelay === sequence.length) {
     gateOpen = true;
     const gateColliderIndex = colliders.findIndex((c) => c.minX === -2.35 && c.maxX === 2.35 && c.minZ === -18.45);
