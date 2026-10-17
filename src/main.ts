@@ -60,7 +60,7 @@ class GameScene extends Phaser.Scene {
   private puzzleHintUntil = 0;
 
   constructor() { super("GameScene"); }
-  preload(): void { preloadShift01Background(this); }
+  preload(): void { preloadShift01Background(this); this.load.svg("shift02-space", "/shift-02-space.svg", { width: W, height: H }); }
 
   create(): void {
     if (this.registry.get("showLevelSelect") === true) {
@@ -788,28 +788,100 @@ class GameScene extends Phaser.Scene {
     // Foreground bank is drawn by the collision platforms so it scrolls at full speed.
   }
   private drawOrbitalBackdrop(offsetX: number): void {
-    const g=this.add.graphics().setDepth(-10).setPosition(offsetX,0).setScrollFactor(0.22,1);
-    g.fillStyle(0x050813,1);g.fillRect(0,0,W,H);
-    g.fillStyle(0x11152b,0.7);g.fillEllipse(270,170,480,150);g.fillStyle(0x17223a,0.45);g.fillEllipse(340,160,320,88);g.fillStyle(0x111e2c,0.65);g.fillEllipse(720,240,540,120);
-    g.fillStyle(0x172b3c,1);g.fillCircle(770,138,92);g.fillStyle(0x203d4c,1);g.fillCircle(748,120,78);g.fillStyle(0x91d4d0,0.12);g.fillCircle(730,111,62);
-    g.lineStyle(2,0x5b879b,0.48);g.strokeEllipse(631,116,278,58);g.lineStyle(1,0x8bc7c5,0.24);g.strokeEllipse(617,111,306,68);
-    for(let i=0;i<74;i++){const x=(i*137+31)%W,y=22+((i*67+19)%295);g.fillStyle(i%7===0?0x9ce2c4:0xd2e5f5,i%5===0?0.8:0.48);g.fillCircle(x,y,i%13===0?1.8:i%4===0?1.2:0.65);}
-    g.fillStyle(0x101b2a,1);g.fillRect(0,366,W,134);g.fillStyle(0x172738,1);g.fillRect(32,337,160,82);g.fillRect(220,358,112,61);g.fillRect(392,327,176,92);g.fillRect(617,354,122,65);g.fillRect(788,337,140,82);
-    g.fillStyle(0x233b4b,1);g.fillRect(48,347,126,4);g.fillRect(407,337,145,4);g.fillRect(803,347,110,4);g.fillStyle(0x9ce2c4,0.62);
-    for(const [x,y] of [[73,372],[94,372],[115,372],[431,365],[453,365],[475,365],[497,365],[823,369],[845,369],[867,369]])g.fillRect(x,y,5,3);
-    g.fillStyle(0x0a111d,1);g.fillRect(0,420,W,80);g.lineStyle(2,0x304c60,0.75);g.beginPath();g.moveTo(0,420);g.lineTo(155,420);g.lineTo(178,409);g.lineTo(334,409);g.lineTo(354,420);g.lineTo(592,420);g.lineTo(617,408);g.lineTo(777,408);g.lineTo(802,420);g.lineTo(W,420);g.strokePath();
+    // The backdrop is a hand-authored SVG asset: layered orbital habitat, ringed planet,
+    // distant starfield, industrial silhouettes and foreground bulkheads.
+    this.add.image(offsetX, 0, "shift02-space")
+      .setOrigin(0, 0)
+      .setDisplaySize(W, H)
+      .setDepth(-10)
+      .setScrollFactor(0.22, 1);
   }
 
   private createRelayPuzzle(): void {
-    const specs=[{x:1210,shape:0},{x:1575,shape:1},{x:680,shape:2}];
-    this.relayNodes=specs.map(({x,shape})=>{
-      const node=this.add.container(x,this.floorY-3).setDepth(4),g=this.add.graphics();
-      g.fillStyle(0x030710,0.7);g.fillEllipse(0,0,56,12);g.fillStyle(0x111f31,1);g.fillRoundedRect(-16,-55,32,54,4);g.fillStyle(0x243c4b,1);g.fillRoundedRect(-12,-51,24,46,3);g.lineStyle(2,0x5d8799,0.95);g.strokeRoundedRect(-12,-51,24,46,3);g.fillStyle(0x07101b,1);g.fillCircle(0,-31,13);g.lineStyle(2,0x527b91,1);
-      if(shape===0)g.strokeCircle(0,-31,8);else if(shape===1){g.beginPath();g.moveTo(0,-41);g.lineTo(9,-31);g.lineTo(0,-21);g.lineTo(-9,-31);g.closePath();g.strokePath();}else{g.beginPath();g.moveTo(0,-42);g.lineTo(10,-24);g.lineTo(-10,-24);g.closePath();g.strokePath();}
-      g.fillStyle(0x9ce2c4,0.18);g.fillCircle(0,-31,4);node.add(g);this.tweens.add({targets:node,y:this.floorY-5,duration:1400+shape*150,yoyo:true,repeat:-1,ease:"Sine.inOut"});return node;
+    const specs = [{ x: 1210, shape: 0 }, { x: 1575, shape: 1 }, { x: 680, shape: 2 }];
+    // Heavy relay pylons are designed as small pieces of orbital machinery, not floating icons.
+    this.relayNodes = specs.map(({ x, shape }) => {
+      const node = this.add.container(x, this.floorY - 3).setDepth(4);
+      const g = this.add.graphics();
+      // Ground shadow and a bolted, layered pedestal.
+      g.fillStyle(0x02050b, 0.75); g.fillEllipse(0, 0, 82, 15);
+      g.fillStyle(0x101a2a, 1); g.fillRoundedRect(-25, -72, 50, 68, 5);
+      g.fillStyle(0x25394d, 1); g.fillRoundedRect(-21, -69, 42, 60, 4);
+      g.fillStyle(0x0a1423, 1); g.fillRoundedRect(-16, -64, 32, 48, 3);
+      g.lineStyle(1, 0x66869b, 0.9); g.strokeRoundedRect(-21, -69, 42, 60, 4);
+      g.fillStyle(0x9ce2c4, 0.12); g.fillRoundedRect(-13, -61, 26, 41, 3);
+      // Side rails, energy channels and tiny service bolts.
+      g.fillStyle(0x46657a, 1); g.fillRoundedRect(-24, -57, 4, 38, 1); g.fillRoundedRect(20, -57, 4, 38, 1);
+      g.fillStyle(0x9ce2c4, 0.95); g.fillRect(-23, -51, 2, 12); g.fillRect(21, -37, 2, 12);
+      for (const bx of [-17, 17]) { g.fillStyle(0x07101b, 1); g.fillCircle(bx, -62, 2.4); g.fillStyle(0x9ce2c4, 0.9); g.fillCircle(bx, -62, 0.8); }
+      // Recessed symbol chamber, lens rings and engraved geometric identity.
+      g.fillStyle(0x020711, 1); g.fillCircle(0, -42, 18);
+      g.lineStyle(2, 0x345a70, 1); g.strokeCircle(0, -42, 15);
+      g.lineStyle(1, 0x9ce2c4, 0.5); g.strokeCircle(0, -42, 11);
+      g.fillStyle(0x9ce2c4, 0.1); g.fillCircle(0, -42, 8);
+      g.lineStyle(2.5, 0x8bbcc9, 1);
+      if (shape === 0) g.strokeCircle(0, -42, 7);
+      else if (shape === 1) { g.beginPath(); g.moveTo(0,-51); g.lineTo(9,-42); g.lineTo(0,-33); g.lineTo(-9,-42); g.closePath(); g.strokePath(); }
+      else { g.beginPath(); g.moveTo(0,-52); g.lineTo(10,-34); g.lineTo(-10,-34); g.closePath(); g.strokePath(); }
+      g.fillStyle(0xb9fff0, 0.9); g.fillCircle(0, -42, 2);
+      // Top crown and floor-contact plates.
+      g.fillStyle(0x172b40, 1); g.fillRoundedRect(-12, -78, 24, 8, 2);
+      g.fillStyle(0x9ce2c4, 0.9); g.fillRect(-7, -76, 14, 2);
+      g.fillStyle(0x31495b, 1); g.fillRoundedRect(-27, -9, 54, 7, 2);
+      g.lineStyle(1, 0x62859a, 0.8); g.lineBetween(-24, -5, 24, -5);
+      node.add(g);
+      // An orbiting reticle gives the pylon a more readable silhouette in space.
+      const ring = this.add.graphics();
+      ring.lineStyle(1, 0x77b8c6, 0.35); ring.strokeEllipse(0, -42, 70, 30);
+      ring.lineStyle(1, 0x9ce2c4, 0.6); ring.beginPath(); ring.moveTo(-37,-42); ring.lineTo(-28,-42); ring.moveTo(28,-42); ring.lineTo(37,-42); ring.strokePath();
+      node.add(ring);
+      this.tweens.add({ targets: ring, angle: 360, duration: 9000 + shape * 1100, repeat: -1 });
+      this.tweens.add({ targets: node, y: this.floorY - 3, duration: 1450 + shape * 190, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      return node;
     });
-    const board=this.add.container(300,395).setDepth(4),bg=this.add.graphics();bg.fillStyle(0x08111d,0.9);bg.fillRoundedRect(-62,-31,124,48,5);bg.lineStyle(1,0x42677a,0.9);bg.strokeRoundedRect(-62,-31,124,48,5);bg.lineStyle(1,0x42677a,0.7);bg.lineBetween(-43,-7,43,-7);bg.lineStyle(2,0x9ce2c4,0.9);bg.beginPath();bg.moveTo(-38,-18);bg.lineTo(-29,-2);bg.lineTo(-47,-2);bg.closePath();bg.strokePath();bg.strokeCircle(0,-10,8);bg.beginPath();bg.moveTo(38,-19);bg.lineTo(47,-10);bg.lineTo(38,-1);bg.lineTo(29,-10);bg.closePath();bg.strokePath();board.add(bg);this.tweens.add({targets:board,alpha:{from:0.78,to:1},duration:1200,yoyo:true,repeat:-1,ease:"Sine.inOut"});
+
+    // Diegetic circuit-map console: three sockets, a routed trace and a projected sequence.
+    const board = this.add.container(300, 394).setDepth(4);
+    const bg = this.add.graphics();
+    bg.fillStyle(0x020711, 0.88); bg.fillRoundedRect(-91, -45, 182, 73, 7);
+    bg.fillStyle(0x122337, 0.96); bg.fillRoundedRect(-86, -41, 172, 64, 5);
+    bg.lineStyle(1.5, 0x567b91, 0.9); bg.strokeRoundedRect(-86, -41, 172, 64, 5);
+    bg.lineStyle(1, 0x29485d, 0.9);
+    for (let x=-73; x<=73; x+=12) bg.lineBetween(x,-35,x,14);
+    bg.lineBetween(-75,-13,75,-13); bg.lineBetween(-75,7,75,7);
+    // Hologram scan bars and three distinct sequence sockets.
+    bg.fillStyle(0x9ce2c4, 0.12); bg.fillRoundedRect(-72,-31,144,7,2);
+    bg.fillStyle(0x9ce2c4, 0.75); bg.fillRect(-69,-28,49,1); bg.fillRect(28,-28,39,1);
+    const socketXs = [-48, 0, 48];
+    socketXs.forEach((sx, idx) => {
+      bg.fillStyle(0x06101d, 1); bg.fillCircle(sx, -1, 14);
+      bg.lineStyle(1.5, idx === 1 ? 0x9ce2c4 : 0x5b8298, 0.95); bg.strokeCircle(sx, -1, 11);
+      bg.lineStyle(2, 0x9ce2c4, 0.95);
+      if (idx === 0) { bg.beginPath(); bg.moveTo(sx,-10); bg.lineTo(sx+8,-1); bg.lineTo(sx,-1); bg.lineTo(sx,-10); bg.strokePath(); }
+      if (idx === 1) bg.strokeCircle(sx,-1,5);
+      if (idx === 2) { bg.beginPath(); bg.moveTo(sx,-10); bg.lineTo(sx+8,5); bg.lineTo(sx-8,5); bg.closePath(); bg.strokePath(); }
+    });
+    bg.lineStyle(2, 0x9ce2c4, 0.8); bg.lineBetween(-34,-1,-15,-1); bg.lineBetween(14,-1,33,-1);
+    bg.fillStyle(0x9ce2c4, 0.8); bg.fillCircle(-75, 17, 2); bg.fillCircle(75, 17, 2);
+    bg.lineStyle(1, 0x4b7087, 0.8); bg.lineBetween(-64,17,-7,17); bg.lineBetween(7,17,64,17);
+    board.add(bg);
+    const beam = this.add.graphics();
+    beam.lineStyle(1, 0x9ce2c4, 0.35); beam.lineBetween(-70, -50, 70, -50);
+    board.add(beam);
+    this.tweens.add({ targets: board, alpha: { from: 0.82, to: 1 }, duration: 1150, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.tweens.add({ targets: beam, y: 4, duration: 1750, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+
+    // A few cable runs visually tie the relay stations into the foundry.
+    const cables = this.add.graphics().setDepth(2);
+    cables.lineStyle(2, 0x24485a, 0.85);
+    cables.beginPath(); cables.moveTo(680, 497); cables.lineTo(680, 478); cables.lineTo(706, 466); cables.lineTo(706, 451);
+    cables.moveTo(1210, 497); cables.lineTo(1210, 477); cables.lineTo(1232, 463); cables.lineTo(1232, 451);
+    cables.moveTo(1575, 497); cables.lineTo(1575, 478); cables.lineTo(1551, 463); cables.lineTo(1551, 451); cables.strokePath();
+    cables.lineStyle(1, 0x9ce2c4, 0.55);
+    cables.fillStyle(0x9ce2c4, 0.8);
+    for (const [x,y] of [[680,478],[1210,477],[1575,478]]) { cables.strokeCircle(x,y,3); cables.fillCircle(x,y,1.2); }
   }
+
   private interactWithRelay(): void {
     let target=-1,best=70;this.relayNodes.forEach((node,index)=>{const d=Phaser.Math.Distance.Between(this.player.x,this.player.y,node.x,node.y);if(d<best){best=d;target=index;}});
     if(target<0)return;if(this.relayNodeActive[target]){this.showPuzzlePulse("NODE ALREADY SYNCHRONIZED");return;}
@@ -840,61 +912,48 @@ class GameScene extends Phaser.Scene {
 
   private drawFoundryObstacles(): void {
     const g = this.add.graphics().setDepth(3);
-    for (let i = 0; i < this.obstacles.length; i++) {
-      const o = this.obstacles[i];
-      // Corroded machinery with broken pipe mouths and mint warning seams.
-      // Three-stage shading, cast shadow and a raised lip give each obstacle volume.
-      g.fillStyle(0x03090c, 0.86); g.fillRoundedRect(o.x + 8, o.y + 9, o.w, o.h - 5, 5);
-      g.fillStyle(0x071014, 0.72); g.fillEllipse(o.x + o.w / 2, 500, o.w + 28, 12);
-      g.fillStyle(0x0c191e, 1); g.fillRoundedRect(o.x, o.y + 5, o.w, o.h - 5, 4);
-      g.fillStyle(i % 2 === 0 ? 0x263c3d : 0x1b3035, 1);
-      g.fillRoundedRect(o.x, o.y + 2, o.w - 3, o.h - 7, 4);
-      g.fillStyle(0x4c6860, 1); g.fillRoundedRect(o.x + 4, o.y, o.w - 8, 13, 3);
-      g.fillStyle(0x6c8980, 0.65); g.fillRect(o.x + 8, o.y + 2, o.w - 16, 2);
-      g.fillStyle(0x0b171d, 0.7); g.fillRect(o.x + 8, o.y + 16, 5, Math.max(8, o.h - 27));
-      g.fillRect(o.x + o.w - 14, o.y + 16, 5, Math.max(8, o.h - 27));
-      for (const boltX of [o.x + 8, o.x + o.w - 8]) {
-        g.fillStyle(0x0b171d, 1); g.fillCircle(boltX, o.y + 8, 3);
-        g.fillStyle(0x9ce2c4, 0.9); g.fillCircle(boltX, o.y + 8, 1.2);
-      }
-      g.lineStyle(2, 0x5f9380, 0.9); g.lineBetween(o.x + 7, o.y + 4, o.x + o.w - 8, o.y + 4);
-      g.lineStyle(1, 0x9ce2c4, 0.75);
-      for (let x = o.x + 12; x < o.x + o.w - 8; x += 18) {
-        g.lineBetween(x, o.y + 17, x - 3, Math.min(o.y + o.h - 6, o.y + 30));
-      }
-      g.fillStyle(0x9ce2c4, 0.85);
-      g.fillRect(o.x + 9, o.y + 10, 4, 2); g.fillRect(o.x + o.w - 15, o.y + 10, 4, 2);
-      if (i === 1 || i === 3) {
-        g.fillStyle(0x0b171d, 1); g.fillCircle(o.x + o.w / 2, o.y + 1, 10);
-        g.lineStyle(2, 0x79a38c, 1); g.strokeCircle(o.x + o.w / 2, o.y + 1, 8);
-        g.fillStyle(0x9ce2c4, 0.8); g.fillCircle(o.x + o.w / 2, o.y + 1, 3);
-        // Toxic steam pulses out of the vents, then thins into the foundry air.
-        const vapor = this.add.container(o.x + o.w / 2, o.y - 5).setDepth(4);
-        const steam = this.add.graphics();
-        steam.fillStyle(0x9ce2c4, 0.22); steam.fillEllipse(-7, -4, 15, 20);
-        steam.fillStyle(0xbfeedd, 0.3); steam.fillEllipse(5, -12, 12, 17);
-        steam.fillStyle(0x9ce2c4, 0.18); steam.fillEllipse(-1, -20, 17, 18);
-        vapor.add(steam);
-        this.tweens.add({
-          targets: vapor, y: o.y - 36, alpha: 0,
-          duration: 900 + i * 110, delay: i * 180, repeat: -1,
-          onRepeat: () => { vapor.setY(o.y - 5); vapor.setAlpha(0.9); },
-          ease: "Sine.out"
-        });
+    this.obstacles.forEach((o, i) => {
+      // Each obstacle is a different piece of machinery, with silhouettes that read at a glance.
+      g.fillStyle(0x02050b, 0.78); g.fillEllipse(o.x + o.w/2, 500, o.w + 34, 14);
+      if (i === 0) {
+        // Stacked pressure pipe housing with a raised elbow and bolted service plate.
+        g.fillStyle(0x0a1420,1); g.fillRoundedRect(o.x,o.y+12,o.w,o.h-12,5);
+        g.fillStyle(0x253b4e,1); g.fillRoundedRect(o.x+4,o.y+14,o.w-8,o.h-19,4);
+        g.fillStyle(0x405e70,1); g.fillRoundedRect(o.x+7,o.y+4,o.w-14,15,4);
+        g.fillStyle(0x152638,1); g.fillRoundedRect(o.x+15,o.y-10,18,28,5);
+        g.fillStyle(0x52768a,1); g.fillRoundedRect(o.x+18,o.y-13,12,25,4);
+        g.lineStyle(2,0x83b6c3,0.9); g.strokeRoundedRect(o.x+4,o.y+14,o.w-8,o.h-19,4);
+        g.fillStyle(0x9ce2c4,0.95); g.fillRect(o.x+10,o.y+20,5,3); g.fillRect(o.x+o.w-15,o.y+20,5,3);
+        for(let k=0;k<4;k++){g.fillStyle(0x07101b,1);g.fillCircle(o.x+15+k*16,o.y+o.h-10,2.4);g.fillStyle(0x8aaebd,1);g.fillCircle(o.x+15+k*16,o.y+o.h-10,1);}
+      } else if (i === 1) {
+        // A cracked capacitor crate with a glowing split core.
+        g.fillStyle(0x101a28,1);g.fillRoundedRect(o.x,o.y+3,o.w,o.h-3,4);
+        g.fillStyle(0x293b4b,1);g.fillRoundedRect(o.x+5,o.y+7,o.w-10,o.h-12,3);
+        g.lineStyle(2,0x66869a,0.9);g.strokeRoundedRect(o.x+5,o.y+7,o.w-10,o.h-12,3);
+        g.lineStyle(3,0x0a1420,1);g.lineBetween(o.x+15,o.y+13,o.x+o.w-15,o.y+o.h-7);
+        g.lineStyle(2,0x9ce2c4,0.85);g.lineBetween(o.x+18,o.y+14,o.x+o.w-17,o.y+o.h-8);
+        g.fillStyle(0x9ce2c4,0.22);g.fillRoundedRect(o.x+o.w/2-7,o.y+13,14,o.h-25,3);
+        g.fillStyle(0xbaffef,0.95);g.fillRect(o.x+o.w/2-2,o.y+17,4,o.h-34);
+        for(const bx of [o.x+10,o.x+o.w-10]){g.fillStyle(0x07101b,1);g.fillCircle(bx,o.y+11,3);g.fillStyle(0x9ce2c4,1);g.fillCircle(bx,o.y+11,1);}
+        const sparks=this.add.graphics();sparks.fillStyle(0x9ce2c4,0.9);sparks.fillTriangle(o.x+18,o.y-4,o.x+24,o.y-13,o.x+26,o.y-3);sparks.fillTriangle(o.x+o.w-23,o.y-5,o.x+o.w-17,o.y-12,o.x+o.w-16,o.y-3);
+        const fx=this.add.container(0,0,[sparks]).setDepth(4);this.tweens.add({targets:fx,alpha:{from:1,to:.25},y:-4,duration:460,yoyo:true,repeat:-1,ease:"Sine.inOut"});
       } else {
-        // A piston cycles in and out of the live pipe machinery.
-        const piston = this.add.container(o.x + o.w / 2, o.y + 18).setDepth(4);
-        const pistonArt = this.add.graphics();
-        pistonArt.fillStyle(0x0b171d, 1); pistonArt.fillRoundedRect(-7, -13, 14, 28, 3);
-        pistonArt.fillStyle(0x55766b, 1); pistonArt.fillRoundedRect(-4, -16, 8, 24, 2);
-        pistonArt.fillStyle(0x9ce2c4, 1); pistonArt.fillRect(-5, -17, 10, 3);
-        piston.add(pistonArt);
-        this.tweens.add({
-          targets: piston, y: o.y + 25, duration: 430 + i * 90,
-          yoyo: true, repeat: -1, ease: "Sine.inOut", delay: i * 120
-        });
+        // Compact rotary vent with concentric rings and animated vapor.
+        g.fillStyle(0x111d2a,1);g.fillRoundedRect(o.x,o.y+7,o.w,o.h-7,4);
+        g.fillStyle(0x314a5c,1);g.fillRoundedRect(o.x+5,o.y+9,o.w-10,o.h-15,3);
+        g.fillStyle(0x07101b,1);g.fillCircle(o.x+o.w/2,o.y+8,17);
+        g.lineStyle(3,0x57798c,1);g.strokeCircle(o.x+o.w/2,o.y+8,14);
+        g.lineStyle(2,0x9ce2c4,0.9);g.strokeCircle(o.x+o.w/2,o.y+8,8);
+        g.fillStyle(0x9ce2c4,0.85);g.fillCircle(o.x+o.w/2,o.y+8,3);
+        for(let k=0;k<6;k++){const angle=k*Math.PI/3;g.lineStyle(2,0x8aaebd,0.9);g.lineBetween(o.x+o.w/2+Math.cos(angle)*5,o.y+8+Math.sin(angle)*5,o.x+o.w/2+Math.cos(angle)*11,o.y+8+Math.sin(angle)*11);}
+        const vapor=this.add.container(o.x+o.w/2,o.y+2).setDepth(4),steam=this.add.graphics();
+        steam.fillStyle(0x9ce2c4,.22);steam.fillEllipse(-9,-4,15,17);steam.fillStyle(0xbfeedd,.25);steam.fillEllipse(6,-14,13,19);steam.fillStyle(0x9ce2c4,.16);steam.fillEllipse(-1,-23,18,17);vapor.add(steam);
+        this.tweens.add({targets:vapor,y:o.y-40,alpha:0,duration:1050,repeat:-1,delay:180,onRepeat:()=>{vapor.setY(o.y+2);vapor.setAlpha(.9);},ease:"Sine.out"});
       }
-    }
+      // Shared hazard edge lighting and floor-mounted anchor brackets.
+      g.lineStyle(1,0x9ce2c4,0.7);g.lineBetween(o.x+5,o.y+4,o.x+o.w-6,o.y+4);
+      g.fillStyle(0x0a1420,1);g.fillRoundedRect(o.x+5,o.y+o.h-4,12,8,1);g.fillRoundedRect(o.x+o.w-17,o.y+o.h-4,12,8,1);
+    });
   }
 
   private isAtExit(): boolean { return Phaser.Math.Distance.Between(this.player.x,this.player.y,this.gate.x,this.gate.y)<78; }
