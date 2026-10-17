@@ -222,6 +222,29 @@ class GameScene extends Phaser.Scene {
     moonHalo.fillStyle(0x9c7be8, 0.045);
     moonHalo.fillCircle(780, 125, 72);
 
+    // Low forest mist drifts behind the playable objects, adding depth without
+    // interfering with the silhouette puzzle or player readability.
+    const mistA = this.add.ellipse(210, 452, 310, 34, 0x9c7be8, 0.055).setDepth(1);
+    const mistB = this.add.ellipse(700, 438, 390, 42, 0x6c5a91, 0.07).setDepth(1);
+    this.tweens.add({
+      targets: mistA,
+      x: 290,
+      alpha: { from: 0.035, to: 0.09 },
+      duration: 7200,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.inOut"
+    });
+    this.tweens.add({
+      targets: mistB,
+      x: 620,
+      alpha: { from: 0.04, to: 0.085 },
+      duration: 9100,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.inOut"
+    });
+
     // Fireflies drift through the forest at different speeds and brightnesses.
     const fireflyPoints = [
       [82, 365], [145, 330], [220, 286], [318, 365], [375, 310],
@@ -274,6 +297,34 @@ class GameScene extends Phaser.Scene {
       for (let x = p.x + 12; x < p.x + p.w; x += 28) {
         g.fillRect(x, p.y + 12, 2, Math.min(30, p.h - 12));
       }
+    }
+
+    // Terrain trim: uneven grass, tiny stones and roots break up the flat slabs.
+    const trim = this.add.graphics().setDepth(2);
+    for (const p of this.platforms) {
+      if (p.y < 450) continue;
+      for (let x = p.x + 8; x < p.x + p.w - 5; x += 19) {
+        const height = 3 + ((Math.floor(x) * 7) % 5);
+        trim.lineStyle(1, x % 3 === 0 ? 0x9b8a69 : 0x65734c, 0.8);
+        trim.lineBetween(x, p.y + 1, x - 2, p.y - height);
+        trim.lineBetween(x + 3, p.y + 1, x + 6, p.y - height + 1);
+      }
+      for (let x = p.x + 18; x < p.x + p.w - 12; x += 57) {
+        trim.fillStyle(0x17131f, 0.35);
+        trim.fillEllipse(x, p.y + 16 + (x % 4), 9, 3);
+      }
+    }
+
+    // Small fungi at the forest floor add a few memorable points of colour.
+    for (const [x, y] of [[58, 492], [285, 492], [744, 492], [928, 492]]) {
+      const mushroom = this.add.graphics().setDepth(2);
+      mushroom.fillStyle(0xd9c9b7, 0.9);
+      mushroom.fillRoundedRect(x - 2, y - 2, 4, 8, 2);
+      mushroom.fillStyle(0x9c5268, 0.95);
+      mushroom.fillEllipse(x, y - 4, 13, 8);
+      mushroom.fillStyle(0xf0e8d8, 0.9);
+      mushroom.fillCircle(x - 3, y - 5, 1);
+      mushroom.fillCircle(x + 2, y - 3, 1);
     }
   }
 
