@@ -844,16 +844,8 @@ function finishGame(): void {
 
   window.setTimeout(() => {
     window.clearInterval(messageTimer);
-    transitScreen.classList.remove("transit-active");
-    transitScreen.hidden = true;
-    endScreen.hidden = false;
-    const eyebrow = endScreen.querySelector<HTMLElement>(".eyebrow");
-    const heading = endScreen.querySelector<HTMLElement>("h2");
-    const copy = endScreen.querySelector<HTMLElement>("p");
-    if (eyebrow) eyebrow.textContent = "TRANSIT COMPLETE // SIGNAL ACQUIRED";
-    if (heading) heading.innerHTML = "SHIFT 03<br /><em>INCOMING.</em>";
-    if (copy) copy.textContent = "The foundry is behind you. Something on the other side has clocked you in.";
-    replayButton.textContent = "REPLAY SHIFT 02 ↻";
+    transitStatus.textContent = "SHIFT 03 INITIALIZED // PERSONNEL RECORDS OPEN";
+    window.location.href = "./index.html?shift=3";
   }, 3200);
 }
 updateObjective();
