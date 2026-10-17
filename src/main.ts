@@ -11,6 +11,8 @@ class GameScene extends Phaser.Scene {
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private player!: Phaser.GameObjects.Container;
   private playerBody!: Phaser.GameObjects.Rectangle;
+  private playerArt!: Phaser.GameObjects.Graphics;
+  private shadowArt!: Phaser.GameObjects.Graphics;
   private playerVx = 0;
   private playerVy = 0;
   private grounded = false;
@@ -59,10 +61,12 @@ class GameScene extends Phaser.Scene {
     this.player = this.makePumpkin(105, 456);
     this.playerBody = this.add.rectangle(0, 0, 30, 34, 0xffffff, 0);
     this.player.add(this.playerBody);
+    this.playerArt = this.player.getAt(0) as Phaser.GameObjects.Graphics;
 
     this.lantern = this.makeLantern(this.lanternX, 438);
     this.tweens.add({ targets: this.lantern, scaleX: 1.055, scaleY: 1.055, duration: 920, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.shadow = this.makeShadow(500, 460);
+    this.shadowArt = this.shadow.getAt(0) as Phaser.GameObjects.Graphics;
     this.shadowLabel = this.add.text(0, 0, "ON BREAK", {
       fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff",
       backgroundColor: "#21182f", padding: { x: 5, y: 3 }
@@ -152,7 +156,11 @@ class GameScene extends Phaser.Scene {
 
     this.player.setPosition(nextX, nextY);
     this.player.setScale(this.playerVx < 0 ? -1 : 1, 1);
-    this.player.setAngle(this.grounded && Math.abs(this.playerVx) > 0 ? Math.sin(this.time.now * 0.018) * 3 : 0);
+    const moving = this.grounded && Math.abs(this.playerVx) > 0;
+    const bob = moving ? Math.abs(Math.sin(this.time.now * 0.018)) * 2.2 : 0;
+    this.player.setY(nextY - bob);
+    this.player.setAngle(moving ? Math.sin(this.time.now * 0.018) * 3 : 0);
+    this.playerArt.setScale(1, moving ? 1 + Math.sin(this.time.now * 0.018) * 0.025 : 1);
 
     const eDown = this.keys.E.isDown;
     if (eDown && !this.eWasDown) this.interact();
@@ -280,11 +288,13 @@ class GameScene extends Phaser.Scene {
     g.fillEllipse(8, 0, 18, 29);
     g.fillStyle(0x7c9b52, 1);
     g.fillRoundedRect(-3, -21, 6, 9, 2);
-    g.fillStyle(0x24172b, 1);
-    g.fillTriangle(-9, -5, -3, 1, -11, 1);
-    g.fillTriangle(9, -5, 3, 1, 11, 1);
-    g.fillTriangle(-6, 7, 6, 7, 0, 12);
     c.add(g);
+    const face = this.add.graphics();
+    face.fillStyle(0x24172b, 1);
+    face.fillTriangle(-9, -5, -3, 1, -11, 1);
+    face.fillTriangle(9, -5, 3, 1, 11, 1);
+    face.fillTriangle(-6, 7, 6, 7, 0, 12);
+    c.add(face);
     return c;
   }
 
@@ -383,8 +393,18 @@ class GameScene extends Phaser.Scene {
       625
     );
     const projectedY = this.demandSatisfied ? 447 : 463;
-    this.shadow.setPosition(projectedX, projectedY);
+    const shadowBob = Math.sin(this.time.now * 0.004) * 2;
+    this.shadow.setPosition(projectedX, projectedY + shadowBob);
     this.shadow.setAlpha(this.demandSatisfied ? 1 : 0.78);
+    this.shadow.setScale(1 + Math.sin(this.time.now * 0.003) * 0.035, 1 - Math.sin(this.time.now * 0.003) * 0.025);
+    this.shadowArt.clear();
+    this.shadowArt.fillStyle(0x08070d, 0.92);
+    this.shadowArt.fillEllipse(0, 0, 30, 36);
+    this.shadowArt.fillEllipse(-8, -1, 15, 31);
+    this.shadowArt.fillEllipse(8, -1, 15, 31);
+    this.shadowArt.fillStyle(this.demandSatisfied ? 0xf39a45 : 0x9c7be8, 1);
+    this.shadowArt.fillCircle(-5, -5, 2.5);
+    this.shadowArt.fillCircle(5, -5, 2.5);
     this.shadowLabel.setPosition(projectedX, projectedY - 31);
     this.shadowLabel.setText(this.demandSatisfied ? "READY TO WORK" : "ON BREAK");
     this.shadowLabel.setColor(this.demandSatisfied ? "#f39a45" : "#c5a8ff");
