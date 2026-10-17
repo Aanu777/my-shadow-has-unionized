@@ -737,14 +737,103 @@ class GameScene extends Phaser.Scene {
   private isAtExit(): boolean { return Phaser.Math.Distance.Between(this.player.x,this.player.y,this.gate.x,this.gate.y)<78; }
   private handleExitEnter(): void { if(this.level===1){this.transitionToShiftTwo();return;}this.won=true;this.showWin(); }
   private transitionToShiftTwo(): void {
-    if(this.transitioning)return;this.transitioning=true;
-    const overlay=this.add.rectangle(W/2,H/2,W,H,0x08070d,1).setDepth(30).setAlpha(0);
-    const panel=this.add.rectangle(W/2,H/2,390,142,0x17212a,0.98).setDepth(31).setAlpha(0);
-    const title=this.add.text(W/2,H/2-25,"SHIFT CHANGE",{fontFamily:"monospace",fontSize:"24px",color:"#9ce2c4",letterSpacing:3}).setOrigin(0.5).setDepth(32).setAlpha(0);
-    const sub=this.add.text(W/2,H/2+16,"RECONFIGURING TERRAIN  //  02",{fontFamily:"monospace",fontSize:"11px",color:"#d7f3e6",letterSpacing:1}).setOrigin(0.5).setDepth(32).setAlpha(0);
-    const bar=this.add.rectangle(W/2-150,H/2+48,0,4,0x9ce2c4).setOrigin(0,0.5).setDepth(32);
-    this.tweens.add({targets:[overlay,panel,title,sub],alpha:1,duration:260,ease:"Sine.out"});
-    this.tweens.add({targets:bar,width:300,duration:1050,delay:180,ease:"Cubic.inOut",onComplete:()=>{this.registry.set("shiftLevel",2);this.scene.restart();}});
+    if (this.transitioning) return;
+    this.transitioning = true;
+
+    // A bespoke "ink-rip" transition: the old world is swallowed by a jagged
+    // seam, as if the shadow itself is tearing the page into the night shift.
+    const wipe = this.add.graphics().setDepth(30);
+    const seamGlow = this.add.graphics().setDepth(31);
+    const wipeState = { progress: 0 };
+    const drawTear = (progress: number): void => {
+      const edge = progress * (W + 40) - 20;
+      wipe.clear();
+      wipe.fillStyle(0x0b171d, 1);
+      wipe.beginPath();
+      wipe.moveTo(0, 0);
+      wipe.lineTo(edge, 0);
+      for (let y = 0; y <= H; y += 18) {
+        const jagged = Math.sin(y * 0.071) * 9
+          + Math.sin(y * 0.193 + 1.4) * 5
+          + Math.sin(y * 0.031 + 2.2) * 11;
+        wipe.lineTo(Phaser.Math.Clamp(edge + jagged, -30, W + 30), y);
+      }
+      wipe.lineTo(0, H);
+      wipe.closePath();
+      wipe.fillPath();
+
+      // Mint sparks cling to the moving tear, like the next level's dead
+      // factory circuit is trying to burn through the old world.
+      seamGlow.clear();
+      seamGlow.lineStyle(2, 0x9ce2c4, 0.72);
+      seamGlow.beginPath();
+      for (let y = 0; y <= H; y += 18) {
+        const jagged = Math.sin(y * 0.071) * 9
+          + Math.sin(y * 0.193 + 1.4) * 5
+          + Math.sin(y * 0.031 + 2.2) * 11;
+        const sx = Phaser.Math.Clamp(edge + jagged, 0, W);
+        if (y === 0) seamGlow.moveTo(sx, y);
+        else seamGlow.lineTo(sx, y);
+        if ((Math.floor(y / 18) + Math.floor(progress * 17)) % 3 === 0) {
+          seamGlow.fillStyle(0xd7f3e6, 0.85);
+          seamGlow.fillCircle(sx + Math.sin(y + progress * 40) * 3, y, 1.5 + (y % 4) * 0.25);
+        }
+      }
+      seamGlow.strokePath();
+    };
+
+    const title = this.add.text(W / 2, H / 2 - 17, "THE NIGHT SHIFT", {
+      fontFamily: "monospace", fontSize: "27px", color: "#9ce2c4",
+      fontStyle: "bold", letterSpacing: 4, align: "center"
+    }).setOrigin(0.5).setDepth(32).setAlpha(0).setScale(0.88);
+    const sub = this.add.text(W / 2, H / 2 + 20, "THE LANTERN FOUNDRY IS STILL AWAKE.", {
+      fontFamily: "monospace", fontSize: "10px", color: "#d7f3e6",
+      letterSpacing: 1, align: "center"
+    }).setOrigin(0.5).setDepth(32).setAlpha(0);
+    const sigil = this.add.graphics().setDepth(32).setAlpha(0);
+    sigil.lineStyle(1, 0x9ce2c4, 0.8);
+    sigil.lineBetween(W / 2 - 142, H / 2 + 43, W / 2 - 26, H / 2 + 43);
+    sigil.lineBetween(W / 2 + 26, H / 2 + 43, W / 2 + 142, H / 2 + 43);
+    sigil.fillStyle(0x9ce2c4, 1);
+    sigil.fillTriangle(W / 2 - 8, H / 2 + 39, W / 2 + 8, H / 2 + 39, W / 2, H / 2 + 47);
+    sigil.fillCircle(W / 2, H / 2 + 43, 2);
+
+    drawTear(0);
+    this.tweens.add({
+      targets: wipeState,
+      progress: 1,
+      duration: 1420,
+      ease: "Cubic.inOut",
+      onUpdate: () => drawTear(wipeState.progress),
+      onComplete: () => {
+        // Hold the fully torn-over frame for a beat so the title lands.
+        this.time.delayedCall(430, () => {
+          this.registry.set("shiftLevel", 2);
+          this.scene.restart();
+        });
+      }
+    });
+    this.tweens.add({
+      targets: [title, sub, sigil],
+      alpha: 1,
+      duration: 360,
+      delay: 680,
+      ease: "Cubic.out"
+    });
+    this.tweens.add({
+      targets: title,
+      scale: 1,
+      duration: 420,
+      delay: 680,
+      ease: "Back.out"
+    });
+    this.tweens.add({
+      targets: [title, sub, sigil],
+      alpha: 0,
+      duration: 170,
+      delay: 1600,
+      ease: "Sine.in"
+    });
   }
   private restartFromShiftOne(): void {this.registry.set("shiftLevel",1);this.scene.restart();}
 
