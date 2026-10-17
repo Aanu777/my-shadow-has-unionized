@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import "./style.css";
 
 const root = document.querySelector<HTMLDivElement>("#game-view");
@@ -39,9 +40,25 @@ moonLight.position.set(-7, 12, 3);
 moonLight.castShadow = true;
 moonLight.shadow.mapSize.set(1024, 1024);
 scene.add(moonLight);
+moonLight.shadow.camera.left = -12;
+moonLight.shadow.camera.right = 12;
+moonLight.shadow.camera.top = 9;
+moonLight.shadow.camera.bottom = -9;
+moonLight.shadow.bias = -0.00025;
+moonLight.shadow.normalBias = 0.025;
 const amberLight = new THREE.PointLight("#e59a55", 24, 18, 2);
 amberLight.position.set(0, 3.4, -7);
 scene.add(amberLight);
+const fillLight = new THREE.PointLight("#7965cb", 18, 22, 1.7);
+fillLight.position.set(5.5, 3.1, -13);
+scene.add(fillLight);
+const practicalLights: THREE.PointLight[] = [];
+for (const z of [8, 1, -6, -13, -20]) {
+  const lamp = new THREE.PointLight("#e7a76c", 10, 8, 1.8);
+  lamp.position.set(0, 4.25, z);
+  scene.add(lamp);
+  practicalLights.push(lamp);
+}
 
 const materials = {
   floor: new THREE.MeshStandardMaterial({ color: "#242033", roughness: 0.84, metalness: 0.25 }),
@@ -159,6 +176,31 @@ function buildEnvironment(): void {
 }
 
 buildEnvironment();
+
+// Imported CC0 model props add authored silhouettes and real mesh detail. The scene
+// still loads if the optional remote asset host is unavailable.
+const gltfLoader = new GLTFLoader();
+const machineAssetUrl = "https://api.flockbay.com/bootstrap/library/models/v1/9039d1705335f47d3766f467a9aa188a9cac395e2b5eec87a69d971b2a1e9eab/machine_generator.glb";
+const importedProps: THREE.Group[] = [];
+gltfLoader.load(machineAssetUrl, (gltf) => {
+  const model = gltf.scene;
+  model.scale.setScalar(2.15);
+  model.traverse((node) => {
+    if (node instanceof THREE.Mesh) {
+      node.castShadow = true;
+      node.receiveShadow = true;
+    }
+  });
+  for (const [x, z, rotation] of [[-5.4, -12.2, 0], [5.4, -12.2, Math.PI], [-5.4, 2.2, 0], [5.4, 2.2, Math.PI]] as const) {
+    const prop = model.clone(true);
+    prop.position.set(x, 0.95, z);
+    prop.rotation.y = rotation;
+    scene.add(prop);
+    importedProps.push(prop);
+  }
+}, undefined, () => {
+  console.warn("Optional CC0 machine model could not be loaded; continuing with fallback scene props.");
+});
 const relays: Relay[] = [makeRelay("triangle", -4.2, -6.8), makeRelay("circle", 0, -6.8), makeRelay("diamond", 4.2, -6.8)];
 const sequence: Relay["kind"][] = ["triangle", "circle", "diamond"];
 let nextRelay = 0;
@@ -362,6 +404,12 @@ function animate(): void {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
+  practicalLights.forEach((lamp, i) => {
+    const pulse = 0.92 + Math.sin(t * 1.35 + i * 1.7) * 0.045 + Math.sin(t * 7.1 + i) * 0.018;
+    lamp.intensity = 10 * pulse;
+  });
+  amberLight.intensity = 22 + Math.sin(t * 1.7) * 1.6;
+  fillLight.intensity = 16 + Math.sin(t * 0.55 + 2) * 2;
   for (const relay of relays) {
     const symbol = relay.group.children[3];
     if (symbol) symbol.rotation.y += delta * (relay.active ? 0.2 : 0.65);
