@@ -255,7 +255,7 @@ document.addEventListener("keydown", (event: KeyboardEvent) => {
   if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
   keys.add(event.code);
   if (event.code === "KeyE" && !event.repeat && started && !ended) interact();
-  if ((event.code === "Space" || event.code === "KeyW") && !event.repeat && started && grounded && coyoteTime > 0) {
+  if (event.code === "Space" && !event.repeat && started && grounded && coyoteTime > 0) {
     verticalVelocity = JUMP_SPEED;
     grounded = false;
     coyoteTime = 0;
