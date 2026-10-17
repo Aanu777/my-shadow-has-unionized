@@ -119,7 +119,14 @@ class GameScene extends Phaser.Scene {
       || Phaser.Input.Keyboard.JustDown(this.cursors.space)
       || Phaser.Input.Keyboard.JustDown(this.keys.W);
 
-    this.playerVx = left ? -210 : right ? 210 : 0;
+    const targetVx = left === right ? 0 : left ? -210 : 210;
+    // Ease into movement and settle naturally instead of snapping between full speed and stillness.
+    const acceleration = targetVx === 0 ? 13 : 18;
+    this.playerVx = Phaser.Math.Linear(
+      this.playerVx,
+      targetVx,
+      Math.min(1, dt * acceleration)
+    );
     if (jumpPressed && this.grounded) { this.playerVy = -390; this.grounded = false; }
     this.playerVy += 900 * dt;
 
