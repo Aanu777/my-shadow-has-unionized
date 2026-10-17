@@ -479,81 +479,48 @@ export class ShiftThreeScene extends Phaser.Scene {
       const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x07060c, 0.94).setScrollFactor(0).setDepth(50);
       overlay.push(shade);
 
-      // Framed incident report: make the failure screen feel like an in-world HR system.
+      // Hard-edged arcade pixel panel with a tiny pixel pumpkin mascot.
       const panel = this.add.graphics().setScrollFactor(0).setDepth(51);
-      panel.fillStyle(0x100d18, 0.98);
-      panel.fillRoundedRect(112, 104, W - 224, 392, 8);
-      panel.lineStyle(1, 0x59405f, 0.95);
-      panel.strokeRoundedRect(112, 104, W - 224, 392, 8);
-      panel.lineStyle(3, 0xff5369, 0.95);
-      panel.lineBetween(132, 104, 256, 104);
-      panel.lineBetween(W - 256, 104, W - 132, 104);
-      panel.fillStyle(0xff5369, 0.08);
-      panel.fillRect(113, 105, W - 226, 50);
+      panel.fillStyle(0x100d18,1); panel.fillRect(144,76,672,448);
+      panel.fillStyle(0x59405f,1); panel.fillRect(144,76,672,4); panel.fillRect(144,520,672,4); panel.fillRect(144,76,4,448); panel.fillRect(812,76,4,448);
+      panel.fillStyle(0xff5369,1); panel.fillRect(164,76,112,4); panel.fillRect(684,76,112,4);
+      panel.fillStyle(0x211524,1); panel.fillRect(148,84,664,38);
+      panel.fillStyle(0x35243d,1); panel.fillRect(164,132,632,2);
       overlay.push(panel);
 
-      const topLabel = this.add.text(144, 123, "DEPARTMENT OF LOST SHADOWS", {
-        fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff", letterSpacing: 2
-      }).setScrollFactor(0).setDepth(52);
-      const incidentId = this.add.text(W - 144, 123, "INCIDENT 03-ERR", {
-        fontFamily: "monospace", fontSize: "9px", color: "#ff8d82", letterSpacing: 1
-      }).setOrigin(1, 0).setScrollFactor(0).setDepth(52);
-      overlay.push(topLabel, incidentId);
+      const topLabel=this.add.text(168,96,"D.L.S. // PERSONNEL SYSTEM",{fontFamily:"monospace",fontSize:"10px",color:"#c5a8ff"}).setScrollFactor(0).setDepth(52);
+      const incident=this.add.text(792,96,"ERR_03",{fontFamily:"monospace",fontSize:"10px",color:"#ff6b72"}).setOrigin(1,0).setScrollFactor(0).setDepth(52);
+      overlay.push(topLabel,incident);
 
-      const icon = this.add.graphics().setScrollFactor(0).setDepth(52);
-      icon.lineStyle(2, 0xff5369, 1);
-      icon.strokeCircle(W / 2, 202, 29);
-      icon.lineBetween(W / 2 - 11, 191, W / 2 + 11, 213);
-      icon.lineBetween(W / 2 + 11, 191, W / 2 - 11, 213);
-      icon.lineStyle(1, 0xff5369, 0.35);
-      icon.strokeCircle(W / 2, 202, 39);
-      overlay.push(icon);
-      this.tweens.add({ targets: icon, angle: 180, alpha: { from: 0.65, to: 1 }, duration: 1200, yoyo: true, repeat: -1 });
+      const mascot=this.add.graphics().setScrollFactor(0).setDepth(52);
+      mascot.fillStyle(0x030208,1); mascot.fillRect(445,145,70,6); mascot.fillRect(435,151,90,6); mascot.fillRect(429,157,102,12); mascot.fillRect(435,169,90,12); mascot.fillRect(445,181,70,6);
+      mascot.fillStyle(0xff7a2f,1); mascot.fillRect(459,151,42,6); mascot.fillRect(447,157,66,12); mascot.fillRect(453,169,54,12); mascot.fillRect(465,181,30,6);
+      mascot.fillStyle(0x759447,1); mascot.fillRect(477,139,12,12);
+      mascot.fillStyle(0x100d18,1); mascot.fillRect(459,163,12,6); mascot.fillRect(489,163,12,6); mascot.fillRect(471,175,18,6);
+      mascot.fillStyle(0xff5369,1); mascot.fillRect(477,193,6,6); mascot.fillRect(465,199,30,6); mascot.fillRect(453,205,54,6); mascot.fillRect(447,211,66,6);
+      overlay.push(mascot);
 
-      const title = this.add.text(W / 2, 260, "EMPLOYEE\nTERMINATED", {
-        fontFamily: "monospace", fontSize: "30px", color: "#fff0ee", fontStyle: "bold",
-        align: "center", lineSpacing: -1, letterSpacing: 2
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
-      title.setAlpha(0);
-      title.setScale(0.92);
-      this.tweens.add({ targets: title, alpha: 1, scale: 1, duration: 340, ease: "Back.out" });
-      overlay.push(title);
+      const title=this.add.text(W/2,246,"SHIFT FAILED",{fontFamily:"monospace",fontSize:"30px",color:"#fff0ee",fontStyle:"bold",align:"center",letterSpacing:2}).setOrigin(0.5).setScrollFactor(0).setDepth(52);
+      const status=this.add.text(W/2,282,"EMPLOYEE RECORD: VOIDED",{fontFamily:"monospace",fontSize:"10px",color:"#f4b860",align:"center"}).setOrigin(0.5).setScrollFactor(0).setDepth(52);
+      overlay.push(title,status);
 
-      const status = this.add.text(W / 2, 309, "YOUR SHADOW HAS BEEN REASSIGNED TO THE VOID.", {
-        fontFamily: "monospace", fontSize: "9px", color: "#f4b860", letterSpacing: 1, align: "center"
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
-      const sub = this.add.text(W / 2, 346, message, {
-        fontFamily: "monospace", fontSize: "11px", color: "#c9bfce", align: "center",
-        wordWrap: { width: 610 }, lineSpacing: 5
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
-      sub.setAlpha(0);
-      this.tweens.add({ targets: sub, alpha: 1, duration: 320, delay: 100 });
-      overlay.push(status, sub);
+      const plate=this.add.graphics().setScrollFactor(0).setDepth(52);
+      plate.fillStyle(0x211524,1); plate.fillRect(184,310,592,48); plate.fillStyle(0xff5369,1); plate.fillRect(184,310,4,48);
+      overlay.push(plate);
+      const sub=this.add.text(W/2,334,message,{fontFamily:"monospace",fontSize:"10px",color:"#e8d9f8",align:"center",wordWrap:{width:540},lineSpacing:3}).setOrigin(0.5).setScrollFactor(0).setDepth(53);
+      overlay.push(sub);
 
-      const divider = this.add.graphics().setScrollFactor(0).setDepth(52);
-      divider.lineStyle(1, 0x59405f, 1);
-      divider.lineBetween(154, 385, W - 154, 385);
+      const divider=this.add.graphics().setScrollFactor(0).setDepth(52);
+      divider.fillStyle(0x59405f,1); divider.fillRect(208,382,544,2); divider.fillStyle(0xc5a8ff,1); divider.fillRect(208,382,48,2);
       overlay.push(divider);
-
-      const hint = this.add.text(W / 2, 421, "[ R ]  REINSTATE EMPLOYMENT", {
-        fontFamily: "monospace", fontSize: "12px", color: "#f4b860", letterSpacing: 1
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
-      hint.setAlpha(0);
-      this.tweens.add({ targets: hint, alpha: { from: 0.55, to: 1 }, duration: 620, delay: 220, yoyo: true, repeat: -1 });
+      const hintBg=this.add.graphics().setScrollFactor(0).setDepth(52);
+      hintBg.fillStyle(0x2b202b,1); hintBg.fillRect(280,404,400,36); hintBg.fillStyle(0xf4b860,1); hintBg.fillRect(280,404,4,36); hintBg.fillRect(676,404,4,36);
+      overlay.push(hintBg);
+      const hint=this.add.text(W/2,422,"[ R ]  TRY AGAIN",{fontFamily:"monospace",fontSize:"13px",color:"#f4b860",fontStyle:"bold",letterSpacing:2}).setOrigin(0.5).setScrollFactor(0).setDepth(53);
       overlay.push(hint);
-
-      const footer = this.add.text(W / 2, 463, "FORM 404-B  //  APPEAL WINDOW: NEVER", {
-        fontFamily: "monospace", fontSize: "8px", color: "#75677e", letterSpacing: 2
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
+      this.tweens.add({targets:hint,alpha:{from:1,to:0.5},duration:450,yoyo:true,repeat:-1});
+      const footer=this.add.text(W/2,475,"FORM 404-B   /   APPEAL WINDOW: NEVER",{fontFamily:"monospace",fontSize:"9px",color:"#75677e"}).setOrigin(0.5).setScrollFactor(0).setDepth(52);
       overlay.push(footer);
-
-      // A quick red scan sweeps through the panel as the report materializes.
-      const scanline = this.add.rectangle(W / 2, 155, W - 250, 2, 0xff5369, 0.85).setScrollFactor(0).setDepth(53);
-      overlay.push(scanline);
-      this.tweens.add({
-        targets: scanline, y: 450, alpha: { from: 0.85, to: 0.1 }, duration: 720, ease: "Sine.inOut",
-        onComplete: () => scanline.setAlpha(0)
-      });
 
       this.data.set("failureOverlay", overlay);
     });
