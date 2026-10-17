@@ -53,13 +53,8 @@ class GameScene extends Phaser.Scene {
     drawShift01Background(this);
     this.createAtmosphere();
 
-    this.platforms = [
-      // One continuous floor: no invisible gaps beneath the starting area.
-      { x: 0, y: 500, w: 960, h: 100 },
-      { x: 95, y: 405, w: 120, h: 18 },
-      { x: 450, y: 395, w: 115, h: 18 },
-      { x: 760, y: 390, w: 110, h: 18 }
-    ];
+    // Platforms intentionally removed for this environment pass.
+    this.platforms = [];
     this.drawPlatforms();
 
     this.player = this.makePumpkin(105, 483);
