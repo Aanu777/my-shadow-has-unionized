@@ -54,19 +54,18 @@ class GameScene extends Phaser.Scene {
     this.createAtmosphere();
 
     this.platforms = [
-      { x: 0, y: 500, w: 300, h: 100 },
-      { x: 390, y: 500, w: 330, h: 100 },
-      { x: 720, y: 500, w: 240, h: 100 },
+      // One continuous floor: no invisible gaps beneath the starting area.
+      { x: 0, y: 500, w: 960, h: 100 },
       { x: 95, y: 405, w: 120, h: 18 },
       { x: 450, y: 395, w: 115, h: 18 },
       { x: 760, y: 390, w: 110, h: 18 }
     ];
     this.drawPlatforms();
 
-    this.player = this.makePumpkin(105, 456);
+    this.player = this.makePumpkin(105, 483);
     this.playerBody = this.add.rectangle(0, 0, 30, 34, 0xffffff, 0);
     this.player.add(this.playerBody);
-    this.playerArt = this.player.getAt(0) as Phaser.GameObjects.Graphics;
+    this.playerArt = this.player.getAt(1) as Phaser.GameObjects.Graphics;
 
     this.lantern = this.makeLantern(this.lanternX, 438);
     this.tweens.add({ targets: this.lantern, scaleX: 1.055, scaleY: 1.055, duration: 920, yoyo: true, repeat: -1, ease: "Sine.inOut" });
@@ -88,15 +87,18 @@ class GameScene extends Phaser.Scene {
     this.demandText = this.add.text(28, 48, "UNION DEMAND: ONE (1) COFFEE BREAK", {
       fontFamily: "monospace", fontSize: "12px", color: "#d8cfe6"
     }).setScrollFactor(0);
-    this.dialogueText = this.add.text(W / 2, 555, this.message, {
-      fontFamily: "monospace", fontSize: "13px", color: "#f0e8d8",
-      backgroundColor: "#21182f", padding: { x: 12, y: 9 },
+    this.dialogueText = this.add.text(W / 2, 550, this.message, {
+      fontFamily: "monospace", fontSize: "12px", color: "#f0e8d8",
+      backgroundColor: "#21182f", padding: { x: 12, y: 7 },
       align: "center", wordWrap: { width: 820 }
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(8);
 
-    this.add.text(W - 26, 26, "A/D MOVE   SPACE JUMP   E INTERACT   R RESTART", {
-      fontFamily: "monospace", fontSize: "10px", color: "#8c819b"
-    }).setOrigin(1, 0);
+    this.add.text(W - 26, 24,
+      "MOVE  A/D OR ←/→\nJUMP  SPACE / W / ↑\nINTERACT  E   •   RESTART  R", {
+      fontFamily: "monospace", fontSize: "11px", color: "#d8cfe6",
+      backgroundColor: "#21182f", padding: { x: 10, y: 8 },
+      lineSpacing: 5, align: "right"
+    }).setOrigin(1, 0).setDepth(8);
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -108,9 +110,12 @@ class GameScene extends Phaser.Scene {
   }
 
   private physicslessHint(): void {
-    this.add.text(28, H - 22, "TIP: MOVE THE LANTERN. THE SHADOW'S PATH MOVES WITH IT.", {
-      fontFamily: "monospace", fontSize: "10px", color: "#82758e"
-    });
+    this.add.text(28, 78,
+      "GOAL: GIVE THE SHADOW COFFEE → ACTIVATE THE SWITCH → REACH THE EXIT.\nSTAND NEAR THE LANTERN AND PRESS E TO MOVE IT.", {
+      fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff",
+      backgroundColor: "#21182f", padding: { x: 8, y: 6 },
+      lineSpacing: 4, wordWrap: { width: 440 }
+    }).setDepth(8);
   }
 
   update(_time: number, delta: number): void {
@@ -154,7 +159,7 @@ class GameScene extends Phaser.Scene {
     }
     if (nextY > H + 80) {
       nextX = 105;
-      nextY = 456;
+      nextY = 483;
       this.playerVy = 0;
       this.say("YOU HAVE FALLEN OUTSIDE THE EMPLOYEE HANDBOOK.");
     }
@@ -162,10 +167,15 @@ class GameScene extends Phaser.Scene {
     this.player.setPosition(nextX, nextY);
     this.player.setScale(this.playerVx < 0 ? -1 : 1, 1);
     const moving = this.grounded && Math.abs(this.playerVx) > 0;
-    const bob = moving ? Math.abs(Math.sin(this.time.now * 0.018)) * 2.2 : 0;
+    const walkCycle = this.time.now * 0.016;
+    const bob = moving ? Math.abs(Math.sin(walkCycle)) * 2.5 : Math.sin(this.time.now * 0.003) * 0.7;
     this.player.setY(nextY - bob);
-    this.player.setAngle(moving ? Math.sin(this.time.now * 0.018) * 3 : 0);
-    this.playerArt.setScale(1, moving ? 1 + Math.sin(this.time.now * 0.018) * 0.025 : 1);
+    this.player.setAngle(moving ? Math.sin(walkCycle) * 2.2 : Math.sin(this.time.now * 0.0025) * 0.6);
+    // Squash only the pumpkin body, not its separate ground shadow.
+    this.playerArt.setScale(
+      moving ? 1 + Math.sin(walkCycle) * 0.035 : 1,
+      moving ? 1 - Math.sin(walkCycle) * 0.045 : 1 + Math.sin(this.time.now * 0.003) * 0.012
+    );
 
     const eDown = this.keys.E.isDown;
     if (eDown && !this.eWasDown) this.interact();
@@ -280,9 +290,11 @@ class GameScene extends Phaser.Scene {
 
   private makePumpkin(x: number, y: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
+    const groundShadow = this.add.graphics();
+    groundShadow.fillStyle(0x000000, 0.28);
+    groundShadow.fillEllipse(0, 18, 44, 10);
+    c.add(groundShadow);
     const g = this.add.graphics();
-    g.fillStyle(0x000000, 0.28);
-    g.fillEllipse(0, 18, 44, 10);
     g.fillStyle(0xe8792f, 1);
     g.fillEllipse(0, 0, 34, 31);
     g.fillEllipse(-8, 0, 18, 29);
