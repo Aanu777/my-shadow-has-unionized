@@ -292,21 +292,21 @@ function buildEnvironment(): void {
   }
 
   // The bulkhead has a frame, curved locking rods and an emissive access seam.
-  const gateFrame = new THREE.Mesh(new THREE.BoxGeometry(5.5, 4.7, 0.42), materials.dark);
-  gateFrame.position.set(0, 2.25, -18.2);
+  const gateFrame = new THREE.Mesh(new THREE.BoxGeometry(4.05, 4.7, 0.42), materials.dark);
+  gateFrame.position.set(5.05, 2.25, -18.2);
   gateFrame.castShadow = true;
   scene.add(gateFrame);
   const gatePanel = new THREE.Mesh(new THREE.BoxGeometry(4.45, 4.05, 0.16), materials.ceramic);
-  gatePanel.position.set(0, 2.2, -17.98);
+  gatePanel.position.set(5.05, 2.2, -17.98);
   gatePanel.castShadow = true;
   scene.add(gatePanel);
-  for (let x = -1.8; x <= 1.8; x += 0.9) {
+  for (let x = 3.65; x <= 6.45; x += 0.7) {
     const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3.75, 10), materials.copper);
     rib.position.set(x, 2.1, -17.84);
     scene.add(rib);
   }
   const gateLight = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.045, 0.08), materials.glow);
-  gateLight.position.set(0, 4.15, -17.78);
+  gateLight.position.set(5.05, 4.15, -17.78);
   scene.add(gateLight);
 
   // Side console banks and the inset equipment have softened, layered profiles.
@@ -346,12 +346,12 @@ const exitDark = new THREE.MeshStandardMaterial({
 });
 const exitSign = new THREE.Group();
 exitSign.name = "exit-sign";
-exitSign.position.set(0, 4.55, -17.55);
+exitSign.position.set(5.05, 4.55, -17.55);
 scene.add(exitSign);
-const signBack = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.82, 0.16), materials.dark);
+const signBack = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.82, 0.16), materials.dark);
 signBack.castShadow = true;
 exitSign.add(signBack);
-const signFace = new THREE.Mesh(new THREE.PlaneGeometry(2.68, 0.61), exitDark);
+const signFace = new THREE.Mesh(new THREE.PlaneGeometry(2.35, 0.61), exitDark);
 signFace.position.z = 0.09;
 exitSign.add(signFace);
 const signCanvas = document.createElement("canvas");
@@ -373,30 +373,30 @@ if (signContext) {
 const signTexture = new THREE.CanvasTexture(signCanvas);
 signTexture.colorSpace = THREE.SRGBColorSpace;
 const signText = new THREE.Mesh(
-  new THREE.PlaneGeometry(2.66, 0.6),
+  new THREE.PlaneGeometry(2.33, 0.6),
   new THREE.MeshBasicMaterial({ map: signTexture, transparent: false, toneMapped: false })
 );
 signText.position.z = 0.105;
 signText.name = "exit-sign-glow";
 exitSign.add(signText);
-for (const x of [-1.33, 1.33]) {
+for (const x of [-1.16, 1.16]) {
   const border = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.68, 0.035), exitMint);
   border.position.set(x, 0, 0.12);
   exitSign.add(border);
 }
 const exitSignLight = new THREE.PointLight("#45ffb0", 7, 10, 1.8);
-exitSignLight.position.set(0, 4.55, -16.8);
+exitSignLight.position.set(5.05, 4.55, -16.8);
 scene.add(exitSignLight);
 
 // Tall luminous jambs outline the actual opening, so the exit reads as a doorway.
-for (const x of [-2.58, 2.58]) {
+for (const x of [3.28, 6.82]) {
   const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.09, 4.25, 0.1), exitMint);
   jamb.position.set(x, 2.12, -17.52);
   jamb.name = "exit-jamb";
   scene.add(jamb);
 }
-const exitThreshold = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.045, 0.42), exitMint);
-exitThreshold.position.set(0, 0.045, -17.2);
+const exitThreshold = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.045, 0.42), exitMint);
+exitThreshold.position.set(5.05, 0.045, -17.2);
 exitThreshold.name = "exit-threshold";
 scene.add(exitThreshold);
 
@@ -408,7 +408,7 @@ const exitArrowMaterial = new THREE.MeshBasicMaterial({
   toneMapped: false,
   side: THREE.DoubleSide
 });
-for (const z of [-9.1, -11.5, -13.9, -16.0]) {
+for (const z of [-12.2, -14.3, -16.2]) {
   const arrowShape = new THREE.Shape();
   arrowShape.moveTo(-0.38, -0.28);
   arrowShape.lineTo(0.38, -0.28);
@@ -420,7 +420,7 @@ for (const z of [-9.1, -11.5, -13.9, -16.0]) {
   arrowShape.closePath();
   const arrow = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), exitArrowMaterial);
   arrow.rotation.x = -Math.PI / 2;
-  arrow.position.set(0, 0.055, z);
+  arrow.position.set(2.0 + ((-z - 12.2) * 0.75), 0.055, z);
   arrow.name = "exit-floor-arrow";
   scene.add(arrow);
 }
@@ -470,9 +470,8 @@ function loadAsset(file: string, placements: Array<[number, number, number, numb
     () => console.warn("Optional CC0 model unavailable:", file)
   );
 }
-loadAsset("satelliteDish.glb", [[-5.45, -11.7, 0, 0], [5.45, -11.7, 0, Math.PI], [-5.45, 2.6, 0, 0], [5.45, 2.6, 0, Math.PI]]);
-loadAsset("satelliteDish_detailed.glb", [[-5.7, -2.8, 0, 0.25], [5.7, -2.8, 0, -0.25]]);
-loadAsset("satelliteDish_large.glb", [[-5.6, -18.4, 0, 0.2], [5.6, -18.4, 0, -0.2]]);
+// Satellite-dish props intentionally omitted: they looked like random antennas and
+// crowded the room without supporting the relay puzzle.
 
 // Kenney Factory Kit assets add recognizable machinery silhouettes and authored
 // PBR mesh detail along the route. All of these models are CC0.
@@ -495,10 +494,8 @@ function loadFactoryAsset(file: string, placements: Array<[number, number, numbe
     () => console.warn("Optional CC0 factory model unavailable:", file)
   );
 }
-loadFactoryAsset("machine.glb", [[-5.45, -15.3, 0.05, 0], [5.45, -15.3, 0.05, Math.PI]]);
-loadFactoryAsset("crane-lift.glb", [[-5.9, -4.0, 0, Math.PI / 2], [5.9, -4.0, 0, -Math.PI / 2]]);
-loadFactoryAsset("machine-window.glb", [[-6.05, 5.1, 0.1, 0], [6.05, 5.1, 0.1, Math.PI]]);
-loadFactoryAsset("pipe-large-curve.glb", [[-5.75, -0.6, 0.1, Math.PI / 2], [5.75, -0.6, 0.1, -Math.PI / 2]]);
+// Keep just two far-end machinery silhouettes; omit cranes and extra window/pipe props.
+loadFactoryAsset("machine.glb", [[-5.8, -15.3, 0.05, 0], [5.8, -15.3, 0.05, Math.PI]]);
 
 // Additive architectural detail uses curved profiles, rings, cable runs and
 // inset panels to break the original hard-edged block rhythm.
@@ -513,96 +510,17 @@ function tubeBetween(a: THREE.Vector3, b: THREE.Vector3, radius: number, materia
   return mesh;
 }
 function addSetDressing(): void {
-  // Arched ribs, concentric service rings and suspended pipework.
-  for (const z of [11, 5, -1, -7, -13, -19]) {
-    for (const side of [-1, 1]) {
-      const support = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.25, 4.7, 12), materials.ceramic);
-      support.position.set(side * 6.9, 2.35, z);
-      support.castShadow = true;
-      support.receiveShadow = true;
-      scene.add(support);
-      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.055, 8, 18), materials.copper);
-      collar.rotation.x = Math.PI / 2;
-      collar.position.set(side * 6.9, 1.1, z);
-      scene.add(collar);
-      tubeBetween(new THREE.Vector3(side * 6.9, 4.2, z), new THREE.Vector3(side * 5.7, 4.45, z), 0.075, materials.copper, 12);
-    }
-    const hoop = new THREE.Mesh(new THREE.TorusGeometry(6.7, 0.055, 8, 64), materials.ceramic);
-    hoop.position.set(0, 2.6, z);
-    hoop.rotation.x = Math.PI / 2;
-    hoop.scale.y = 0.62;
-    hoop.castShadow = true;
-    scene.add(hoop);
-    const lightRing = new THREE.Mesh(new THREE.TorusGeometry(5.95, 0.025, 6, 64), materials.glow);
-    lightRing.position.set(0, 4.38, z);
-    lightRing.rotation.x = Math.PI / 2;
-    lightRing.scale.y = 0.22;
-    scene.add(lightRing);
-  }
-
-  // Recessed floor plates and small service lights; material roughness varies
-  // across the walking surface for a more convincing industrial finish.
-  for (let z = 12; z > -22; z -= 1.5) {
-    for (const x of [-5.9, -3.9, -1.9, 0.1, 2.1, 4.1, 6.1]) {
-      const plate = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.035, 1.3), (Math.round(z * 10 + x) % 3 === 0) ? materials.dark : materials.floor);
-      plate.position.set(x, 0.012, z);
-      plate.receiveShadow = true;
-      scene.add(plate);
-      if (Math.round(z * 10 + x) % 5 === 0) {
-        const boltMat = materials.copper;
-        for (const bx of [-0.72, 0.72]) {
-          for (const bz of [-0.5, 0.5]) {
-            const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.018, 8), boltMat);
-            bolt.position.set(x + bx, 0.04, z + bz);
-            bolt.rotation.x = Math.PI / 2;
-            scene.add(bolt);
-          }
-        }
-      }
-    }
-  }
-
-  // Cable bundles follow the corridor edges rather than floating as decorations.
+  // Open sightlines: no repeated arches, hoops, reactor drums, floor bolts or
+  // suspended pipe bundles. A pair of restrained edge cables keeps the room industrial.
   for (const side of [-1, 1]) {
-    for (let line = 0; line < 3; line++) {
-      const x = side * (5.7 + line * 0.19);
-      tubeBetween(new THREE.Vector3(x, 3.85 + line * 0.13, 13), new THREE.Vector3(x, 3.85 + line * 0.13, -22), 0.035 + line * 0.009, line === 1 ? materials.copper : materials.dark, 8);
-    }
+    const cable = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.035, 30, 8),
+      materials.dark
+    );
+    cable.position.set(side * 6.65, 3.72, -5);
+    cable.castShadow = true;
+    scene.add(cable);
   }
-
-  // Rounded ventilation drums and reactor housings.
-  for (const [x, z] of [[-6.1, -8.8], [6.1, -8.8], [-6.1, 7.5], [6.1, 7.5]] as const) {
-    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.72, 1.7, 20, 2), materials.dark);
-    drum.position.set(x, 1.0, z);
-    drum.rotation.z = Math.PI / 2;
-    drum.castShadow = true;
-    drum.receiveShadow = true;
-    scene.add(drum);
-    for (const dx of [-0.58, 0.58]) {
-      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.07, 8, 24), materials.copper);
-      rim.position.set(x + dx, 1.0, z);
-      rim.rotation.y = Math.PI / 2;
-      scene.add(rim);
-    }
-    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.06, 16), materials.violet);
-    axle.position.set(x, 1.0, z + 0.87);
-    axle.castShadow = true;
-    scene.add(axle);
-  }
-
-  // Distant dust catches the light without covering the reticle or objectives.
-  const dustGeometry = new THREE.BufferGeometry();
-  const dustCount = 460;
-  const positions = new Float32Array(dustCount * 3);
-  for (let i = 0; i < dustCount; i++) {
-    positions[i * 3] = -7.2 + Math.random() * 14.4;
-    positions[i * 3 + 1] = 0.45 + Math.random() * 4.2;
-    positions[i * 3 + 2] = -22 + Math.random() * 36;
-  }
-  dustGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({ color: "#d8b6ff", size: 0.035, transparent: true, opacity: 0.48, sizeAttenuation: true, depthWrite: false }));
-  scene.add(dust);
-  dust.name = "atmospheric-dust";
 }
 addSetDressing();
 const relays: Relay[] = [makeRelay("triangle", -4.2, -6.8), makeRelay("circle", 0, -6.8), makeRelay("diamond", 4.2, -6.8)];
@@ -641,7 +559,7 @@ const colliders: Collider[] = [
   { minX: 7.45, maxX: 8.35, minZ: -25, maxZ: 15 },
   { minX: -8, maxX: 8, minZ: 12.9, maxZ: 13.8 },
   // The sealed bulkhead blocks the route until the relay sequence is solved.
-  { minX: -2.35, maxX: 2.35, minZ: -18.45, maxZ: -17.65 },
+  { minX: 3.25, maxX: 6.85, minZ: -18.45, maxZ: -17.65 },
   // Relay consoles
   { minX: -4.95, maxX: -3.45, minZ: -7.55, maxZ: -6.05 },
   { minX: -0.75, maxX: 0.75, minZ: -7.55, maxZ: -6.05 },
@@ -661,7 +579,7 @@ const colliders: Collider[] = [
   { minX: -3.95, maxX: -2.45, minZ: -3.6, maxZ: -2.4 },
   { minX: 2.45, maxX: 3.95, minZ: -5.1, maxZ: -3.9 }
 ];
-const gateLeft = scene.children.find((o) => o instanceof THREE.Mesh && Math.abs(o.position.z + 18.2) < 0.01 && o.position.x === 0) as THREE.Mesh | undefined;
+const gateLeft = scene.children.find((o) => o instanceof THREE.Mesh && Math.abs(o.position.z + 18.2) < 0.01 && Math.abs(o.position.x - 5.05) < 0.01) as THREE.Mesh | undefined;
 
 function notify(message: string): void {
   toast.textContent = message;
@@ -673,10 +591,10 @@ function updateObjective(): void {
   relayProgress.innerHTML = `SIGNAL <strong>${nextRelay} / ${sequence.length}</strong>`;
   if (gateOpen) {
     objectiveTitle.textContent = "The exit is unlocked";
-    objectiveCopy.textContent = "Follow the glowing green floor arrows to the EXIT sign, then press E at the bulkhead.";
+    objectiveCopy.textContent = "Head to the green EXIT gate in the back-right corner and press E at the bulkhead.";
   } else {
     objectiveTitle.textContent = nextRelay === 0 ? "Decode the maintenance rhythm" : nextRelay < sequence.length ? "Signal pattern in progress" : "Signal accepted";
-    objectiveCopy.textContent = "Decode the six-beat relay signal. Once it is accepted, follow the green EXIT arrows to the bulkhead.";
+    objectiveCopy.textContent = "Decode the six-beat relay signal. Once it is accepted, follow the green guide marks to the EXIT gate in the back-right corner.";
   }
 }
 function startGame(): void {
@@ -754,7 +672,7 @@ function nearestTarget(): { relay?: Relay; gate: boolean; distance: number } {
     }
   }
 
-  const gatePosition = new THREE.Vector3(0, 1.4, -17.2);
+  const gatePosition = new THREE.Vector3(5.05, 1.4, -17.2);
   const toGate = gatePosition.clone().sub(camera.position);
   const gateDistance = toGate.length();
   const gateFacing = toGate.normalize().dot(lookDirection);
@@ -790,11 +708,11 @@ function interact(): void {
   notify(`SIGNAL BEAT ${nextRelay} / ${sequence.length} ACCEPTED.`);
   if (nextRelay === sequence.length) {
     gateOpen = true;
-    const gateColliderIndex = colliders.findIndex((c) => c.minX === -2.35 && c.maxX === 2.35 && c.minZ === -18.45);
+    const gateColliderIndex = colliders.findIndex((c) => c.minX === 3.25 && c.maxX === 6.85 && c.minZ === -18.45);
     if (gateColliderIndex >= 0) colliders.splice(gateColliderIndex, 1);
     if (gateLeft) gateLeft.position.y = 8;
     for (const child of scene.children) {
-      if (child instanceof THREE.Mesh && (Math.abs(child.position.z + 17.84) < 0.02 || Math.abs(child.position.z + 17.98) < 0.02) && Math.abs(child.position.x) < 2.3) child.position.y += 5;
+      if (child instanceof THREE.Mesh && (Math.abs(child.position.z + 17.84) < 0.02 || Math.abs(child.position.z + 17.98) < 0.02) && Math.abs(child.position.x - 5.05) < 1.8) child.position.y += 5;
     }
     notify("ACCESS RESTORED. THE BULKHEAD IS OPEN.");
   }
