@@ -270,9 +270,11 @@ function buildEnvironment(): void {
   }
   const planetMaterial = new THREE.MeshStandardMaterial({ color: "#a58bc2", emissive: "#4d356c", emissiveIntensity: 0.7, roughness: 0.86, metalness: 0.06 });
   const planet = new THREE.Mesh(new THREE.SphereGeometry(2.25, 48, 32), planetMaterial);
+  planet.name = "distant-planet";
   planet.position.set(-1.8, 3.4, -24.4);
   scene.add(planet);
   const planetRim = new THREE.Mesh(new THREE.TorusGeometry(2.36, 0.025, 8, 80), materials.violet);
+  planetRim.name = "planet-rim";
   planetRim.position.copy(planet.position);
   planetRim.rotation.set(0.6, 0.2, 0.1);
   scene.add(planetRim);
@@ -544,8 +546,12 @@ const colliders: Collider[] = [
   { minX: -4.95, maxX: -3.45, minZ: -7.55, maxZ: -6.05 },
   { minX: -0.75, maxX: 0.75, minZ: -7.55, maxZ: -6.05 },
   { minX: 3.45, maxX: 4.95, minZ: -7.55, maxZ: -6.05 },
-  // Side machinery
+  // Side machinery and imported environmental props
   { minX: -6.7, maxX: -4.1, minZ: -16.7, maxZ: -14.9 },
+  { minX: -6.9, maxX: -4.8, minZ: -5.0, maxZ: -3.0 },
+  { minX: 4.8, maxX: 6.9, minZ: -5.0, maxZ: -3.0 },
+  { minX: -6.9, maxX: -5.0, minZ: 4.0, maxZ: 6.2 },
+  { minX: 5.0, maxX: 6.9, minZ: 4.0, maxZ: 6.2 },
   { minX: 4.1, maxX: 6.7, minZ: -16.7, maxZ: -14.9 },
   // Low floor-level equipment that the player must navigate around
   { minX: -3.95, maxX: -2.45, minZ: 7.4, maxZ: 8.6 },
@@ -712,9 +718,12 @@ function animate(): void {
   });
   amberLight.intensity = 22 + Math.sin(t * 1.7) * 1.6;
   fillLight.intensity = 16 + Math.sin(t * 0.55 + 2) * 2;
-  for (const [index, prop] of importedProps.entries()) {
-    if (index % 2 === 0) prop.rotation.y += Math.sin(t * 0.25 + index) * delta * 0.018;
-  }
+  const dust = scene.getObjectByName("atmospheric-dust");
+  if (dust) dust.rotation.y += delta * 0.012;
+  const distantPlanet = scene.getObjectByName("distant-planet");
+  if (distantPlanet) distantPlanet.rotation.y += delta * 0.035;
+  const planetRim = scene.getObjectByName("planet-rim");
+  if (planetRim) planetRim.rotation.z += delta * 0.025;
   for (const relay of relays) {
     const symbol = relay.group.getObjectByName("relay-symbol");
     if (symbol) {
