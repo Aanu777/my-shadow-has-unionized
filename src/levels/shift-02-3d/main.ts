@@ -167,6 +167,12 @@ function makeRelay(kind: Relay["kind"], x: number, z: number): Relay {
   group.add(lowerRing);
   return { group, kind, active: false, position: new THREE.Vector3(x, 0, z) };
 }
+const exitDoorLeaves: THREE.Group[] = [];
+const exitDoorLocks: THREE.Object3D[] = [];
+let exitDoorCore: THREE.Group | undefined;
+let exitOpeningStartedAt: number | null = null;
+let exitOpeningProgress = 0;
+
 function buildEnvironment(): void {
   // Continuous floor with a procedural brushed-metal / panel texture.
   const floorCanvas = document.createElement("canvas");
@@ -330,46 +336,62 @@ function buildEnvironment(): void {
     metalness: 0.22, roughness: 0.2
   });
 
-  // Six armored vertical leaves give the sealed door a mechanical iris silhouette.
+  // Each armored leaf is its own pivot group so the panels can split apart under power.
   for (let i = 0; i < 6; i++) {
     const x = -1.28 + i * 0.512;
+    const leafGroup = new THREE.Group();
+    leafGroup.position.set(x, 0, 0);
+    leafGroup.name = `exit-door-leaf-${i}`;
+    gateAssembly.add(leafGroup);
+    exitDoorLeaves.push(leafGroup);
+
     const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.47, 3.26, 0.16), armor);
-    leaf.position.set(x, 2.17, 0.68);
+    leaf.position.set(0, 2.17, 0.68);
     leaf.rotation.z = (i - 2.5) * 0.018;
     leaf.castShadow = true;
     leaf.receiveShadow = true;
-    gateAssembly.add(leaf);
+    leafGroup.add(leaf);
 
     const spine = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.92, 0.045), armorEdge);
-    spine.position.set(x, 2.17, 0.78);
-    gateAssembly.add(spine);
+    spine.position.set(0, 2.17, 0.78);
+    leafGroup.add(spine);
 
     for (const y of [0.78, 3.55]) {
       const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.05, 8), materials.ceramic);
       bolt.rotation.x = Math.PI / 2;
-      bolt.position.set(x, y, 0.79);
-      gateAssembly.add(bolt);
+      bolt.position.set(0, y, 0.79);
+      leafGroup.add(bolt);
     }
   }
 
-  // A contained circular reactor lens adds a focal point without obscuring the door.
+  // The reactor core is mounted on a separate carriage; it retracts before the
+  // armor leaves move, so the opening feels like a powered mechanism rather than a teleport.
+  exitDoorCore = new THREE.Group();
+  exitDoorCore.name = "exit-door-core";
+  gateAssembly.add(exitDoorCore);
   const coreHousing = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.82, 0.2, 12), materials.dark);
   coreHousing.rotation.x = Math.PI / 2;
   coreHousing.position.set(0, 2.2, 0.9);
   coreHousing.castShadow = true;
-  gateAssembly.add(coreHousing);
+  exitDoorCore.add(coreHousing);
   const coreRing = new THREE.Mesh(new THREE.TorusGeometry(0.61, 0.055, 10, 48), materials.violet);
   coreRing.position.set(0, 2.2, 1.03);
-  gateAssembly.add(coreRing);
+  coreRing.name = "exit-core-ring";
+  exitDoorCore.add(coreRing);
   const coreLens = new THREE.Mesh(new THREE.CircleGeometry(0.48, 12), coreGlow);
   coreLens.position.set(0, 2.2, 1.04);
-  gateAssembly.add(coreLens);
+  coreLens.name = "exit-core-lens";
+  exitDoorCore.add(coreLens);
   for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2;
+    const lockGroup = new THREE.Group();
+    lockGroup.position.set(Math.cos(angle) * 0.96, 2.2 + Math.sin(angle) * 0.96, 0.91);
+    lockGroup.rotation.z = -angle;
+    lockGroup.name = `exit-lock-${i}`;
     const lock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.42, 0.12), armorEdge);
-    lock.position.set(Math.cos(angle) * 0.96, 2.2 + Math.sin(angle) * 0.96, 0.91);
-    lock.rotation.z = -angle;
-    gateAssembly.add(lock);
+    lockGroup.add(lock);
+    exitDoorCore.add(lockGroup);
+    exitDoorLocks.push(lockGroup);
   }
 
   // Heavy horizontal clamps and a top-mounted access rail make the frame feel engineered.
@@ -787,8 +809,10 @@ function interact(): void {
     gateOpen = true;
     const gateColliderIndex = colliders.findIndex((c) => c.minX === 3.25 && c.maxX === 6.85 && c.minZ === -18.45);
     if (gateColliderIndex >= 0) colliders.splice(gateColliderIndex, 1);
-    if (gateAssembly) gateAssembly.position.y += 5;
-    notify("ACCESS RESTORED. THE BULKHEAD IS OPEN.");
+    // Start a staged mechanical sequence. The actual door motion is driven by
+    // elapsed time in animate(), not an instant position jump.
+    exitOpeningStartedAt = clock.elapsedTime;
+    notify("POWER RESTORED. BULKHEAD CYCLE INITIATED.");
   }
   updateObjective();
 }
@@ -821,7 +845,43 @@ function animate(): void {
     const pulse = 0.88 + (Math.sin(t * 2.6) + 1) * 0.12;
     exitSign.scale.y = pulse;
   }
-  exitSignLight.intensity = gateOpen ? 11 + Math.sin(t * 3.4) * 1.2 : 5.5 + Math.sin(t * 2.2) * 1.0;
+  // Three-stage exit animation: release the radial locks, retract the reactor
+  // core, then peel the six armor leaves sideways to reveal the passage.
+  if (exitOpeningStartedAt !== null) {
+    const elapsed = t - exitOpeningStartedAt;
+    const easeOut = (value: number) => {
+      const clamped = THREE.MathUtils.clamp(value, 0, 1);
+      return 1 - Math.pow(1 - clamped, 3);
+    };
+    const lockProgress = easeOut(elapsed / 0.62);
+    const coreProgress = easeOut((elapsed - 0.48) / 0.9);
+    const leafProgress = easeOut((elapsed - 1.05) / 1.45);
+    exitOpeningProgress = leafProgress;
+
+    exitDoorLocks.forEach((lock, i) => {
+      const angle = (i / 8) * Math.PI * 2;
+      lock.position.z = 0.91 - lockProgress * 0.72;
+      lock.position.x = Math.cos(angle) * (0.96 + lockProgress * 0.12);
+      lock.position.y = 2.2 + Math.sin(angle) * (0.96 + lockProgress * 0.12);
+    });
+    if (exitDoorCore) {
+      exitDoorCore.position.z = -0.15 - coreProgress * 1.8;
+      exitDoorCore.scale.setScalar(1 - coreProgress * 0.24);
+      exitDoorCore.rotation.z = coreProgress * Math.PI * 1.5;
+    }
+    exitDoorLeaves.forEach((leaf, i) => {
+      const side = i < 3 ? -1 : 1;
+      const rank = i < 3 ? 2 - i : i - 3;
+      const spread = 0.24 + rank * 0.16;
+      leaf.position.x = (-1.28 + i * 0.512) + side * spread * leafProgress;
+      leaf.position.z = leafProgress * 0.42;
+      leaf.rotation.y = side * leafProgress * 0.22;
+      leaf.rotation.z = (i - 2.5) * 0.018 + side * leafProgress * 0.12;
+    });
+  }
+  exitSignLight.intensity = exitOpeningStartedAt !== null
+    ? 8 + Math.sin(t * 18) * (1 - exitOpeningProgress) * 2.2
+    : 5.5 + Math.sin(t * 2.2) * 1.0;
 
   for (const relay of relays) {
     const symbol = relay.group.getObjectByName("relay-symbol");
