@@ -6,21 +6,25 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import "./style.css";
 
-const root = document.querySelector<HTMLDivElement>("#game-view");
-const intro = document.querySelector<HTMLElement>("#intro");
-const startButton = document.querySelector<HTMLButtonElement>("#start-button");
-const hud = document.querySelector<HTMLElement>("#hud");
-const interaction = document.querySelector<HTMLElement>("#interaction");
-const objectiveTitle = document.querySelector<HTMLElement>("#objective-title");
-const objectiveCopy = document.querySelector<HTMLElement>("#objective-copy");
-const relayProgress = document.querySelector<HTMLElement>("#relay-progress");
-const toast = document.querySelector<HTMLElement>("#toast");
-const endScreen = document.querySelector<HTMLElement>("#end-screen");
-const replayButton = document.querySelector<HTMLButtonElement>("#replay-button");
-
-if (!root || !intro || !startButton || !hud || !interaction || !objectiveTitle || !objectiveCopy || !relayProgress || !toast || !endScreen || !replayButton) {
-  throw new Error("Shift 02 3D page is missing a required UI element.");
+function requireElement<T extends HTMLElement>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) {
+    throw new Error(`Shift 02 3D page is missing required UI element: ${selector}`);
+  }
+  return element;
 }
+
+const root = requireElement<HTMLDivElement>("#game-view");
+const intro = requireElement<HTMLElement>("#intro");
+const startButton = requireElement<HTMLButtonElement>("#start-button");
+const hud = requireElement<HTMLElement>("#hud");
+const interaction = requireElement<HTMLElement>("#interaction");
+const objectiveTitle = requireElement<HTMLElement>("#objective-title");
+const objectiveCopy = requireElement<HTMLElement>("#objective-copy");
+const relayProgress = requireElement<HTMLElement>("#relay-progress");
+const toast = requireElement<HTMLElement>("#toast");
+const endScreen = requireElement<HTMLElement>("#end-screen");
+const replayButton = requireElement<HTMLButtonElement>("#replay-button");
 
 type Relay = { group: THREE.Group; kind: "triangle" | "circle" | "diamond"; active: boolean; position: THREE.Vector3 };
 const scene = new THREE.Scene();
