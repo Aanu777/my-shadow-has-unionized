@@ -411,19 +411,101 @@ class GameScene extends Phaser.Scene {
 
   private makeGate(x: number, y: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
-    const g = this.add.graphics();
-    const frame = this.level === 2 ? 0x79a38c : 0x7055a5;
-    const glow = this.level === 2 ? 0x9ce2c4 : 0xf39a45;
-    g.fillStyle(0x15141e, 1); g.fillRoundedRect(-34, -61, 68, 122, 8);
-    g.fillStyle(this.level === 2 ? 0x233c3c : 0x352747, 1); g.fillRoundedRect(-29, -56, 58, 112, 6);
-    g.lineStyle(5, frame, 1); g.strokeRoundedRect(-25, -52, 50, 106, 6);
-    g.lineStyle(1, glow, 0.55); g.strokeRoundedRect(-18, -45, 36, 92, 4);
-    g.fillStyle(0x101019, 1); g.fillRoundedRect(-15, -41, 30, 88, 4);
-    g.lineStyle(2, frame, 0.9); g.lineBetween(-9, -34, -9, 38); g.lineBetween(9, -34, 9, 38);
-    g.fillStyle(glow, 0.9); g.fillCircle(0, -7, 7);
-    c.add(g);
-    this.add.text(x, y + 67, this.level === 2 ? "EXIT 02" : "EXIT 01", { fontFamily: "monospace", fontSize: "10px", color: this.level === 2 ? "#9ce2c4" : "#f39a45" }).setOrigin(0.5);
+    const art = this.add.graphics();
+    this.drawGateArt(art, false);
+    c.add(art);
+    this.add.text(x, y + 73, this.level === 2 ? "EXIT 02" : "EXIT 01", {
+      fontFamily: "monospace", fontSize: "10px",
+      color: this.level === 2 ? "#9ce2c4" : "#f39a45",
+      backgroundColor: "#17131f", padding: { x: 5, y: 3 }
+    }).setOrigin(0.5).setDepth(6);
     return c;
+  }
+
+  private drawGateArt(g: Phaser.GameObjects.Graphics, active: boolean): void {
+    const levelTwo = this.level === 2;
+    const stone = levelTwo ? 0x263b3d : 0x30213f;
+    const stoneLight = levelTwo ? 0x52776e : 0x67436f;
+    const trim = levelTwo ? 0x79a38c : 0x8d5aab;
+    const flame = levelTwo ? 0x9ce2c4 : 0xffa13b;
+    const hot = levelTwo ? 0xd7f3e6 : 0xffdf91;
+
+    // Cast shadow and broad, broken-stone plinth.
+    g.fillStyle(0x05040a, 0.5); g.fillEllipse(0, 60, 100, 13);
+    g.fillStyle(0x15121d, 1); g.fillRoundedRect(-43, -48, 86, 108, 7);
+    g.fillStyle(stone, 1); g.fillRoundedRect(-39, -45, 78, 103, 6);
+    g.fillStyle(stoneLight, 1); g.fillRoundedRect(-34, -41, 68, 96, 5);
+
+    // Pointed gothic arch, double rim, and tall side buttresses.
+    g.fillStyle(0x15111e, 1);
+    g.fillTriangle(-39, -28, 0, -82, 39, -28);
+    g.fillRect(-39, -30, 78, 83);
+    g.fillStyle(stone, 1);
+    g.fillTriangle(-32, -28, 0, -72, 32, -28);
+    g.fillRect(-32, -28, 64, 81);
+    g.lineStyle(4, trim, 1);
+    g.beginPath(); g.moveTo(-33, 48); g.lineTo(-33, -26); g.lineTo(0, -75); g.lineTo(33, -26); g.lineTo(33, 48); g.strokePath();
+    g.lineStyle(1, hot, 0.45);
+    g.beginPath(); g.moveTo(-26, 44); g.lineTo(-26, -25); g.lineTo(0, -64); g.lineTo(26, -25); g.lineTo(26, 44); g.strokePath();
+
+    // Dark doorway with a sealed, smoky void.
+    g.fillStyle(0x090811, 1);
+    g.fillTriangle(-25, -23, 0, -59, 25, -23);
+    g.fillRect(-25, -23, 50, 68);
+    g.fillStyle(levelTwo ? 0x142421 : 0x21132e, 1);
+    g.fillEllipse(0, 5, 43, 70);
+    g.fillStyle(flame, active ? 0.16 : 0.07);
+    g.fillEllipse(0, 3, 34, 60);
+    g.lineStyle(2, trim, active ? 0.9 : 0.65);
+    g.beginPath(); g.arc(0, 4, 17, -1.2, 1.4, false); g.strokePath();
+    g.beginPath(); g.arc(0, 4, 11, 1.8, 4.5, false); g.strokePath();
+
+    if (active) {
+      // Open portal: a bright, spiralling path draws the eye through the doorway.
+      g.lineStyle(3, flame, 0.95);
+      g.beginPath(); g.arc(0, 3, 23, -1.35, 1.25, false); g.strokePath();
+      g.lineStyle(2, hot, 0.9);
+      g.beginPath(); g.arc(0, 3, 14, 0.15, 4.95, false); g.strokePath();
+      g.fillStyle(hot, 1); g.fillCircle(0, -1, 4);
+      g.fillStyle(flame, 0.95);
+      g.fillCircle(-17, -13, 2); g.fillCircle(16, 9, 2); g.fillCircle(10, -21, 1.5);
+    } else {
+      // The locked portal has two ember eyes beneath the pumpkin crest.
+      g.fillStyle(levelTwo ? 0x9ce2c4 : 0xc5a8ff, 0.9);
+      g.fillTriangle(-13, -1, -5, 3, -14, 5);
+      g.fillTriangle(13, -1, 5, 3, 14, 5);
+    }
+
+    // Buttress pillars, engraved runes, and little caged side flames.
+    for (const side of [-1, 1]) {
+      g.fillStyle(0x17121e, 1); g.fillRect(side * 36 - 5, -15, 10, 62);
+      g.fillStyle(stoneLight, 1); g.fillRect(side * 36 - 3, -13, 6, 58);
+      g.fillStyle(flame, active ? 0.95 : 0.55);
+      g.fillTriangle(side * 36, -7, side * 33, 0, side * 38, 2);
+      g.lineStyle(1, hot, 0.75);
+      g.lineBetween(side * 36, 14, side * 36 - side * 2, 20);
+      g.lineBetween(side * 36 - side * 2, 20, side * 36, 26);
+      g.fillStyle(0x17121e, 1); g.fillRect(side * 36 - 8, -19, 16, 5);
+      g.fillStyle(trim, 1); g.fillRect(side * 36 - 7, -18, 14, 2);
+    }
+
+    // Spiked crown and a tiny carved jack-o'-lantern emblem to match the player.
+    g.fillStyle(0x17121e, 1);
+    g.fillTriangle(-28, -48, -37, -70, -16, -51);
+    g.fillTriangle(28, -48, 37, -70, 16, -51);
+    g.fillStyle(stoneLight, 1);
+    g.fillTriangle(-27, -50, -35, -66, -18, -52);
+    g.fillTriangle(27, -50, 35, -66, 18, -52);
+    g.fillStyle(0x211521, 1); g.fillCircle(0, -57, 15);
+    g.fillStyle(levelTwo ? 0x45695c : 0x8f432c, 1); g.fillCircle(0, -57, 12);
+    g.fillStyle(levelTwo ? 0x9ce2c4 : 0xf17a2e, 1); g.fillEllipse(0, -57, 18, 17);
+    g.fillStyle(hot, active ? 1 : 0.88);
+    g.fillTriangle(-7, -60, -2, -55, -8, -54);
+    g.fillTriangle(7, -60, 2, -55, 8, -54);
+    g.fillTriangle(-6, -52, 6, -52, 0, -48);
+    g.fillStyle(0x759447, 1); g.fillRoundedRect(-2, -72, 4, 5, 1);
+    g.lineStyle(2, trim, 1); g.lineBetween(-27, 52, 27, 52);
+    g.fillStyle(hot, active ? 0.95 : 0.45); g.fillCircle(0, 52, 3);
   }
 
   private refreshShadow(): void {
@@ -530,17 +612,9 @@ class GameScene extends Phaser.Scene {
   }
 
   private updateGate(): void {
-    if (this.switchOn) {
-      const art = this.gate.getAt(0) as Phaser.GameObjects.Graphics;
-      const frame = this.level === 2 ? 0x79a38c : 0xf39a45;
-      const glow = this.level === 2 ? 0x9ce2c4 : 0xffdf91;
-      art.clear();
-      art.fillStyle(this.level === 2 ? 0x233c3c : 0x352747, 0.55); art.fillRoundedRect(-29,-56,58,112,6);
-      art.lineStyle(5,frame,1); art.strokeRoundedRect(-25,-52,50,106,6);
-      art.lineStyle(2,glow,0.85); art.strokeRoundedRect(-17,-44,34,90,4);
-      art.fillStyle(0x101019,0.4); art.fillRoundedRect(-14,-40,28,86,4);
-      art.fillStyle(glow,1); art.fillCircle(0,-7,8);
-    }
+    const art = this.gate.getAt(0) as Phaser.GameObjects.Graphics;
+    art.clear();
+    this.drawGateArt(art, this.switchOn);
   }
 
   private showWin(): void {
