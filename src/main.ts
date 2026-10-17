@@ -238,15 +238,17 @@ class GameScene extends Phaser.Scene {
     const g = this.add.graphics().setDepth(2);
     for (const p of this.platforms) {
       const ground = p.y >= 450;
-      g.fillStyle(this.level === 2 ? 0x202f35 : 0x30233f, 1);
+      g.fillStyle(this.level === 2 ? 0x17252b : 0x21172f, 1);
       g.fillRect(p.x, p.y, p.w, p.h);
-      g.fillStyle(this.level === 2 ? 0x79a38c : 0x9b7950, 1);
-      g.fillRect(p.x, p.y, p.w, 4);
+      g.fillStyle(this.level === 2 ? 0x79a38c : 0x8f5a43, 1);
+      g.fillRect(p.x, p.y, p.w, 3);
+      g.fillStyle(this.level === 2 ? 0x314b48 : 0x50305f, 0.9);
+      g.fillRect(p.x, p.y + 3, p.w, 2);
       if (ground) {
         for (let x = p.x + 5; x < p.x + p.w - 3; x += 8) {
           const n = (Math.floor(x * 13) % 5);
-          g.lineStyle(1, this.level === 2 ? 0x79a38c : (n % 2 === 0 ? 0x8b7954 : 0xb5a16a), 0.82);
-          g.lineBetween(x, p.y, x - 1, p.y - 3 - n);
+          g.lineStyle(1, this.level === 2 ? 0x79a38c : (n % 2 === 0 ? 0x8b5b4d : 0xc18b55), 0.88);
+          g.lineBetween(x, p.y + 1, x - 1, p.y - 2 - n);
         }
         g.lineStyle(1, this.level === 2 ? 0x35544d : 0x3d294c, 0.95);
         for (let x = p.x + 12; x < p.x + p.w - 4; x += 27) {
