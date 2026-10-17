@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import "./style.css";
 import { drawShift01Background, preloadShift01Background } from "./levels/shift-01/background";
+import { ShiftThreeScene } from "./levels/shift-03";
 
 const W = 960;
 const H = 600;
@@ -63,6 +64,11 @@ class GameScene extends Phaser.Scene {
   preload(): void { preloadShift01Background(this); this.load.svg("shift02-space", "/shift-02-space.svg", { width: W, height: H }); }
 
   create(): void {
+    if (new URLSearchParams(window.location.search).get("shift") === "3") {
+      this.registry.set("showLevelSelect", false);
+      this.scene.start("ShiftThreeScene");
+      return;
+    }
     if (this.registry.get("showLevelSelect") === true) {
       this.createLevelSelectScreen();
       return;
@@ -1254,7 +1260,7 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO, parent: "app", width: W, height: H,
   backgroundColor: "#17131f", pixelArt: true, antialias: false,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-  scene: [GameScene]
+  scene: [GameScene, ShiftThreeScene]
 };
 
 new Phaser.Game(config);
