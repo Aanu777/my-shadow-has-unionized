@@ -25,6 +25,8 @@ const relayProgress = requireElement<HTMLElement>("#relay-progress");
 const toast = requireElement<HTMLElement>("#toast");
 const endScreen = requireElement<HTMLElement>("#end-screen");
 const replayButton = requireElement<HTMLButtonElement>("#replay-button");
+const transitScreen = requireElement<HTMLElement>("#transit-screen");
+const transitStatus = requireElement<HTMLElement>("#transit-status");
 
 type Relay = { group: THREE.Group; kind: "triangle" | "circle" | "diamond"; active: boolean; position: THREE.Vector3 };
 const scene = new THREE.Scene();
@@ -817,10 +819,42 @@ function interact(): void {
   updateObjective();
 }
 function finishGame(): void {
+  if (ended) return;
   ended = true;
   document.exitPointerLock?.();
-  endScreen.hidden = false;
   hud.classList.remove("active");
+  transitScreen.hidden = false;
+  transitScreen.classList.add("transit-active");
+
+  // The transit overlay is a deliberate inter-level beat. Keep the scene alive
+  // underneath it so the final bulkhead lighting and foundry ambience can settle.
+  const messages = [
+    "EXIT ACCEPTED // PERSONNEL RECORD SEALED",
+    "REVOKING EMPLOYEE ACCESS...",
+    "DESTINATION NOT APPROVED",
+    "SHIFT 03 INITIALIZATION"
+  ];
+  let messageIndex = 0;
+  transitStatus.textContent = messages[0];
+  const messageTimer = window.setInterval(() => {
+    messageIndex += 1;
+    if (messageIndex < messages.length) transitStatus.textContent = messages[messageIndex];
+    else window.clearInterval(messageTimer);
+  }, 720);
+
+  window.setTimeout(() => {
+    window.clearInterval(messageTimer);
+    transitScreen.classList.remove("transit-active");
+    transitScreen.hidden = true;
+    endScreen.hidden = false;
+    const eyebrow = endScreen.querySelector<HTMLElement>(".eyebrow");
+    const heading = endScreen.querySelector<HTMLElement>("h2");
+    const copy = endScreen.querySelector<HTMLElement>("p");
+    if (eyebrow) eyebrow.textContent = "TRANSIT COMPLETE // SIGNAL ACQUIRED";
+    if (heading) heading.innerHTML = "SHIFT 03<br /><em>INCOMING.</em>";
+    if (copy) copy.textContent = "The foundry is behind you. Something on the other side has clocked you in.";
+    replayButton.textContent = "REPLAY SHIFT 02 ↻";
+  }, 3200);
 }
 updateObjective();
 
