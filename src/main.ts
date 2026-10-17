@@ -305,8 +305,11 @@ class GameScene extends Phaser.Scene {
     const c = this.add.container(x, y);
     const g = this.add.graphics();
     g.fillStyle(0x21182f, 1); g.fillRoundedRect(-17, -20, 34, 29, 4);
+    g.lineStyle(2, 0x7055a5, 1); g.strokeRoundedRect(-17, -20, 34, 29, 4);
     g.fillStyle(0x7055a5, 1); g.fillCircle(0, -6, 8);
     g.fillStyle(0xf0e8d8, 1); g.fillCircle(0, -6, 3);
+    g.lineStyle(2, 0x7055a5, 0.85);
+    g.lineBetween(-8, -25, 8, -25);
     c.add(g);
     this.add.text(x, y + 16, "SWITCH", { fontFamily: "monospace", fontSize: "9px", color: "#c5b7d7" }).setOrigin(0.5);
     return c;
@@ -318,6 +321,8 @@ class GameScene extends Phaser.Scene {
     g.fillStyle(0x352747, 1); g.fillRoundedRect(-30, -58, 60, 116, 5);
     g.lineStyle(4, 0x7055a5, 1); g.strokeRoundedRect(-24, -52, 48, 108, 4);
     g.fillStyle(0x17131f, 1); g.fillRect(-16, -42, 32, 96);
+    g.lineStyle(2, 0x8060ac, 0.8);
+    g.lineBetween(-10, -36, -10, 42); g.lineBetween(10, -36, 10, 42);
     g.fillStyle(0xf39a45, 0.8); g.fillCircle(0, -7, 6);
     c.add(g);
     this.add.text(x, y + 67, "EXIT", { fontFamily: "monospace", fontSize: "10px", color: "#f39a45" }).setOrigin(0.5);
@@ -344,11 +349,23 @@ class GameScene extends Phaser.Scene {
     let route = this.data.get("routeGraphics") as Phaser.GameObjects.Graphics | undefined;
     if (!route) { route = this.add.graphics(); route.setDepth(2); this.data.set("routeGraphics", route); }
     route.clear();
-    route.lineStyle(2, this.demandSatisfied ? 0xf39a45 : 0x7055a5, 0.7);
-    for (let x = projectedX; x < 670; x += 14) {
-      route.fillStyle(this.demandSatisfied ? 0xf39a45 : 0x7055a5, 0.8);
-      route.fillCircle(x, 480 - Math.sin((x + this.time.now * 0.05) * 0.04) * 5, 2);
+
+    // The lantern's position determines where the shadow appears; this dotted route
+    // then leads toward the switch so the player can read the puzzle at a glance.
+    const routeColor = this.demandSatisfied ? 0xf39a45 : 0x7055a5;
+    const routeAlpha = this.demandSatisfied ? 0.95 : 0.55;
+    route.lineStyle(1, routeColor, routeAlpha * 0.45);
+    route.lineBetween(this.lanternX, 456, projectedX, 480);
+    for (let x = projectedX; x < this.switchObject.x - 18; x += 14) {
+      const progress = (x - projectedX) / Math.max(1, this.switchObject.x - projectedX);
+      const y = Phaser.Math.Linear(projectedY + 17, 480, progress)
+        - Math.sin(progress * Math.PI) * 10
+        + Math.sin((x + this.time.now * 0.05) * 0.04) * 2;
+      route.fillStyle(routeColor, routeAlpha);
+      route.fillCircle(x, y, this.demandSatisfied ? 2.4 : 1.8);
     }
+    route.fillStyle(routeColor, routeAlpha);
+    route.fillCircle(this.switchObject.x - 20, 480, this.demandSatisfied ? 3 : 2);
   }
 
   private updateCoffee(): void {
@@ -376,9 +393,27 @@ class GameScene extends Phaser.Scene {
       this.lanternX = Phaser.Math.Clamp(this.lanternX + direction * 45, this.lanternMin, this.lanternMax);
       this.lantern.setX(this.lanternX); this.say("LANTERN REPOSITIONED. SHADOW ROUTE UPDATED."); this.refreshShadow(); return;
     }
-    if (this.demandSatisfied && Phaser.Math.Distance.Between(px, this.player.y, this.switchObject.x, this.switchObject.y) < 65) {
-      this.switchOn = true; this.switchObject.setAlpha(0.45);
-      this.say("SHADOW: 'Switch activated. Please update my job title.'"); this.updateGate(); return;
+    if (Phaser.Math.Distance.Between(px, this.player.y, this.switchObject.x, this.switchObject.y) < 65) {
+      if (!this.demandSatisfied) {
+        this.say("THE SWITCH IS LOCKED. SETTLE THE SHADOW'S COFFEE DEMAND FIRST.");
+        return;
+      }
+      if (!this.switchOn) {
+        this.switchOn = true;
+        const switchArt = this.switchObject.getAt(0) as Phaser.GameObjects.Graphics;
+        switchArt.clear();
+        switchArt.fillStyle(0x21182f, 1); switchArt.fillRoundedRect(-17, -20, 34, 29, 4);
+        switchArt.lineStyle(2, 0xf39a45, 1); switchArt.strokeRoundedRect(-17, -20, 34, 29, 4);
+        switchArt.fillStyle(0xf39a45, 1); switchArt.fillCircle(0, -6, 8);
+        switchArt.fillStyle(0xffdf91, 1); switchArt.fillCircle(0, -6, 3);
+        switchArt.lineStyle(2, 0xf39a45, 0.9); switchArt.lineBetween(-8, -25, 8, -25);
+        this.switchObject.setAlpha(1);
+        this.say("SWITCH ONLINE. THE EXIT IS UNLOCKED.");
+        this.updateGate();
+      } else {
+        this.say("SWITCH IS ALREADY ONLINE. GET TO THE EXIT.");
+      }
+      return;
     }
     if (Phaser.Math.Distance.Between(px, this.player.y, this.shadow.x, this.shadow.y) < 70 && !this.demandSatisfied) {
       this.say("SHADOW: 'I am legally entitled to one (1) coffee.'"); return;
@@ -387,9 +422,18 @@ class GameScene extends Phaser.Scene {
   }
 
   private updateGate(): void {
-    if (!this.switchOn) return;
-    this.gate.setAlpha(0.45);
-    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, this.gate.x, this.gate.y) < 78) {
+    if (this.switchOn) {
+      this.gate.setAlpha(1);
+      const gateArt = this.gate.getAt(0) as Phaser.GameObjects.Graphics;
+      gateArt.clear();
+      gateArt.fillStyle(0x352747, 0.48); gateArt.fillRoundedRect(-30, -58, 60, 116, 5);
+      gateArt.lineStyle(4, 0xf39a45, 1); gateArt.strokeRoundedRect(-24, -52, 48, 108, 4);
+      gateArt.fillStyle(0x17131f, 0.35); gateArt.fillRect(-16, -42, 32, 96);
+      gateArt.lineStyle(2, 0xf39a45, 0.8);
+      gateArt.lineBetween(-10, -36, -10, 42); gateArt.lineBetween(10, -36, 10, 42);
+      gateArt.fillStyle(0xffdf91, 1); gateArt.fillCircle(0, -7, 7);
+    }
+    if (this.switchOn && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.gate.x, this.gate.y) < 78) {
       this.won = true; this.showWin();
     }
   }
