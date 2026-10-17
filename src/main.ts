@@ -20,6 +20,7 @@ class GameScene extends Phaser.Scene {
   private jumpBuffer = 0;
   private coyoteTime = 0;
   private platforms: Platform[] = [];
+  private checkpointMarker!: Phaser.GameObjects.Container;
   private lanternX = 260;
   private lanternMin = 190;
   private lanternMax = 405;
@@ -47,15 +48,28 @@ class GameScene extends Phaser.Scene {
   private floorY = 500;
   private worldWidth = W;
   private obstacles: Array<{ x: number; y: number; w: number; h: number }> = [];
+  private groundGaps: Array<{ x: number; w: number }> = [];
+  private checkpointX = 105;
+  private checkpointReached = false;
+  private dead = false;
+  private deathOverlay: Phaser.GameObjects.GameObject[] = [];
 
   constructor() { super("GameScene"); }
   preload(): void { preloadShift01Background(this); }
 
   create(): void {
+    if (this.registry.get("showLevelSelect") === true) {
+      this.createLevelSelectScreen();
+      return;
+    }
     this.level = Number(this.registry.get("shiftLevel") ?? 1);
     // Scene.restart reuses this scene instance: reset every run/shift flag here.
     this.transitioning = false;
     this.won = false;
+    this.dead = false;
+    this.checkpointReached = false;
+    this.checkpointX = 105;
+    this.deathOverlay = [];
     this.hasCoffee = false;
     this.coffeeHintShown = false;
     this.demandSatisfied = false;
@@ -77,6 +91,11 @@ class GameScene extends Phaser.Scene {
       { x: 1165, y: 465, w: 66, h: 35 },
       { x: 1500, y: 448, w: 112, h: 52 }
     ] : [];
+    // Irregular gaps force real jumps instead of a flat walk to the exit.
+    this.groundGaps = this.level === 2 ? [
+      { x: 535, w: 66 }, { x: 790, w: 82 }, { x: 1080, w: 76 },
+      { x: 1385, w: 94 }, { x: 1670, w: 88 }
+    ] : [];
     this.lanternX = this.level === 1 ? 260 : 350;
     this.lanternMin = this.level === 1 ? 190 : 175;
     this.lanternMax = this.level === 1 ? 405 : 405;
@@ -91,19 +110,29 @@ class GameScene extends Phaser.Scene {
     this.createAtmosphere();
 
     // Only the solid ground remains. All floating platforms are removed.
+    const groundSegments: Platform[] = [];
+    let groundStart = 0;
+    for (const gap of this.groundGaps) {
+      if (gap.x > groundStart) groundSegments.push({ x: groundStart, y: this.floorY, w: gap.x - groundStart, h: H - this.floorY });
+      groundStart = gap.x + gap.w;
+    }
+    if (groundStart < this.worldWidth) groundSegments.push({ x: groundStart, y: this.floorY, w: this.worldWidth - groundStart, h: H - this.floorY });
     this.platforms = [
-      { x: 0, y: this.floorY, w: this.worldWidth, h: H - this.floorY },
+      ...(this.level === 2 ? groundSegments : [{ x: 0, y: this.floorY, w: this.worldWidth, h: H - this.floorY }]),
       ...this.obstacles.map(({ x, y, w, h }) => ({ x, y, w, h }))
     ];
     this.drawPlatforms();
-    if (this.level === 2) this.drawFoundryObstacles();
+    if (this.level === 2) {
+      this.drawFoundryObstacles();
+      this.drawCheckpoint();
+    }
 
     this.player = this.makePumpkin(105, 483);
     this.player.setDepth(5);
     if (this.level === 2) {
       this.cameras.main.setBounds(0, 0, this.worldWidth, H);
       this.cameras.main.startFollow(this.player, true, 0.09, 0.08);
-      this.cameras.main.setDeadzone(250, 0);
+      this.cameras.main.setDeadzone(250, 80);
     }
     this.playerBody = this.add.rectangle(0, 0, 30, 34, 0xffffff, 0);
     this.player.add(this.playerBody);
@@ -162,7 +191,7 @@ class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.transitioning) return;
+    if (this.transitioning || this.dead) return;
     if (this.won) {
       if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.restartFromShiftOne();
       return;
@@ -218,9 +247,15 @@ class GameScene extends Phaser.Scene {
         else if (oldX - 15 >= obstacle.x + obstacle.w && nextX - 15 < obstacle.x + obstacle.w) nextX = obstacle.x + obstacle.w + 15;
       }
     }
-    if (nextY > H + 80) {
-      nextX = 105; nextY = 483; this.playerVy = 0;
-      this.say("YOU HAVE FALLEN OUTSIDE THE EMPLOYEE HANDBOOK.");
+    if (this.level === 2 && !this.checkpointReached && nextX >= this.checkpointX) {
+      this.checkpointReached = true;
+      this.say("CHECKPOINT SECURED // IF THE FOUNDRY TAKES YOU, YOU RETURN HERE.");
+      this.tweens.add({ targets: this.checkpointMarker, alpha: 1, duration: 220, yoyo: true, repeat: 2 });
+    }
+    if (nextY > H + 38) {
+      this.player.setPosition(nextX, nextY);
+      this.triggerMissionFailed();
+      return;
     }
 
     this.player.setPosition(nextX, nextY);
@@ -700,7 +735,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private drawLevelTwoBackdrop(offsetX = 0): void {
-    const g = this.add.graphics().setDepth(-10).setPosition(offsetX, 0);
+    const g = this.add.graphics().setDepth(-10).setPosition(offsetX, 0).setScrollFactor(0.34, 1);
     // Paint an opaque full-canvas base FIRST. Shift 01's SVG is at depth -20,
     // so this masks every pixel of that environment, including its sky and ground.
     // The Shift 02 skyline, moon, swamp and gameplay floor are drawn above this base.
@@ -760,24 +795,44 @@ class GameScene extends Phaser.Scene {
       g.fillStyle(i % 3 === 0 ? 0x9ce2c4 : 0x78a6a0, 0.4);
       g.fillCircle(x, y, i % 4 === 0 ? 2 : 1);
     }
-    // Layered swamp-bank edge; gameplay collision floor remains unchanged at y=500.
-    g.fillStyle(0x122629, 1); g.fillRect(0, 500, W, 100);
-    g.fillStyle(0x79a38c, 1); g.fillRect(0, 500, W, 4);
-    g.fillStyle(0x375d56, 1); g.fillRect(0, 505, W, 4);
-    g.lineStyle(2, 0x426d64, 0.8); g.beginPath();
-    g.moveTo(0,516); g.lineTo(67,511); g.lineTo(116,521); g.lineTo(187,513); g.lineTo(249,523);
-    g.lineTo(321,512); g.lineTo(395,522); g.lineTo(467,514); g.lineTo(545,524); g.lineTo(624,512);
-    g.lineTo(701,521); g.lineTo(779,513); g.lineTo(850,522); g.lineTo(916,513); g.lineTo(960,518); g.strokePath();
+    // Foreground bank is drawn by the collision platforms so it scrolls at full speed.
   }
+  private drawCheckpoint(): void {
+    this.checkpointMarker = this.add.container(this.checkpointX, this.floorY - 2).setDepth(4);
+    const g = this.add.graphics();
+    g.fillStyle(0x071014, 0.65); g.fillEllipse(0, 0, 48, 10);
+    g.fillStyle(0x132b2b, 1); g.fillRoundedRect(-15, -62, 30, 58, 4);
+    g.lineStyle(2, 0x9ce2c4, 1); g.strokeRoundedRect(-15, -62, 30, 58, 4);
+    g.lineStyle(1, 0xd7f3e6, 0.8); g.lineBetween(-8, -54, 8, -54); g.lineBetween(-8, -47, 8, -47);
+    g.fillStyle(0x9ce2c4, 0.22); g.fillCircle(0, -32, 20);
+    g.fillStyle(0x9ce2c4, 1); g.fillCircle(0, -32, 5);
+    g.fillStyle(0xd7f3e6, 1); g.fillCircle(-1, -33, 2);
+    this.checkpointMarker.add(g);
+    this.add.text(this.checkpointX, this.floorY - 78, "MIDPOINT // CHECKPOINT", {
+      fontFamily: "monospace", fontSize: "9px", color: "#9ce2c4",
+      backgroundColor: "#0b171d", padding: { x: 4, y: 3 }
+    }).setOrigin(0.5).setDepth(4);
+  }
+
   private drawFoundryObstacles(): void {
     const g = this.add.graphics().setDepth(3);
     for (let i = 0; i < this.obstacles.length; i++) {
       const o = this.obstacles[i];
       // Corroded machinery with broken pipe mouths and mint warning seams.
-      g.fillStyle(0x071014, 0.72); g.fillEllipse(o.x + o.w / 2, 500, o.w + 24, 9);
+      // Three-stage shading, cast shadow and a raised lip give each obstacle volume.
+      g.fillStyle(0x03090c, 0.86); g.fillRoundedRect(o.x + 8, o.y + 9, o.w, o.h - 5, 5);
+      g.fillStyle(0x071014, 0.72); g.fillEllipse(o.x + o.w / 2, 500, o.w + 28, 12);
+      g.fillStyle(0x0c191e, 1); g.fillRoundedRect(o.x, o.y + 5, o.w, o.h - 5, 4);
       g.fillStyle(i % 2 === 0 ? 0x263c3d : 0x1b3035, 1);
-      g.fillRoundedRect(o.x, o.y + 5, o.w, o.h - 5, 4);
-      g.fillStyle(0x3b5551, 1); g.fillRoundedRect(o.x + 4, o.y, o.w - 8, 13, 3);
+      g.fillRoundedRect(o.x, o.y + 2, o.w - 3, o.h - 7, 4);
+      g.fillStyle(0x4c6860, 1); g.fillRoundedRect(o.x + 4, o.y, o.w - 8, 13, 3);
+      g.fillStyle(0x6c8980, 0.65); g.fillRect(o.x + 8, o.y + 2, o.w - 16, 2);
+      g.fillStyle(0x0b171d, 0.7); g.fillRect(o.x + 8, o.y + 16, 5, Math.max(8, o.h - 27));
+      g.fillRect(o.x + o.w - 14, o.y + 16, 5, Math.max(8, o.h - 27));
+      for (const boltX of [o.x + 8, o.x + o.w - 8]) {
+        g.fillStyle(0x0b171d, 1); g.fillCircle(boltX, o.y + 8, 3);
+        g.fillStyle(0x9ce2c4, 0.9); g.fillCircle(boltX, o.y + 8, 1.2);
+      }
       g.lineStyle(2, 0x5f9380, 0.9); g.lineBetween(o.x + 7, o.y + 4, o.x + o.w - 8, o.y + 4);
       g.lineStyle(1, 0x9ce2c4, 0.75);
       for (let x = o.x + 12; x < o.x + o.w - 8; x += 18) {
@@ -898,7 +953,121 @@ class GameScene extends Phaser.Scene {
       ease: "Sine.in"
     });
   }
-  private restartFromShiftOne(): void {this.registry.set("shiftLevel",1);this.scene.restart();}
+  private triggerMissionFailed(): void {
+    if (this.dead) return;
+    this.dead = true;
+    this.playerVy = 0;
+    const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x03080b, 0.88).setDepth(40).setScrollFactor(0).setAlpha(0);
+    const panel = this.add.rectangle(W / 2, H / 2, 590, 310, 0x0b171d, 0.98).setStrokeStyle(2, 0x5f9380, 0.95).setDepth(41).setScrollFactor(0).setAlpha(0);
+    const crack = this.add.graphics().setDepth(42).setScrollFactor(0).setAlpha(0);
+    crack.lineStyle(2, 0x9ce2c4, 0.75);
+    crack.beginPath(); crack.moveTo(190, 154); crack.lineTo(228, 179); crack.lineTo(212, 201); crack.lineTo(249, 226); crack.strokePath();
+    crack.lineStyle(1, 0x9ce2c4, 0.35); crack.lineBetween(710, 153, 746, 188); crack.lineBetween(746, 188, 729, 215);
+    const title = this.add.text(W / 2, 190, "MISSION FAILED", {
+      fontFamily: "monospace", fontSize: "31px", color: "#b8e8d4", fontStyle: "bold", letterSpacing: 3
+    }).setOrigin(0.5).setDepth(43).setScrollFactor(0).setAlpha(0);
+    const sub = this.add.text(W / 2, 235, "THE FOUNDRY CLAIMS ANOTHER EMPLOYEE.", {
+      fontFamily: "monospace", fontSize: "10px", color: "#9ce2c4", letterSpacing: 1
+    }).setOrigin(0.5).setDepth(43).setScrollFactor(0).setAlpha(0);
+    const checkpointLabel = this.add.text(W / 2, 270,
+      this.checkpointReached ? "LAST SAFE LOCATION: MIDPOINT CHECKPOINT" : "NO CHECKPOINT LOGGED // RETURN TO ENTRY", {
+        fontFamily: "monospace", fontSize: "11px", color: "#c2d2cc", align: "center"
+      }).setOrigin(0.5).setDepth(43).setScrollFactor(0).setAlpha(0);
+    const makeButton = (x: number, y: number, label: string, primary: boolean, callback: () => void) => {
+      const bg = this.add.rectangle(x, y, 210, 43, primary ? 0x24483e : 0x17272a, 1)
+        .setStrokeStyle(1, primary ? 0x9ce2c4 : 0x5f9380, 1).setDepth(43).setScrollFactor(0).setInteractive({ useHandCursor: true }).setAlpha(0);
+      const text = this.add.text(x, y, label, {
+        fontFamily: "monospace", fontSize: "12px", color: primary ? "#d7f3e6" : "#a9c3b9", fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(44).setScrollFactor(0).setAlpha(0);
+      bg.on("pointerover", () => { if (this.dead) bg.setFillStyle(primary ? 0x315e50 : 0x263f40, 1); });
+      bg.on("pointerout", () => bg.setFillStyle(primary ? 0x24483e : 0x17272a, 1));
+      bg.on("pointerdown", callback);
+      this.deathOverlay.push(bg, text);
+      return [bg, text];
+    };
+    makeButton(W / 2 - 118, 340, "TRY AGAIN", true, () => this.respawnAtCheckpoint());
+    makeButton(W / 2 + 118, 340, "EXIT TO LEVELS", false, () => this.returnToLevelSelect());
+    this.deathOverlay.push(shade, panel, crack, title, sub, checkpointLabel);
+    this.tweens.add({ targets: [shade, panel, crack, title, sub, checkpointLabel], alpha: 1, duration: 280, ease: "Cubic.out" });
+    this.deathOverlay.forEach((item) => {
+      if ("alpha" in item) this.tweens.add({ targets: item, alpha: 1, duration: 280, ease: "Cubic.out" });
+    });
+    this.cameras.main.shake(180, 0.006);
+  }
+
+  private respawnAtCheckpoint(): void {
+    this.deathOverlay.forEach((item) => item.destroy());
+    this.deathOverlay = [];
+    this.dead = false;
+    const spawnX = this.level === 2 && this.checkpointReached ? this.checkpointX + 28 : 105;
+    this.player.setPosition(spawnX, this.floorY - 17);
+    this.playerVy = 0; this.playerVx = 0; this.grounded = false;
+    this.jumpBuffer = 0; this.coyoteTime = 0;
+    this.cameras.main.centerOn(spawnX, H / 2);
+    if (this.level === 2) this.cameras.main.startFollow(this.player, true, 0.09, 0.08);
+    this.say(this.checkpointReached ? "BACK ON SHIFT. CHECKPOINT RESTORED." : "BACK ON SHIFT. TRY NOT TO FALL THROUGH REALITY.");
+  }
+
+  private returnToLevelSelect(): void {
+    this.registry.set("showLevelSelect", true);
+    this.scene.restart();
+  }
+
+  private createLevelSelectScreen(): void {
+    this.cameras.main.setBackgroundColor("#0b171d");
+    this.add.rectangle(W / 2, H / 2, W, H, 0x0b171d, 1);
+    const backdrop = this.add.graphics().setDepth(1);
+    backdrop.lineStyle(1, 0x28423f, 0.45);
+    for (let x = 0; x < W; x += 32) backdrop.lineBetween(x, 0, x, H);
+    for (let y = 0; y < H; y += 32) backdrop.lineBetween(0, y, W, y);
+    backdrop.fillStyle(0x9ce2c4, 0.06); backdrop.fillCircle(750, 118, 115);
+    backdrop.fillStyle(0xd7f3e6, 0.18); backdrop.fillCircle(750, 118, 42);
+    this.add.text(52, 48, "MY SHADOW HAS UNIONIZED", {
+      fontFamily: "monospace", fontSize: "21px", color: "#d7f3e6", fontStyle: "bold", letterSpacing: 2
+    }).setDepth(2);
+    this.add.text(54, 82, "EMPLOYEE ACCESS TERMINAL  //  SELECT A SHIFT", {
+      fontFamily: "monospace", fontSize: "10px", color: "#7cae9c", letterSpacing: 1
+    }).setDepth(2);
+    const makeLevelCard = (x: number, level: number, title: string, subtitle: string, status: string, color: number, active: boolean) => {
+      const y = 205;
+      const card = this.add.rectangle(x, y, 350, 190, 0x102126, 0.98).setStrokeStyle(1, color, 0.95).setDepth(2);
+      const stripe = this.add.rectangle(x - 158, y, 5, 188, color, 1).setDepth(3);
+      this.add.text(x - 145, y - 65, `SHIFT 0${level}`, {
+        fontFamily: "monospace", fontSize: "10px", color: `#${color.toString(16).padStart(6,"0")}`, letterSpacing: 2
+      }).setDepth(3);
+      this.add.text(x - 145, y - 32, title, {
+        fontFamily: "monospace", fontSize: "18px", color: "#e0eee8", fontStyle: "bold"
+      }).setDepth(3);
+      this.add.text(x - 145, y + 1, subtitle, {
+        fontFamily: "monospace", fontSize: "10px", color: "#a9c3b9", lineSpacing: 6, wordWrap: { width: 270 }
+      }).setDepth(3);
+      this.add.text(x - 145, y + 48, status, {
+        fontFamily: "monospace", fontSize: "9px", color: active ? "#9ce2c4" : "#769087"
+      }).setDepth(3);
+      const launch = this.add.rectangle(x, y + 126, 270, 35, active ? 0x24483e : 0x17272a, 1)
+        .setStrokeStyle(1, color, 1).setDepth(3).setInteractive({ useHandCursor: true });
+      const launchText = this.add.text(x, y + 126, active ? "ENTER SHIFT" : "REPLAY SHIFT", {
+        fontFamily: "monospace", fontSize: "10px", color: "#d7f3e6", fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(4);
+      launch.on("pointerover", () => launch.setFillStyle(0x315e50, 1));
+      launch.on("pointerout", () => launch.setFillStyle(active ? 0x24483e : 0x17272a, 1));
+      launch.on("pointerdown", () => {
+        this.registry.set("showLevelSelect", false);
+        this.registry.set("shiftLevel", level);
+        this.scene.restart();
+      });
+    };
+    makeLevelCard(245, 1, "Probation", "Coffee diplomacy. A shadow with boundaries.\nA workplace on the edge.", "AVAILABLE  //  PLUM + AMBER", 0xf39a45, true);
+    makeLevelCard(715, 2, "The Night Shift", "Broken circuits. Live pipes.\nFive gaps. One checkpoint.", "AVAILABLE  //  MINT + IRON", 0x9ce2c4, true);
+    this.add.text(W / 2, 520, "A/D MOVE     SPACE JUMP     E INTERACT     R RESTART", {
+      fontFamily: "monospace", fontSize: "10px", color: "#638b7d", letterSpacing: 1
+    }).setOrigin(0.5).setDepth(2);
+    this.add.text(W / 2, 558, "THE COMPANY DISCLAIMS ALL RESPONSIBILITY FOR SHADOW-RELATED INCIDENTS.", {
+      fontFamily: "monospace", fontSize: "8px", color: "#4d7166", letterSpacing: 0.5
+    }).setOrigin(0.5).setDepth(2);
+  }
+
+  private restartFromShiftOne(): void {this.registry.set("showLevelSelect", false); this.registry.set("shiftLevel",1);this.scene.restart();}
 
   private say(text: string): void {
     this.message = text; this.dialogueText.setText(text); this.messageUntil = this.time.now + 2800;
