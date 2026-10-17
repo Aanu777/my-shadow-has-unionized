@@ -407,7 +407,7 @@ class GameScene extends Phaser.Scene {
 
     // Only show the proximity hint once per approach; don't reset the dialogue timer every frame.
     if (nearCoffee && !this.coffeeHintShown) {
-      this.say("PRESS E TO OFFER THE SHADOW A COFFEE.");
+      this.say(this.level === 1 ? "PRESS E TO OFFER THE SHADOW A COFFEE." : "PRESS E TO PICK UP THE FUSE.");
       this.coffeeHintShown = true;
     } else if (!nearCoffee) {
       this.coffeeHintShown = false;
@@ -452,9 +452,9 @@ class GameScene extends Phaser.Scene {
       return;
     }
     if (Phaser.Math.Distance.Between(px, this.player.y, this.shadow.x, this.shadow.y) < 70 && !this.demandSatisfied) {
-      this.say("SHADOW: 'I am legally entitled to one (1) coffee.'"); return;
+      this.say(this.level === 1 ? "SHADOW: 'I am legally entitled to one (1) coffee.'" : "THE FUSE CIRCUIT IS STILL OFFLINE."); return;
     }
-    this.say("E: INTERACT. TRY THE LANTERN, COFFEE, OR SWITCH.");
+    this.say(this.level === 1 ? "GET COFFEE, ALIGN THE LANTERN RIGHT, THEN ACTIVATE THE SWITCH." : "RECOVER THE FUSE, ALIGN THE LANTERN LEFT, THEN ACTIVATE THE SWITCH.");
   }
 
   private updateGate(): void {
@@ -477,7 +477,7 @@ class GameScene extends Phaser.Scene {
       fontFamily: "monospace", fontSize: "34px", color: "#f39a45", fontStyle: "bold", align: "center"
     }).setOrigin(0.5).setDepth(21);
     this.add.text(W / 2, 280,
-      "The shadow has agreed to leave the forest.\nManagement has agreed to stop calling it 'the dark bit.'\n\nA historic victory for workplace relations.",
+      "You restored the broken circuit and escaped the night forest.\nThe shadow has filed a formal request for paid overtime.\n\nA historic victory for workplace relations.",
       { fontFamily: "monospace", fontSize: "15px", color: "#f0e8d8", align: "center", lineSpacing: 9 }
     ).setOrigin(0.5).setDepth(21);
     this.add.text(W / 2, 385, "PRESS R TO RESTART FROM SHIFT 01", {
