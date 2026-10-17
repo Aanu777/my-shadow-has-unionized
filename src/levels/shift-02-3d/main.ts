@@ -372,6 +372,32 @@ loadAsset("satelliteDish.glb", [[-5.45, -11.7, 0, 0], [5.45, -11.7, 0, Math.PI],
 loadAsset("satelliteDish_detailed.glb", [[-5.7, -2.8, 0, 0.25], [5.7, -2.8, 0, -0.25]]);
 loadAsset("satelliteDish_large.glb", [[-5.6, -18.4, 0, 0.2], [5.6, -18.4, 0, -0.2]]);
 
+// Kenney Factory Kit assets add recognizable machinery silhouettes and authored
+// PBR mesh detail along the route. All of these models are CC0.
+const factoryAssetBase = "https://raw.githubusercontent.com/shorepine/kenney/main/3d/factory/";
+function loadFactoryAsset(file: string, placements: Array<[number, number, number, number]>): void {
+  gltfLoader.load(
+    factoryAssetBase + file,
+    (gltf) => {
+      const source = gltf.scene;
+      fitModel(source, 2.4);
+      for (const [x, z, height, rotation] of placements) {
+        const instance = source.clone(true);
+        instance.position.set(x, height, z);
+        instance.rotation.y = rotation;
+        scene.add(instance);
+        importedProps.push(instance);
+      }
+    },
+    undefined,
+    () => console.warn("Optional CC0 factory model unavailable:", file)
+  );
+}
+loadFactoryAsset("machine.glb", [[-5.45, -15.3, 0.05, 0], [5.45, -15.3, 0.05, Math.PI]]);
+loadFactoryAsset("crane-lift.glb", [[-5.9, -4.0, 0, Math.PI / 2], [5.9, -4.0, 0, -Math.PI / 2]]);
+loadFactoryAsset("machine-window.glb", [[-6.05, 5.1, 0.1, 0], [6.05, 5.1, 0.1, Math.PI]]);
+loadFactoryAsset("pipe-large-curve.glb", [[-5.75, -0.6, 0.1, Math.PI / 2], [5.75, -0.6, 0.1, -Math.PI / 2]]);
+
 // Additive architectural detail uses curved profiles, rings, cable runs and
 // inset panels to break the original hard-edged block rhythm.
 function tubeBetween(a: THREE.Vector3, b: THREE.Vector3, radius: number, material: THREE.Material, segments = 10): THREE.Mesh {
