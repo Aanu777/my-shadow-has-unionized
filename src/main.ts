@@ -102,7 +102,7 @@ class GameScene extends Phaser.Scene {
     this.lanternX = this.level === 1 ? 260 : 350;
     this.lanternMin = this.level === 1 ? 190 : 175;
     this.lanternMax = this.level === 1 ? 405 : 405;
-    this.cameras.main.setBackgroundColor(this.level === 1 ? "#17131f" : "#101c22");
+    this.cameras.main.setBackgroundColor(this.level === 1 ? "#17131f" : "#100f24");
     // Do not draw Shift 01's SVG into Shift 02; each shift owns its backdrop.
     if (this.level === 1) drawShift01Background(this);
     else {
@@ -356,8 +356,45 @@ class GameScene extends Phaser.Scene {
   private makePumpkin(x: number, y: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
     const groundShadow = this.add.graphics(); groundShadow.fillStyle(0x05040a,0.42); groundShadow.fillEllipse(0,19,48,11); groundShadow.fillStyle(this.level===2?0x65d9df:0xf39a45,0.12); groundShadow.fillEllipse(0,18,35,7); c.add(groundShadow);
-    if(this.level===2){
-      const suit=this.add.graphics();suit.fillStyle(0x020711,1);suit.fillRoundedRect(-14,-5,28,23,7);suit.fillStyle(0x172b43,1);suit.fillRoundedRect(-11,-4,22,20,6);suit.fillStyle(0x42657c,1);suit.fillRoundedRect(-9,-2,18,15,5);suit.fillStyle(0xf4b860,0.9);suit.fillRect(-8,1,16,2);suit.fillStyle(0x07111e,1);suit.fillRoundedRect(-17,0,7,14,3);suit.fillRoundedRect(10,0,7,14,3);suit.fillStyle(0xf4b860,1);suit.fillRect(-16,3,5,2);suit.fillRect(11,3,5,2);suit.fillStyle(0x020711,1);suit.fillRoundedRect(-9,13,7,10,2);suit.fillRoundedRect(2,13,7,10,2);suit.fillStyle(0x54788d,1);suit.fillRoundedRect(-9,19,8,4,1);suit.fillRoundedRect(2,19,8,4,1);suit.fillStyle(0x0b1424,1);suit.fillRoundedRect(-8,-24,16,7,3);suit.fillStyle(0x1b334b,1);suit.fillCircle(0,-13,16);suit.fillStyle(0x47768b,1);suit.fillCircle(0,-13,13);suit.fillStyle(0x06101d,1);suit.fillEllipse(0,-13,23,17);suit.fillStyle(0x78d8d8,0.92);suit.fillEllipse(0,-14,19,12);suit.fillStyle(0xc4ffff,0.75);suit.fillEllipse(-4,-17,7,3);suit.lineStyle(1,0xffe1a1,0.8);suit.beginPath();suit.arc(0,-13,15,3.45,5.95,false);suit.strokePath();suit.fillStyle(0xf4b860,1);suit.fillCircle(-4,-13,1.6);suit.fillCircle(4,-13,1.6);c.add(suit);const visor=this.add.graphics();visor.fillStyle(0x07111e,1);visor.fillEllipse(-4,-13,3,4);visor.fillEllipse(4,-13,3,4);visor.fillStyle(0xe2ffff,0.9);visor.fillCircle(-4,-14,1);visor.fillCircle(4,-14,1);c.add(visor);return c;
+    if (this.level === 2) {
+      // Compact pixel-art salvage suit: stepped silhouette, hard highlights, no soft vector gloss.
+      const suit = this.add.graphics();
+      // Life-support pack and antenna.
+      suit.fillStyle(0x090d1c, 1); suit.fillRect(-15, -5, 6, 17);
+      suit.fillStyle(0x514060, 1); suit.fillRect(-14, -4, 4, 13);
+      suit.fillStyle(0xb46d56, 1); suit.fillRect(-14, -2, 2, 4);
+      suit.fillStyle(0x090d1c, 1); suit.fillRect(7, -25, 3, 8);
+      suit.fillStyle(0xf4b860, 1); suit.fillRect(7, -28, 3, 3);
+      // Helmet shell and angular visor.
+      suit.fillStyle(0x080b18, 1); suit.fillRect(-12, -25, 24, 22);
+      suit.fillStyle(0x302b4a, 1); suit.fillRect(-9, -28, 18, 3);
+      suit.fillRect(-15, -21, 3, 13); suit.fillRect(12, -21, 3, 13);
+      suit.fillStyle(0x625477, 1); suit.fillRect(-9, -23, 18, 17);
+      suit.fillStyle(0x17182f, 1); suit.fillRect(-7, -21, 14, 13);
+      suit.fillStyle(0xc7a6ff, 1); suit.fillRect(-6, -20, 3, 2);
+      suit.fillRect(-3, -18, 8, 2); suit.fillRect(4, -16, 2, 2);
+      suit.fillStyle(0xf4b860, 1); suit.fillRect(-9, -8, 18, 2);
+      // Neck, chest plate, shoulder blocks and arm guards.
+      suit.fillStyle(0x090d1c, 1); suit.fillRect(-5, -5, 10, 4);
+      suit.fillStyle(0x34314f, 1); suit.fillRect(-11, -2, 22, 16);
+      suit.fillStyle(0x625477, 1); suit.fillRect(-8, 0, 16, 10);
+      suit.fillStyle(0x17182f, 1); suit.fillRect(-5, 2, 10, 7);
+      suit.fillStyle(0xf4b860, 1); suit.fillRect(-4, 3, 8, 2);
+      suit.fillStyle(0x17182f, 1); suit.fillRect(-15, 0, 4, 11); suit.fillRect(11, 0, 4, 11);
+      suit.fillStyle(0xb46d56, 1); suit.fillRect(-15, 3, 4, 3); suit.fillRect(11, 3, 4, 3);
+      // Belt, squared legs and heavy magnetic boots.
+      suit.fillStyle(0x090d1c, 1); suit.fillRect(-9, 13, 18, 4);
+      suit.fillStyle(0x34314f, 1); suit.fillRect(-8, 17, 6, 5); suit.fillRect(2, 17, 6, 5);
+      suit.fillStyle(0x625477, 1); suit.fillRect(-9, 21, 8, 3); suit.fillRect(1, 21, 8, 3);
+      suit.fillStyle(0xf4b860, 1); suit.fillRect(-8, 22, 6, 1); suit.fillRect(2, 22, 6, 1);
+      // Small suit indicator lights, limited to the same warm signal color.
+      suit.fillStyle(0xf4b860, 1); suit.fillRect(8, 1, 2, 2); suit.fillRect(-10, 10, 2, 2);
+      c.add(suit);
+      const visor = this.add.graphics();
+      visor.fillStyle(0x090d1c, 1); visor.fillRect(-4, -17, 3, 4); visor.fillRect(2, -17, 3, 4);
+      visor.fillStyle(0xffdfa0, 1); visor.fillRect(-4, -17, 1, 1); visor.fillRect(2, -17, 1, 1);
+      c.add(visor);
+      return c;
     }
 
     // Layered, hand-drawn pumpkin body: dark silhouette, lobes, carved grooves and rim light.
