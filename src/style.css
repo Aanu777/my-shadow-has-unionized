@@ -3,9 +3,11 @@
 :root {
   font-family: 'Space Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
   color: #f0e8d8;
-  background: #100d16;
+  background: #0c0a12;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * { box-sizing: border-box; }
@@ -21,33 +23,64 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: clamp(8px, 2.5vw, 28px);
+  overflow-x: hidden;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(112, 85, 165, .16), transparent 58%),
-    #100d16;
+    radial-gradient(ellipse at 50% 8%, rgba(112, 85, 165, .19), transparent 48%),
+    radial-gradient(ellipse at 12% 88%, rgba(243, 154, 69, .055), transparent 36%),
+    #0c0a12;
 }
 
 #app {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: 1100px;
-  width: 100%;
+  width: min(100%, 1100px);
+  isolation: isolate;
+}
+
+#app::before {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  z-index: -1;
+  pointer-events: none;
+  border: 1px solid rgba(197, 168, 255, .055);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,.018), transparent 40%);
 }
 
 canvas {
   display: block;
   width: 100% !important;
   height: auto !important;
-  max-height: calc(100vh - 40px);
+  max-height: calc(100vh - clamp(16px, 5vw, 56px));
   object-fit: contain;
-  border: 1px solid rgba(243, 154, 69, .28);
+  border: 1px solid rgba(243, 154, 69, .32);
   border-radius: 8px;
-  box-shadow: 0 24px 100px rgba(0, 0, 0, .45), 0 0 60px rgba(112, 85, 165, .1);
+  box-shadow:
+    0 26px 90px rgba(0, 0, 0, .5),
+    0 0 0 1px rgba(255, 255, 255, .025),
+    0 0 65px rgba(112, 85, 165, .12);
   image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 @media (max-width: 700px) {
   body { padding: 8px; }
-  canvas { max-height: calc(100vh - 16px); border-radius: 4px; }
+  #app::before { inset: -3px; border-radius: 7px; }
+  canvas {
+    max-height: calc(100vh - 16px);
+    border-radius: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
