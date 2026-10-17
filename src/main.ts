@@ -44,6 +44,7 @@ class GameScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setBackgroundColor("#17131f");
     this.drawBackdrop();
+    this.createAtmosphere();
 
     this.platforms = [
       { x: 0, y: 500, w: 300, h: 100 },
@@ -60,6 +61,7 @@ class GameScene extends Phaser.Scene {
     this.player.add(this.playerBody);
 
     this.lantern = this.makeLantern(this.lanternX, 438);
+    this.tweens.add({ targets: this.lantern, scaleX: 1.055, scaleY: 1.055, duration: 920, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.shadow = this.makeShadow(500, 460);
     this.shadowLabel = this.add.text(0, 0, "ON BREAK", {
       fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff",
@@ -150,6 +152,7 @@ class GameScene extends Phaser.Scene {
 
     this.player.setPosition(nextX, nextY);
     this.player.setScale(this.playerVx < 0 ? -1 : 1, 1);
+    this.player.setAngle(this.grounded && Math.abs(this.playerVx) > 0 ? Math.sin(this.time.now * 0.018) * 3 : 0);
 
     const eDown = this.keys.E.isDown;
     if (eDown && !this.eWasDown) this.interact();
@@ -199,6 +202,56 @@ class GameScene extends Phaser.Scene {
       g.lineBetween(x + 2, 345, x - 20, 315);
       g.lineBetween(x + 2, 370, x + 25, 335);
       g.lineBetween(x + 1, 320, x + 18, 292);
+    }
+  }
+
+
+  private createAtmosphere(): void {
+    // A soft moon halo gives the sky more depth without obscuring the playfield.
+    const moonHalo = this.add.graphics().setDepth(0);
+    moonHalo.fillStyle(0x9c7be8, 0.035);
+    moonHalo.fillCircle(780, 125, 92);
+    moonHalo.fillStyle(0x9c7be8, 0.045);
+    moonHalo.fillCircle(780, 125, 72);
+
+    // Fireflies drift through the forest at different speeds and brightnesses.
+    const fireflyPoints = [
+      [82, 365], [145, 330], [220, 286], [318, 365], [375, 310],
+      [430, 355], [535, 290], [585, 345], [700, 315], [742, 365],
+      [835, 300], [900, 355], [510, 420], [290, 445], [760, 445]
+    ];
+    fireflyPoints.forEach(([x, y], i) => {
+      const dot = this.add.circle(x, y, i % 4 === 0 ? 2 : 1.4, i % 3 === 0 ? 0xf39a45 : 0xc5a8ff, 0.15).setDepth(1);
+      this.tweens.add({
+        targets: dot,
+        alpha: { from: 0.12, to: i % 3 === 0 ? 0.85 : 0.58 },
+        scale: { from: 0.75, to: 1.5 },
+        x: x + (i % 2 === 0 ? 10 : -12),
+        y: y - (8 + (i % 5) * 3),
+        duration: 1500 + (i % 5) * 360,
+        yoyo: true,
+        repeat: -1,
+        delay: i * 95,
+        ease: "Sine.inOut"
+      });
+    });
+
+    // Small amber sparks around the lantern reinforce that it is the puzzle's focal point.
+    for (let i = 0; i < 5; i++) {
+      const spark = this.add.circle(260 + (i - 2) * 12, 414 - (i % 3) * 8, 1.5, 0xffdf91, 0.6).setDepth(4);
+      this.tweens.add({
+        targets: spark,
+        y: spark.y - 9 - (i % 3) * 3,
+        alpha: 0,
+        duration: 700 + i * 130,
+        delay: i * 170,
+        repeat: -1,
+        onRepeat: () => {
+          spark.setPosition(this.lanternX + (i - 2) * 12, 414 - (i % 3) * 8);
+          spark.setAlpha(0.6);
+        },
+        ease: "Sine.out"
+      });
     }
   }
 
