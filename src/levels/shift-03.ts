@@ -89,8 +89,12 @@ export class ShiftThreeScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.won || this.dead) {
-      if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.scene.start("GameScene");
+    if (this.won) {
+      if (Phaser.Input.Keyboard.JustDown(this.keys.R)) window.location.href = "./index.html";
+      return;
+    }
+    if (this.dead) {
+      if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.respawnAtCheckpoint();
       return;
     }
     const dt = Math.min(delta / 1000, 0.033);
@@ -141,7 +145,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     const r = this.keys.R.isDown;
     if (r && !this.rWasDown) this.scene.restart();
     this.rWasDown = r;
-    if (this.player.x > this.checkpointX) this.checkpointX = 875;
+    if (this.checkpointX < 875 && this.player.x >= 875) { this.checkpointX = 875; this.say("CHECKPOINT LOGGED. HR WILL STILL DENY THIS HAPPENED."); }
     this.updateDoor();
   }
 
@@ -220,18 +224,7 @@ export class ShiftThreeScene extends Phaser.Scene {
       arrows.fillTriangle(x, FLOOR - 27, x + 12, FLOOR - 22, x, FLOOR - 17);
     }
     arrows.x = index * 2; this.conveyorArrows.push(arrows);
-    const console = this.add.container(index === 0 ? x2 + 22 : x2 + 28, FLOOR - 18).setDepth(6);
-    const cg = this.add.graphics();
-    cg.fillStyle(0x171221, 1); cg.fillRoundedRect(-15, -28, 30, 31, 3);
-    cg.lineStyle(2, 0xc5a8ff, 0.9); cg.strokeRoundedRect(-15, -28, 30, 31, 3);
-    cg.fillStyle(0x352544, 1); cg.fillRect(-9, -21, 18, 13);
-    cg.fillStyle(0xf4b860, 1); cg.fillTriangle(-5, -17, 4, -17, 0, -12);
-    cg.fillStyle(0x8c79a5, 1); cg.fillCircle(0, -2, 4);
-    console.add(cg);
-    this.consoles.push(console);
-    this.add.text(console.x, FLOOR - 53, index === 0 ? "BELT A" : "SORTER B", {
-      fontFamily: "monospace", fontSize: "8px", color: "#c5a8ff"
-    }).setOrigin(0.5).setDepth(7);
+
   }
 
   private createScanner(x: number, phase: number): void {
@@ -433,6 +426,17 @@ export class ShiftThreeScene extends Phaser.Scene {
       fontFamily: "monospace", fontSize: "10px", color: "#f4b860"
     }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
     this.data.set("failureOverlay", [shade, title, sub, hint]);
+  }
+
+  private respawnAtCheckpoint(): void {
+    const overlay = this.data.get("failureOverlay") as Phaser.GameObjects.GameObject[] | undefined;
+    overlay?.forEach(item => item.destroy());
+    this.data.remove("failureOverlay");
+    this.dead = false;
+    this.player.setPosition(this.checkpointX, FLOOR - 17);
+    this.playerVx = 0; this.playerVy = 0; this.grounded = false;
+    this.cameras.main.centerOn(this.checkpointX, H / 2);
+    this.say(this.checkpointX > 110 ? "CHECKPOINT RESTORED. PLEASE FILE FORM 12-C FOR YOUR OWN RESCUE." : "REASSIGNED TO ENTRY. TRY NOT TO GET SCANNED.");
   }
 
   private showWin(): void {
