@@ -291,23 +291,100 @@ function buildEnvironment(): void {
     scene.add(star);
   }
 
-  // The bulkhead has a frame, curved locking rods and an emissive access seam.
-  const gateFrame = new THREE.Mesh(new THREE.BoxGeometry(4.05, 4.7, 0.42), materials.dark);
-  gateFrame.position.set(5.05, 2.25, -18.2);
-  gateFrame.castShadow = true;
-  scene.add(gateFrame);
-  const gatePanel = new THREE.Mesh(new THREE.BoxGeometry(4.45, 4.05, 0.16), materials.ceramic);
-  gatePanel.position.set(5.05, 2.2, -17.98);
-  gatePanel.castShadow = true;
-  scene.add(gatePanel);
-  for (let x = 3.65; x <= 6.45; x += 0.7) {
-    const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3.75, 10), materials.copper);
-    rib.position.set(x, 2.1, -17.84);
-    scene.add(rib);
+  // Signature iris bulkhead: layered octagonal frame, segmented armor petals,
+  // a recessed reactor core, and radial lock hardware. This is a proper landmark,
+  // not a flat slab with bars painted over it.
+  const gateAssembly = new THREE.Group();
+  gateAssembly.name = "exit-bulkhead";
+  gateAssembly.position.set(5.05, 0, -18.2);
+  scene.add(gateAssembly);
+
+  const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(4.25, 4.62, 0.5), materials.dark);
+  outerFrame.position.set(0, 2.25, 0);
+  outerFrame.castShadow = true;
+  outerFrame.receiveShadow = true;
+  gateAssembly.add(outerFrame);
+
+  const innerFrame = new THREE.Mesh(new THREE.BoxGeometry(3.82, 4.18, 0.34), materials.copper);
+  innerFrame.position.set(0, 2.22, 0.31);
+  innerFrame.castShadow = true;
+  gateAssembly.add(innerFrame);
+
+  const recessedSocket = new THREE.Mesh(
+    new THREE.BoxGeometry(3.56, 3.9, 0.22),
+    new THREE.MeshStandardMaterial({ color: "#090d19", metalness: 0.82, roughness: 0.26 })
+  );
+  recessedSocket.position.set(0, 2.2, 0.51);
+  gateAssembly.add(recessedSocket);
+
+  const armor = new THREE.MeshStandardMaterial({
+    color: "#35374a", metalness: 0.88, roughness: 0.24,
+    emissive: "#21152d", emissiveIntensity: 0.45
+  });
+  const armorEdge = new THREE.MeshStandardMaterial({
+    color: "#a56b4d", metalness: 0.82, roughness: 0.3,
+    emissive: "#512817", emissiveIntensity: 0.55
+  });
+  const coreGlow = new THREE.MeshStandardMaterial({
+    color: "#ffc58c", emissive: "#ff6a35", emissiveIntensity: 2.8,
+    metalness: 0.22, roughness: 0.2
+  });
+
+  // Six armored vertical leaves give the sealed door a mechanical iris silhouette.
+  for (let i = 0; i < 6; i++) {
+    const x = -1.28 + i * 0.512;
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.47, 3.26, 0.16), armor);
+    leaf.position.set(x, 2.17, 0.68);
+    leaf.rotation.z = (i - 2.5) * 0.018;
+    leaf.castShadow = true;
+    leaf.receiveShadow = true;
+    gateAssembly.add(leaf);
+
+    const spine = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.92, 0.045), armorEdge);
+    spine.position.set(x, 2.17, 0.78);
+    gateAssembly.add(spine);
+
+    for (const y of [0.78, 3.55]) {
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.05, 8), materials.ceramic);
+      bolt.rotation.x = Math.PI / 2;
+      bolt.position.set(x, y, 0.79);
+      gateAssembly.add(bolt);
+    }
   }
-  const gateLight = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.045, 0.08), materials.glow);
-  gateLight.position.set(5.05, 4.15, -17.78);
-  scene.add(gateLight);
+
+  // A contained circular reactor lens adds a focal point without obscuring the door.
+  const coreHousing = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.82, 0.2, 12), materials.dark);
+  coreHousing.rotation.x = Math.PI / 2;
+  coreHousing.position.set(0, 2.2, 0.9);
+  coreHousing.castShadow = true;
+  gateAssembly.add(coreHousing);
+  const coreRing = new THREE.Mesh(new THREE.TorusGeometry(0.61, 0.055, 10, 48), materials.violet);
+  coreRing.position.set(0, 2.2, 1.03);
+  gateAssembly.add(coreRing);
+  const coreLens = new THREE.Mesh(new THREE.CircleGeometry(0.48, 12), coreGlow);
+  coreLens.position.set(0, 2.2, 1.04);
+  gateAssembly.add(coreLens);
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const lock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.42, 0.12), armorEdge);
+    lock.position.set(Math.cos(angle) * 0.96, 2.2 + Math.sin(angle) * 0.96, 0.91);
+    lock.rotation.z = -angle;
+    gateAssembly.add(lock);
+  }
+
+  // Heavy horizontal clamps and a top-mounted access rail make the frame feel engineered.
+  for (const y of [0.22, 4.2]) {
+    const clamp = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.18, 0.32), materials.dark);
+    clamp.position.set(0, y, 0.52);
+    clamp.castShadow = true;
+    gateAssembly.add(clamp);
+    for (const x of [-1.75, 1.75]) {
+      const latch = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.28, 0.2), coreGlow);
+      latch.position.set(x, y, 0.72);
+      gateAssembly.add(latch);
+    }
+  }
+
 
   // Side console banks and the inset equipment have softened, layered profiles.
   for (const side of [-1, 1]) {
@@ -579,7 +656,7 @@ const colliders: Collider[] = [
   { minX: -3.95, maxX: -2.45, minZ: -3.6, maxZ: -2.4 },
   { minX: 2.45, maxX: 3.95, minZ: -5.1, maxZ: -3.9 }
 ];
-const gateLeft = scene.children.find((o) => o instanceof THREE.Mesh && Math.abs(o.position.z + 18.2) < 0.01 && Math.abs(o.position.x - 5.05) < 0.01) as THREE.Mesh | undefined;
+const gateAssembly = scene.getObjectByName("exit-bulkhead") as THREE.Group | undefined;
 
 function notify(message: string): void {
   toast.textContent = message;
@@ -710,10 +787,7 @@ function interact(): void {
     gateOpen = true;
     const gateColliderIndex = colliders.findIndex((c) => c.minX === 3.25 && c.maxX === 6.85 && c.minZ === -18.45);
     if (gateColliderIndex >= 0) colliders.splice(gateColliderIndex, 1);
-    if (gateLeft) gateLeft.position.y = 8;
-    for (const child of scene.children) {
-      if (child instanceof THREE.Mesh && (Math.abs(child.position.z + 17.84) < 0.02 || Math.abs(child.position.z + 17.98) < 0.02) && Math.abs(child.position.x - 5.05) < 1.8) child.position.y += 5;
-    }
+    if (gateAssembly) gateAssembly.position.y += 5;
     notify("ACCESS RESTORED. THE BULKHEAD IS OPEN.");
   }
   updateObjective();
