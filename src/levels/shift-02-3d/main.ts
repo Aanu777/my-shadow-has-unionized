@@ -102,35 +102,67 @@ function makeRelay(kind: Relay["kind"], x: number, z: number): Relay {
   const group = new THREE.Group();
   group.position.set(x, 0, z);
   scene.add(group);
-  box(group, 0, 0.42, 0, 1.1, 0.84, 0.95, materials.dark);
-  box(group, 0, 0.86, 0, 1.22, 0.08, 1.04, materials.copper);
-  const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.18, 8), materials.wall);
-  pedestal.position.y = 1.02;
-  pedestal.castShadow = true;
-  group.add(pedestal);
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.68, 0.16, 16), materials.rubber);
+  base.position.y = 0.1;
+  base.castShadow = true;
+  base.receiveShadow = true;
+  group.add(base);
+  const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.55, 0.54, 16), materials.ceramic);
+  plinth.position.y = 0.43;
+  plinth.castShadow = true;
+  plinth.receiveShadow = true;
+  group.add(plinth);
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.045, 8, 32), materials.copper);
+  collar.position.y = 0.68;
+  group.add(collar);
+
+  const consoleTop = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.48, 0.14, 16), materials.dark);
+  consoleTop.position.y = 0.75;
+  consoleTop.castShadow = true;
+  group.add(consoleTop);
+  const screen = new THREE.Mesh(new THREE.CircleGeometry(0.37, 32), materials.glass);
+  screen.rotation.x = -Math.PI / 2;
+  screen.position.y = 0.83;
+  group.add(screen);
+
+  // Small indicator studs make the console read as a designed prop, not a block.
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const stud = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), i % 2 ? materials.violet : materials.glow);
+    stud.position.set(Math.cos(a) * 0.43, 0.86, Math.sin(a) * 0.43);
+    group.add(stud);
+  }
+
   let symbol: THREE.Mesh;
   if (kind === "circle") {
-    symbol = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.07, 8, 24), materials.glow);
+    symbol = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.065, 12, 40), materials.glow);
   } else if (kind === "triangle") {
-    symbol = new THREE.Mesh(new THREE.ConeGeometry(0.31, 0.55, 3), materials.glow);
+    symbol = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.52, 3, 1), materials.glow);
     symbol.rotation.y = Math.PI;
   } else {
-    symbol = new THREE.Mesh(new THREE.OctahedronGeometry(0.31, 0), materials.glow);
+    symbol = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), materials.glow);
     symbol.scale.set(0.78, 1.2, 0.78);
   }
-  symbol.position.y = 1.43;
+  symbol.name = "relay-symbol";
+  symbol.position.y = 1.4;
   symbol.castShadow = true;
   group.add(symbol);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.025, 6, 28), materials.violet);
-  ring.rotation.x = Math.PI / 2;
-  ring.position.y = 1.08;
-  group.add(ring);
-  const pin = new THREE.PointLight("#df945b", 1.8, 3, 2);
+
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.022, 8, 48), materials.violet);
+  halo.name = "relay-halo";
+  halo.rotation.x = Math.PI / 2;
+  halo.position.y = 1.12;
+  group.add(halo);
+  const pin = new THREE.PointLight("#df945b", 2.8, 4, 1.8);
   pin.position.set(0, 1.5, 0);
   group.add(pin);
+
+  const lowerRing = new THREE.Mesh(new THREE.TorusGeometry(0.53, 0.022, 6, 32), materials.glow);
+  lowerRing.position.y = 0.25;
+  group.add(lowerRing);
   return { group, kind, active: false, position: new THREE.Vector3(x, 0, z) };
 }
-
 function buildEnvironment(): void {
   // Continuous floor with a procedural brushed-metal / panel texture.
   const floorCanvas = document.createElement("canvas");
@@ -630,7 +662,7 @@ function interact(): void {
     if (gateColliderIndex >= 0) colliders.splice(gateColliderIndex, 1);
     if (gateLeft) gateLeft.position.y = 8;
     for (const child of scene.children) {
-      if (child instanceof THREE.Mesh && (Math.abs(child.position.z + 17.87) < 0.02 || Math.abs(child.position.z + 17.98) < 0.02) && Math.abs(child.position.x) < 2.3) child.position.y += 5;
+      if (child instanceof THREE.Mesh && (Math.abs(child.position.z + 17.84) < 0.02 || Math.abs(child.position.z + 17.98) < 0.02) && Math.abs(child.position.x) < 2.3) child.position.y += 5;
     }
     notify("ACCESS RESTORED. THE BULKHEAD IS OPEN.");
   }
@@ -655,10 +687,17 @@ function animate(): void {
   amberLight.intensity = 22 + Math.sin(t * 1.7) * 1.6;
   fillLight.intensity = 16 + Math.sin(t * 0.55 + 2) * 2;
   for (const relay of relays) {
-    const symbol = relay.group.children[3];
-    if (symbol) symbol.rotation.y += delta * (relay.active ? 0.2 : 0.65);
-    const glow = relay.group.children[4];
-    if (glow) glow.scale.setScalar(1 + Math.sin(t * 2.2 + relay.position.x) * 0.045);
+    const symbol = relay.group.getObjectByName("relay-symbol");
+    if (symbol) {
+      symbol.rotation.y += delta * (relay.active ? 0.22 : 0.72);
+      symbol.position.y = 1.4 + Math.sin(t * 1.65 + relay.position.x) * 0.055;
+    }
+    const halo = relay.group.getObjectByName("relay-halo");
+    if (halo) {
+      halo.rotation.z += delta * (relay.active ? -0.18 : 0.28);
+      const pulse = 1 + Math.sin(t * 2.2 + relay.position.x) * 0.045;
+      halo.scale.setScalar(pulse);
+    }
   }
   if (started && !ended) {
     camera.rotation.order = "YXZ";
@@ -719,10 +758,10 @@ function animate(): void {
       interaction.textContent = "EXPLORE THE FOUNDRY";
     }
     for (const relay of relays) {
-      const glow = relay.group.children[4] as THREE.Mesh | undefined;
-      if (glow) {
-        const material = glow.material as THREE.MeshStandardMaterial;
-        material.emissiveIntensity = relay.active ? 2.8 : 0.6 + Math.max(0, Math.sin(t * 2 + relay.position.x)) * 0.5;
+      const symbol = relay.group.getObjectByName("relay-symbol") as THREE.Mesh | undefined;
+      if (symbol) {
+        const material = symbol.material as THREE.MeshStandardMaterial;
+        material.emissiveIntensity = relay.active ? 3.5 : 1.7 + Math.max(0, Math.sin(t * 2 + relay.position.x)) * 0.75;
       }
     }
   }
