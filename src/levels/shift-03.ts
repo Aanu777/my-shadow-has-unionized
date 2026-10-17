@@ -17,6 +17,7 @@ export class ShiftThreeScene extends Phaser.Scene {
   private files: ArchiveFile[] = [];
   private consoles: Phaser.GameObjects.Container[] = [];
   private routeGates: Phaser.GameObjects.Container[] = [];
+  private gateShutters: Phaser.GameObjects.Container[] = [];
   private consoleStates = [false, false];
   private door!: Phaser.GameObjects.Container;
   private doorOpen = false;
@@ -42,7 +43,7 @@ export class ShiftThreeScene extends Phaser.Scene {
 
   create(): void {
     this.playerVx = 0; this.playerVy = 0; this.grounded = false;
-    this.files = []; this.consoles = []; this.routeGates = []; this.consoleStates = [false, false];
+    this.files = []; this.consoles = []; this.routeGates = []; this.gateShutters = []; this.consoleStates = [false, false];
     this.doorOpen = false; this.won = false; this.dead = false;
     this.eWasDown = false; this.rWasDown = false; this.checkpointX = 110;
     this.conveyorArrows = []; this.conveyorRollers = []; this.scannerBeams = []; this.drones = [];
@@ -366,17 +367,57 @@ export class ShiftThreeScene extends Phaser.Scene {
   }
 
   private createRouteGate(x: number): Phaser.GameObjects.Container {
+    // A full-width industrial bulkhead: fixed jambs and header stay put while
+    // the segmented shutter retracts into the overhead housing when calibrated.
     const gate = this.add.container(x, FLOOR - 90).setDepth(9);
-    const g = this.add.graphics();
-    g.fillStyle(0x05040a, 1); g.fillRect(-24, -94, 48, 188);
-    g.fillStyle(0x34243e, 1); g.fillRect(-19, -90, 38, 180);
-    g.lineStyle(2, 0x9b7ca9, 1); g.strokeRect(-19, -90, 38, 180);
-    g.fillStyle(0x120e19, 1); g.fillRect(-11, -82, 22, 164);
-    for (let y = -74; y < 78; y += 18) { g.fillStyle(0xf4b860, 1); g.fillRect(-10, y, 20, 7); }
-    g.fillStyle(0xff6c67, 1); g.fillRect(-5, -16, 10, 32);
-    g.fillStyle(0x08070d, 1); g.fillRect(-31, -101, 62, 9);
-    g.fillStyle(0x6b4c7b, 1); g.fillRect(-35, -106, 70, 5);
-    gate.add(g);
+    const frame = this.add.graphics();
+    frame.fillStyle(0x05040a, 1); frame.fillRect(-55, -108, 110, 18);
+    frame.fillStyle(0x30243b, 1); frame.fillRect(-51, -105, 102, 11);
+    frame.fillStyle(0x746083, 1); frame.fillRect(-49, -105, 98, 2);
+    frame.fillStyle(0x090811, 1); frame.fillRect(-47, -91, 94, 188);
+    // Heavy side rails bolt the door into the floor instead of floating over the belt.
+    frame.fillStyle(0x08070d, 1); frame.fillRect(-55, -96, 15, 194); frame.fillRect(40, -96, 15, 194);
+    frame.fillStyle(0x393047, 1); frame.fillRect(-52, -94, 9, 188); frame.fillRect(43, -94, 9, 188);
+    frame.fillStyle(0x8b7698, 1); frame.fillRect(-49, -94, 2, 188); frame.fillRect(46, -94, 2, 188);
+    // Guide rails and floor shoes make the moving shutter read as real machinery.
+    frame.fillStyle(0x17111f, 1); frame.fillRect(-39, -92, 5, 188); frame.fillRect(34, -92, 5, 188);
+    frame.fillStyle(0x0a0911, 1); frame.fillRect(-60, 92, 120, 8);
+    frame.fillStyle(0x746083, 1); frame.fillRect(-58, 92, 116, 2);
+    for (const bx of [-45, 45]) {
+      frame.fillStyle(0x08070d, 1); frame.fillCircle(bx, 84, 4);
+      frame.fillStyle(0xf4b860, 1); frame.fillCircle(bx, 84, 1.5);
+    }
+    // Paired signal lamps sit on the header, not on the moving door.
+    frame.fillStyle(0xff6c67, 1); frame.fillCircle(-17, -99, 3);
+    frame.fillStyle(0xf4b860, 1); frame.fillCircle(0, -99, 3);
+    frame.fillStyle(0x72d8bb, 1); frame.fillCircle(17, -99, 3);
+    gate.add(frame);
+
+    const shutter = this.add.container(0, 0);
+    const panel = this.add.graphics();
+    panel.fillStyle(0x120e19, 1); panel.fillRect(-36, -88, 72, 176);
+    panel.fillStyle(0x40334e, 1); panel.fillRect(-33, -85, 66, 170);
+    panel.lineStyle(1, 0x9b7ca9, 1); panel.strokeRect(-33, -85, 66, 170);
+    // Repeated horizontal slats give the shutter a mechanical, readable silhouette.
+    for (let y = -78; y <= 74; y += 12) {
+      panel.fillStyle(0x21192d, 1); panel.fillRect(-30, y, 60, 8);
+      panel.fillStyle(0x77618b, 1); panel.fillRect(-30, y, 60, 2);
+      panel.fillStyle(0x0a0911, 1); panel.fillRect(-30, y + 8, 60, 2);
+      panel.fillStyle(0xf4b860, 0.9); panel.fillRect(-29, y + 4, 5, 2);
+      panel.fillStyle(0xff6c67, 0.8); panel.fillRect(24, y + 3, 4, 3);
+    }
+    panel.fillStyle(0x08070d, 1); panel.fillRect(-12, -87, 24, 174);
+    panel.fillStyle(0x5a466a, 1); panel.fillRect(-8, -83, 16, 166);
+    panel.fillStyle(0x120e19, 1); panel.fillRect(-5, -79, 10, 158);
+    for (let y = -70; y <= 64; y += 22) {
+      panel.fillStyle(0xf4b860, 1); panel.fillRect(-4, y, 8, 7);
+    }
+    shutter.add(panel);
+    gate.add(shutter);
+    this.gateShutters.push(shutter);
+
+    const status = this.add.circle(x, FLOOR - 198, 3, 0xff6c67, 1).setDepth(10);
+    this.tweens.add({ targets: status, alpha: { from: 0.3, to: 1 }, duration: 380, yoyo: true, repeat: -1 });
     return gate;
   }
 
@@ -455,7 +496,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     }
     const index = this.activeConsolePuzzle;
     this.consoleStates[index] = true;
-    this.tweens.add({ targets: this.routeGates[index], y: FLOOR - 280, duration: 650, ease: "Cubic.inOut" });
+    this.tweens.add({ targets: this.gateShutters[index], y: -190, duration: 820, ease: "Cubic.inOut" });
     this.activeConsolePuzzle = -1;
     this.consoleInputProgress = 0;
     const art = this.consoles[index].getAt(0) as Phaser.GameObjects.Graphics;
