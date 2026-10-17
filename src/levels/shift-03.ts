@@ -33,6 +33,9 @@ export class ShiftThreeScene extends Phaser.Scene {
   private drones: Phaser.GameObjects.Container[] = [];
   private startTime = 0;
   private failureCall?: Phaser.Time.TimerEvent;
+  private activeConsolePuzzle = -1;
+  private consoleInputProgress = 0;
+  private readonly consoleSequences: string[][] = [["A", "D", "A"], ["D", "A", "D"]];
 
   constructor() { super("ShiftThreeScene"); }
 
@@ -44,6 +47,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     this.conveyorArrows = []; this.conveyorRollers = []; this.scannerBeams = []; this.drones = [];
     this.startTime = this.time.now;
     this.failureCall = undefined;
+    this.activeConsolePuzzle = -1; this.consoleInputProgress = 0;
     this.cameras.main.setBackgroundColor("#0a0912");
     this.cameras.main.setBounds(0, 0, WORLD, H);
     this.drawArchiveBackdrop();
@@ -98,6 +102,10 @@ export class ShiftThreeScene extends Phaser.Scene {
     }
     if (this.dead) {
       if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.respawnAtCheckpoint();
+      return;
+    }
+    if (this.activeConsolePuzzle >= 0) {
+      this.updateConsolePuzzle();
       return;
     }
     const dt = Math.min(delta / 1000, 0.033);
@@ -308,9 +316,9 @@ export class ShiftThreeScene extends Phaser.Scene {
 
   private createArchiveFiles(): void {
     const specs = [
-      { x: 360, title: "FORM 08-B", clue: "FILE 08-B: ROUTE ALL DISPUTED SHADOWS TO ARCHIVE C." },
-      { x: 1015, title: "ROUTE SLIP", clue: "ROUTE SLIP: BELT A MUST RUN LEFT. RIGHTWARD FLOW IS A TRAP." },
-      { x: 1515, title: "TERMINATION", clue: "TERMINATION ORDER: THE LEGITIMATE DOOR REQUIRES SORTER B TO ROUTE LEFT." }
+      { x: 360, title: "FORM 08-B", clue: "FILE 08-B: ROUTE ALL DISPUTED SHADOWS TO ARCHIVE C. BELT A CALIBRATION: A → D → A." },
+      { x: 1015, title: "ROUTE SLIP", clue: "ROUTE SLIP: BELT A MUST RUN LEFT. RIGHTWARD FLOW IS A TRAP. ENTER THE CALIBRATION KEYS IN ORDER." },
+      { x: 1515, title: "TERMINATION", clue: "TERMINATION ORDER: SORTER B MUST ROUTE LEFT. CALIBRATION: D → A → D." }
     ];
     this.files = specs.map((spec, index) => {
       const art = this.add.container(spec.x, FLOOR - 33).setDepth(7);
@@ -381,17 +389,16 @@ export class ShiftThreeScene extends Phaser.Scene {
     }
     const consoleIndex = this.consoles.findIndex(c => Math.abs(c.x - px) < 72);
     if (consoleIndex >= 0) {
-      this.consoleStates[consoleIndex] = !this.consoleStates[consoleIndex];
-      const art = this.consoles[consoleIndex].getAt(0) as Phaser.GameObjects.Graphics;
-      art.clear();
-      art.fillStyle(0x15111f, 1); art.fillRoundedRect(-19, -36, 38, 40, 4);
-      art.lineStyle(2, this.consoleStates[consoleIndex] ? 0xf4b860 : 0x8b6ca1, 1); art.strokeRoundedRect(-19, -36, 38, 40, 4);
-      art.fillStyle(this.consoleStates[consoleIndex] ? 0x5b3c24 : 0x2c2038, 1); art.fillRoundedRect(-13, -29, 26, 19, 2);
-      art.fillStyle(this.consoleStates[consoleIndex] ? 0xf4b860 : 0x9c7be8, 1); art.fillCircle(0, -4, 4);
+      if (this.consoleStates[consoleIndex]) {
+        this.say(consoleIndex === 0 ? "BELT A IS ALREADY LOCKED TO LEFTWARD FLOW." : "SORTER B IS ALREADY LOCKED TO ARCHIVE C.");
+        return;
+      }
+      this.activeConsolePuzzle = consoleIndex;
+      this.consoleInputProgress = 0;
+      this.playerVx = 0;
       this.say(consoleIndex === 0
-        ? (this.consoleStates[0] ? "BELT A REVERSED. ROUTE NOW FLOWS LEFT." : "BELT A RESTORED TO DEFAULT FLOW. TERRIBLE DECISION.")
-        : (this.consoleStates[1] ? "SORTER B ROUTED LEFT. ARCHIVE C SELECTED." : "SORTER B ROUTED RIGHT. THE PAPERWORK IS LYING."));
-      this.updateObjective();
+        ? "CALIBRATION A // ENTER: A  →  D  →  A. WRONG KEY RESETS THE SEQUENCE."
+        : "CALIBRATION B // ENTER: D  →  A  →  D. WRONG KEY RESETS THE SEQUENCE.");
       return;
     }
     if (Math.abs(this.player.x - this.door.x) < 82) {
@@ -403,6 +410,40 @@ export class ShiftThreeScene extends Phaser.Scene {
       return;
     }
     this.say("CHECK THE CABINETS, READ THE CLUES, AND FIX BOTH ROUTING CONSOLES.");
+  }
+
+  private updateConsolePuzzle(): void {
+    const expected = this.consoleSequences[this.activeConsolePuzzle][this.consoleInputProgress];
+    const pressed = Phaser.Input.Keyboard.JustDown(this.keys.A) ? "A" :
+      Phaser.Input.Keyboard.JustDown(this.keys.D) ? "D" : null;
+    if (!pressed) return;
+    if (pressed !== expected) {
+      this.consoleInputProgress = 0;
+      this.say(this.activeConsolePuzzle === 0
+        ? "CALIBRATION REJECTED. SEQUENCE RESET: A  →  D  →  A."
+        : "CALIBRATION REJECTED. SEQUENCE RESET: D  →  A  →  D.");
+      return;
+    }
+    this.consoleInputProgress++;
+    if (this.consoleInputProgress < this.consoleSequences[this.activeConsolePuzzle].length) {
+      const remaining = this.consoleSequences[this.activeConsolePuzzle].slice(this.consoleInputProgress).join("  →  ");
+      this.say("KEY ACCEPTED. NEXT: " + remaining);
+      return;
+    }
+    const index = this.activeConsolePuzzle;
+    this.consoleStates[index] = true;
+    this.activeConsolePuzzle = -1;
+    this.consoleInputProgress = 0;
+    const art = this.consoles[index].getAt(0) as Phaser.GameObjects.Graphics;
+    art.clear();
+    art.fillStyle(0x15111f, 1); art.fillRect(-19, -36, 38, 40);
+    art.lineStyle(2, 0xf4b860, 1); art.strokeRect(-19, -36, 38, 40);
+    art.fillStyle(0x5b3c24, 1); art.fillRect(-13, -29, 26, 19);
+    art.fillStyle(0xf4b860, 1); art.fillRect(-9, -24, 18, 3); art.fillRect(-9, -18, 18, 3);
+    art.fillStyle(0xf4b860, 1); art.fillCircle(0, -4, 4);
+    this.cameras.main.flash(90, 244, 184, 96);
+    this.say(index === 0 ? "BELT A CALIBRATED. LEFTWARD FLOW LOCKED." : "SORTER B CALIBRATED. ARCHIVE C ROUTE LOCKED.");
+    this.updateObjective();
   }
 
   private updateObjective(): void {
