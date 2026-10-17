@@ -1,43 +1,104 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
   <defs>
-    <radialGradient id="moonGlow"><stop offset="0" stop-color="#f5a04b" stop-opacity=".32"/><stop offset=".5" stop-color="#8e4e9f" stop-opacity=".18"/><stop offset="1" stop-color="#8e4e9f" stop-opacity="0"/></radialGradient>
-    <linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#382344"/><stop offset="1" stop-color="#171020"/></linearGradient>
-      <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#382344"/><stop offset=".35" stop-color="#21152d"/><stop offset="1" stop-color="#100c19"/></linearGradient>
-    <linearGradient id="moss" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#8b5a43"/><stop offset=".45" stop-color="#c18b55"/><stop offset="1" stop-color="#5d405f"/></linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#100d1a"/>
+      <stop offset=".58" stop-color="#21162d"/>
+      <stop offset="1" stop-color="#39213d"/>
+    </linearGradient>
+    <linearGradient id="mountain" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#35213e"/><stop offset="1" stop-color="#191321"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#17121f"/><stop offset=".5" stop-color="#302039"/><stop offset="1" stop-color="#130f1b"/>
+    </linearGradient>
+    <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#382344"/><stop offset=".35" stop-color="#21152d"/><stop offset="1" stop-color="#100c19"/>
+    </linearGradient>
+    <linearGradient id="moss" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#8b5a43"/><stop offset=".45" stop-color="#c18b55"/><stop offset="1" stop-color="#5d405f"/>
+    </linearGradient>
+    <radialGradient id="moonlight">
+      <stop stop-color="#f3b66b" stop-opacity=".2"/><stop offset=".42" stop-color="#b77886" stop-opacity=".09"/><stop offset="1" stop-color="#9b668d" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="brick" width="34" height="22" patternUnits="userSpaceOnUse">
+      <path d="M0 0H34M0 11H34M17 0V11M7 11V22" fill="none" stroke="#7b5a79" stroke-width="1" opacity=".18"/>
+    </pattern>
     <pattern id="soilTexture" width="48" height="24" patternUnits="userSpaceOnUse">
       <path d="M4 7h9m11 9h5m10-11h4M15 21h7" stroke="#8b5a82" stroke-width="1" opacity=".5"/>
       <circle cx="35" cy="17" r="1.5" fill="#c18b55" opacity=".6"/>
       <path d="M2 20l4-3m26-8l3-2" stroke="#4d3458" stroke-width="2"/>
     </pattern>
-</defs>
-  <!-- Background illustration only; the gameplay ground is drawn separately. -->
-  <rect width="960" height="600" fill="#171020"/>
-  <circle cx="780" cy="125" r="104" fill="url(#moonGlow)"/>
-  <circle cx="780" cy="125" r="54" fill="#6e5a7c" opacity=".23"/>
-  <circle cx="780" cy="125" r="41" fill="#a091ad" opacity=".28"/>
-  <g fill="#f5bd70">
-    <rect x="66" y="99" width="2" height="2" opacity=".42"/><rect x="130" y="172" width="2" height="2" opacity=".3"/>
-    <rect x="217" y="122" width="2" height="2" opacity=".48"/><rect x="300" y="190" width="2" height="2" opacity=".25"/>
-    <rect x="368" y="107" width="2" height="2" opacity=".46"/><rect x="433" y="162" width="2" height="2" opacity=".35"/>
-    <rect x="520" y="92" width="2" height="2" opacity=".45"/><rect x="581" y="203" width="2" height="2" opacity=".28"/>
-    <rect x="676" y="161" width="2" height="2" opacity=".38"/><rect x="868" y="197" width="2" height="2" opacity=".3"/>
-    <rect x="911" y="110" width="2" height="2" opacity=".4"/><rect x="742" y="239" width="2" height="2" opacity=".36"/>
-    <rect x="183" y="246" width="2" height="2" opacity=".3"/><rect x="464" y="236" width="2" height="2" opacity=".38"/>
-    <rect x="338" y="282" width="2" height="2" opacity=".22"/><rect x="614" y="274" width="2" height="2" opacity=".3"/>
+  </defs>
+
+  <!-- A hand-composed haunted district: sky, distant roofs, ruined masonry, and forest layers. -->
+  <rect width="960" height="600" fill="url(#sky)"/>
+  <circle cx="760" cy="118" r="150" fill="url(#moonlight)"/>
+  <circle cx="760" cy="118" r="43" fill="#d6b58e" opacity=".12"/>
+  <circle cx="760" cy="118" r="32" fill="#e3c6a0" opacity=".48"/>
+  <path d="M746 91l-5 18 9 7-4 17 12 13 7-18-4-12 7-11-10-15z" fill="#6e5c70" opacity=".34"/>
+
+  <!-- Fine, deliberately sparse stars and distant birds. -->
+  <g fill="#edc18b" opacity=".65">
+    <circle cx="74" cy="91" r="1.5"/><circle cx="143" cy="153" r="1"/><circle cx="211" cy="76" r="1.4"/>
+    <circle cx="298" cy="126" r="1"/><circle cx="354" cy="65" r="1.2"/><circle cx="440" cy="147" r="1"/>
+    <circle cx="531" cy="86" r="1.5"/><circle cx="609" cy="174" r="1"/><circle cx="869" cy="82" r="1.2"/>
+    <circle cx="915" cy="174" r="1"/><circle cx="678" cy="58" r="1"/>
   </g>
-  <path d="M0 385L88 309L151 344L265 231L351 326L404 365L510 255L615 345L700 316L806 230L895 326L960 369L960 397L0 397Z" fill="url(#ridge)"/>
-  <path d="M0 385L88 309L151 344L265 231L351 326L404 365L510 255L615 345L700 316L806 230L895 326L960 369" fill="none" stroke="#5b3864" stroke-width="2" opacity=".65"/>
-  <g fill="none" stroke="#100c19" stroke-linecap="square" stroke-linejoin="miter">
-    <path d="M44 397L46 314M45 365L26 338M45 348L62 322M46 337L37 319M46 330L57 310" stroke-width="5"/>
-    <path d="M258 397L260 319M259 365L239 338M259 349L278 322M260 337L251 319M260 331L271 311" stroke-width="5"/>
-    <path d="M620 397L622 315M621 365L601 337M621 348L641 320M622 337L613 318M622 330L634 309" stroke-width="5"/>
-    <path d="M925 397L927 314M926 365L907 338M926 348L945 321M927 337L918 319M927 330L939 309" stroke-width="5"/>
+  <path d="M175 111q7-6 13 0q6-6 13 0M225 137q5-4 10 0q5-4 10 0" fill="none" stroke="#100d1a" stroke-width="2" opacity=".7"/>
+
+  <!-- Broken skyline: tiny roofs and a distant clock-house give the horizon a place. -->
+  <path d="M0 375L0 344 33 344 33 319 49 319 49 344 70 344 70 330 89 330 89 375Z" fill="#191321"/>
+  <path d="M90 380L90 348 117 348 117 327 131 327 131 348 155 348 155 312 174 293 193 312 193 379Z" fill="#20152a"/>
+  <path d="M160 379V312L174 293L188 312V379" fill="none" stroke="#654364" stroke-width="1.5" opacity=".45"/>
+  <path d="M174 293V277M168 282H180" stroke="#8b5a82" stroke-width="2" opacity=".55"/>
+  <path d="M222 380V350L242 333L262 350V380M262 380V338L282 321L302 338V380" fill="#1c1427"/>
+  <path d="M315 380V345L341 319L367 345V380M329 380V354H353V380" fill="#21162c"/>
+  <path d="M390 380V352L415 330L440 352V380M449 380V360L465 346L481 360V380" fill="#191321"/>
+  <path d="M501 380V348L521 329L541 348V380M554 380V360L576 341L598 360V380" fill="#21162c"/>
+  <path d="M617 380V348L643 325L669 348V380M680 380V359L699 342L718 359V380" fill="#1b1426"/>
+  <path d="M729 380V339L751 315L773 339V380M786 380V352L807 330L828 352V380" fill="#21162c"/>
+  <path d="M842 380V344L861 323L880 344V380M889 380V352L911 332L933 352V380H960V380Z" fill="#191321"/>
+  <g fill="#d68c58" opacity=".7">
+    <rect x="109" y="358" width="4" height="8"/><rect x="179" y="335" width="4" height="8"/>
+    <rect x="337" y="355" width="4" height="8"/><rect x="425" y="357" width="4" height="8"/>
+    <rect x="648" y="355" width="4" height="8"/><rect x="757" y="350" width="4" height="8"/>
+    <rect x="868" y="357" width="4" height="8"/>
   </g>
-  <!-- Foreground ground: a clearly visible, layered haunted-forest soil bank. -->
+
+  <!-- Layered ridge, with broken peaks instead of a smooth gradient-only backdrop. -->
+  <path d="M0 390L63 349L108 365L181 300L231 347L277 326L337 369L398 332L450 357L518 285L583 345L633 329L693 365L754 309L803 344L855 295L909 350L960 328V414H0Z" fill="url(#mountain)"/>
+  <path d="M0 390L63 349L108 365L181 300L231 347L277 326L337 369L398 332L450 357L518 285L583 345L633 329L693 365L754 309L803 344L855 295L909 350L960 328" fill="none" stroke="#70466f" stroke-width="2" opacity=".62"/>
+  <path d="M181 300l-18 29 18-10 17 16M518 285l-22 34 21-11 19 24M855 295l-16 25 16-8 16 17" fill="none" stroke="#9a668a" stroke-width="2" opacity=".35"/>
+
+  <!-- Ruined side pillars frame the playable area without obscuring it. -->
+  <g>
+    <path d="M0 255H34L42 271V500H0Z" fill="url(#stone)"/>
+    <path d="M0 255H34L42 271H0Z" fill="#48304d"/>
+    <path d="M0 278H42M0 294H42M0 310H42M0 326H42M0 342H42M0 358H42M0 374H42M0 390H42M0 406H42M0 422H42M0 438H42M0 454H42M0 470H42" stroke="#765374" stroke-width="1" opacity=".24"/>
+    <path d="M960 275H924L916 292V500H960Z" fill="url(#stone)"/>
+    <path d="M960 275H924L916 292H960Z" fill="#48304d"/>
+    <path d="M918 307H960M918 324H960M918 341H960M918 358H960M918 375H960M918 392H960M918 409H960M918 426H960M918 443H960M918 460H960M918 477H960" stroke="#765374" stroke-width="1" opacity=".24"/>
+    <path d="M5 258H31M929 278H955" stroke="#bd875e" stroke-width="2" opacity=".62"/>
+  </g>
+
+  <!-- Foreground tree silhouettes create depth and a recognizable silhouette language. -->
+  <g fill="#100c19">
+    <path d="M50 500L54 435L36 449L48 421L29 431L49 404L37 405L55 376L72 406L61 404L80 431L61 421L74 449L58 437L62 500Z"/>
+    <path d="M256 500L260 445L245 456L256 431L241 438L260 411L250 412L263 389L278 414L269 412L284 438L269 431L280 455L265 445L268 500Z"/>
+    <path d="M623 500L628 441L610 455L623 427L606 436L628 405L616 407L632 379L650 408L638 406L655 435L638 427L651 454L633 441L637 500Z"/>
+    <path d="M907 500L912 438L894 452L908 425L890 433L912 402L900 404L917 375L935 405L923 403L941 432L923 424L936 451L918 438L922 500Z"/>
+  </g>
+  <g fill="none" stroke="#6b4569" stroke-width="2" opacity=".4">
+    <path d="M55 500L56 431M261 500L262 441M629 500L631 438M913 500L917 434"/>
+  </g>
+
+  <!-- Ground remains aligned with the game's y=500 floor. -->
   <path d="M0 500H960V600H0Z" fill="url(#soil)"/>
-  <path d="M0 500H960" stroke="url(#moss)" stroke-width="4"/>
-  <path d="M0 505H960" stroke="#6c456f" stroke-width="4"/>\n  <path d="M0 500H960" stroke="#f5bd70" stroke-width="1" opacity=".65"/>
+  <path d="M0 500H960" stroke="url(#moss)" stroke-width="5"/>
+  <path d="M0 506H960" stroke="#6c456f" stroke-width="3"/>
+  <path d="M0 500H960" stroke="#f5bd70" stroke-width="1" opacity=".65"/>
   <path d="M0 510H960V600H0Z" fill="url(#soilTexture)" opacity=".95"/>
+  <path d="M0 526L74 520L108 532L182 524L239 534L311 521L385 530L449 523L526 535L606 522L681 531L758 521L829 532L900 522L960 528" fill="none" stroke="#5b3b64" stroke-width="2" opacity=".65"/>
   <g fill="none" stroke-linecap="round">
     <path d="M32 504l-8 14 13 8-5 16m114-37l8 11-10 13 4 18m112-43l-9 15 12 9-6 17m122-39l7 12-13 12 5 15m120-39l-8 14 10 9-3 16m125-38l9 13-12 11 6 15m115-39l-7 12 11 11-4 16m109-38l-10 15 12 8-3 17" stroke="#100c19" stroke-width="4" opacity=".9"/>
     <path d="M70 506l-5 8m173-8l-5 8m193-8l-5 8m183-8l-5 8m185-8l-5 8m130-8l-5 8" stroke="#b7a06a" stroke-width="2" opacity=".85"/>
