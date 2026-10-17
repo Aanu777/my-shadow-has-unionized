@@ -17,6 +17,8 @@ class GameScene extends Phaser.Scene {
   private playerVx = 0;
   private playerVy = 0;
   private grounded = false;
+  private jumpBuffer = 0;
+  private coyoteTime = 0;
   private platforms: Platform[] = [];
   private lanternX = 260;
   private lanternMin = 190;
@@ -35,8 +37,11 @@ class GameScene extends Phaser.Scene {
   private demandSatisfied = false;
   private switchOn = false;
   private won = false;
+  private transitioning = false;
+  private level = 1;
   private eWasDown = false;
   private rWasDown = false;
+  private enterWasDown = false;
   private messageUntil = 0;
   private message = "THE SHADOW IS ON A BREAK. AGAIN.";
   private floorY = 500;
@@ -45,8 +50,11 @@ class GameScene extends Phaser.Scene {
   preload(): void { preloadShift01Background(this); }
 
   create(): void {
-    this.cameras.main.setBackgroundColor("#17131f");
+    this.level = Number(this.registry.get("shiftLevel") ?? 1);
+    this.lanternX = this.level === 1 ? 260 : 350;
+    this.cameras.main.setBackgroundColor(this.level === 1 ? "#17131f" : "#101c22");
     drawShift01Background(this);
+    if (this.level === 2) this.drawLevelTwoBackdrop();
     this.createAtmosphere();
 
     // Only the solid ground remains. All floating platforms are removed.
@@ -67,14 +75,14 @@ class GameScene extends Phaser.Scene {
       backgroundColor: "#21182f", padding: { x: 5, y: 3 }
     }).setOrigin(0.5);
 
-    this.coffee = this.makeCoffee(342, 467);
+    this.coffee = this.makeCoffee(this.level === 1 ? 342 : 475, 467, this.level === 1 ? "COFFEE" : "FUSE");
     this.switchObject = this.makeSwitch(670, 470);
     this.gate = this.makeGate(865, 425);
 
-    this.statusText = this.add.text(28, 24, "PROBATION  //  SHIFT 01", {
+    this.statusText = this.add.text(28, 24, this.level === 1 ? "PROBATION  //  SHIFT 01" : "NIGHT AUDIT  //  SHIFT 02", {
       fontFamily: "monospace", fontSize: "13px", color: "#f39a45", letterSpacing: 2
     }).setScrollFactor(0);
-    this.demandText = this.add.text(28, 48, "UNION DEMAND: ONE (1) COFFEE BREAK", {
+    this.demandText = this.add.text(28, 48, this.level === 1 ? "UNION DEMAND: ONE (1) COFFEE BREAK" : "OBJECTIVE: RECOVER THE FUSE", {
       fontFamily: "monospace", fontSize: "12px", color: "#d8cfe6"
     }).setScrollFactor(0);
     this.dialogueText = this.add.text(W / 2, 550, this.message, {
@@ -84,7 +92,7 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(8);
 
     this.add.text(W - 26, 24,
-      "MOVE  A/D OR ←/→\nJUMP  SPACE / W / ↑\nINTERACT  E   •   RESTART  R", {
+      "MOVE  A/D OR ←/→\nJUMP  SPACE / W / ↑\nINTERACT  E   •   ENTER  EXIT\nRESTART  R", {
       fontFamily: "monospace", fontSize: "11px", color: "#d8cfe6",
       backgroundColor: "#21182f", padding: { x: 10, y: 8 },
       lineSpacing: 5, align: "right"
@@ -92,7 +100,7 @@ class GameScene extends Phaser.Scene {
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
-      this.keys = this.input.keyboard.addKeys("A,D,W,E,R") as Record<string, Phaser.Input.Keyboard.Key>;
+      this.keys = this.input.keyboard.addKeys("A,D,W,E,R,ENTER") as Record<string, Phaser.Input.Keyboard.Key>;
     }
     this.physicslessHint();
     this.refreshShadow();
@@ -100,7 +108,9 @@ class GameScene extends Phaser.Scene {
 
   private physicslessHint(): void {
     this.add.text(28, 78,
-      "GOAL: GIVE THE SHADOW COFFEE → ACTIVATE THE SWITCH → REACH THE EXIT.\nSTAND NEAR THE LANTERN AND PRESS E TO MOVE IT.", {
+      this.level === 1
+        ? "GOAL: GET COFFEE → ALIGN LANTERN RIGHT → ACTIVATE SWITCH.\nAT EXIT, PRESS ENTER TO LOAD SHIFT 02."
+        : "GOAL: RECOVER FUSE → ALIGN LANTERN LEFT → ACTIVATE SWITCH.\nAT EXIT, PRESS ENTER TO FINISH SHIFT 02.", {
       fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff",
       backgroundColor: "#21182f", padding: { x: 8, y: 6 },
       lineSpacing: 4, wordWrap: { width: 440 }
@@ -108,8 +118,9 @@ class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    if (this.transitioning) return;
     if (this.won) {
-      if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.scene.restart();
+      if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.restartFromShiftOne();
       return;
     }
     const dt = Math.min(delta / 1000, 0.033);
@@ -119,7 +130,7 @@ class GameScene extends Phaser.Scene {
       || Phaser.Input.Keyboard.JustDown(this.cursors.space)
       || Phaser.Input.Keyboard.JustDown(this.keys.W);
 
-    const targetVx = left === right ? 0 : left ? -210 : 210;
+    const targetVx = left === right ? 0 : left ? -230 : 230;
     // Ease into movement and settle naturally instead of snapping between full speed and stillness.
     const acceleration = targetVx === 0 ? 13 : 18;
     this.playerVx = Phaser.Math.Linear(
@@ -127,8 +138,14 @@ class GameScene extends Phaser.Scene {
       targetVx,
       Math.min(1, dt * acceleration)
     );
-    if (jumpPressed && this.grounded) { this.playerVy = -390; this.grounded = false; }
-    this.playerVy += 900 * dt;
+    if (jumpPressed) this.jumpBuffer = 0.14;
+    else this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
+    if (this.grounded) this.coyoteTime = 0.11;
+    else this.coyoteTime = Math.max(0, this.coyoteTime - dt);
+    if (this.jumpBuffer > 0 && (this.grounded || this.coyoteTime > 0)) {
+      this.playerVy = -455; this.grounded = false; this.coyoteTime = 0; this.jumpBuffer = 0;
+    }
+    this.playerVy += 1050 * dt;
 
     const oldX = this.player.x;
     const oldY = this.player.y;
@@ -155,11 +172,14 @@ class GameScene extends Phaser.Scene {
 
     this.player.setPosition(nextX, nextY);
     this.player.setScale(this.playerVx < 0 ? -1 : 1, 1);
-    const moving = this.grounded && Math.abs(this.playerVx) > 0;
+    const moving = this.grounded && Math.abs(this.playerVx) > 8;
     const walkCycle = this.time.now * 0.016;
-    const bob = moving ? Math.abs(Math.sin(walkCycle)) * 2.5 : Math.sin(this.time.now * 0.003) * 0.7;
-    this.player.setY(nextY - bob);
-    this.player.setAngle(moving ? Math.sin(walkCycle) * 2.2 : Math.sin(this.time.now * 0.0025) * 0.6);
+    const bob = moving ? Math.abs(Math.sin(walkCycle)) * 2.2 : Math.sin(this.time.now * 0.003) * 0.45;
+    this.playerArt.setY(bob);
+    this.playerArt.setAngle(moving ? Math.sin(walkCycle) * 2.2 : Math.sin(this.time.now * 0.0025) * 0.4);
+    const faceArt = this.player.getAt(2) as Phaser.GameObjects.Graphics;
+    faceArt.setY(bob);
+    faceArt.setAngle(moving ? Math.sin(walkCycle) * 2.2 : Math.sin(this.time.now * 0.0025) * 0.4);
     this.playerArt.setScale(
       moving ? 1 + Math.sin(walkCycle) * 0.035 : 1,
       moving ? 1 - Math.sin(walkCycle) * 0.045 : 1 + Math.sin(this.time.now * 0.003) * 0.012
@@ -169,8 +189,11 @@ class GameScene extends Phaser.Scene {
     if (eDown && !this.eWasDown) this.interact();
     this.eWasDown = eDown;
     const rDown = this.keys.R.isDown;
-    if (rDown && !this.rWasDown) this.scene.restart();
+    if (rDown && !this.rWasDown) this.restartFromShiftOne();
     this.rWasDown = rDown;
+    const enterDown = this.keys.ENTER.isDown;
+    if (enterDown && !this.enterWasDown && this.switchOn && this.isAtExit()) this.handleExitEnter();
+    this.enterWasDown = enterDown;
 
     this.refreshShadow();
     this.updateCoffee();
@@ -213,17 +236,17 @@ class GameScene extends Phaser.Scene {
     const g = this.add.graphics().setDepth(2);
     for (const p of this.platforms) {
       const ground = p.y >= 450;
-      g.fillStyle(ground ? 0x382846 : 0x352747, 1);
+      g.fillStyle(this.level === 2 ? 0x202f35 : 0x30233f, 1);
       g.fillRect(p.x, p.y, p.w, p.h);
-      g.fillStyle(ground ? 0x71549a : 0x8060ac, 1);
+      g.fillStyle(this.level === 2 ? 0x79a38c : 0x9b7950, 1);
       g.fillRect(p.x, p.y, p.w, 4);
       if (ground) {
         for (let x = p.x + 5; x < p.x + p.w - 3; x += 8) {
           const n = (Math.floor(x * 13) % 5);
-          g.lineStyle(1, n % 2 === 0 ? 0x68734d : 0x8b8759, 0.82);
+          g.lineStyle(1, this.level === 2 ? 0x79a38c : (n % 2 === 0 ? 0x8b7954 : 0xb5a16a), 0.82);
           g.lineBetween(x, p.y, x - 1, p.y - 3 - n);
         }
-        g.lineStyle(1, 0x4a355d, 0.85);
+        g.lineStyle(1, this.level === 2 ? 0x35544d : 0x5c456b, 0.9);
         for (let x = p.x + 12; x < p.x + p.w - 4; x += 27) {
           g.lineBetween(x, p.y + 11, x, Math.min(p.y + 39, p.y + p.h - 2));
         }
@@ -289,7 +312,7 @@ class GameScene extends Phaser.Scene {
     c.add(g); c.setDepth(4); return c;
   }
 
-  private makeCoffee(x: number, y: number): Phaser.GameObjects.Container {
+  private makeCoffee(x: number, y: number, label = "COFFEE"): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
     const g = this.add.graphics();
     g.fillStyle(0xeee1d0, 1); g.fillRoundedRect(-9, -11, 18, 17, 3);
@@ -297,7 +320,7 @@ class GameScene extends Phaser.Scene {
     g.fillStyle(0x6d3d29, 1); g.fillRect(-6, -8, 12, 3);
     g.lineStyle(2, 0xf0e8d8, 0.6); g.lineBetween(-4, -16, -6, -21); g.lineBetween(3, -16, 1, -22);
     c.add(g); c.setDepth(5);
-    this.add.text(x, y + 15, "COFFEE", { fontFamily: "monospace", fontSize: "9px", color: "#f0e8d8" }).setOrigin(0.5);
+    this.add.text(x, y + 15, label, { fontFamily: "monospace", fontSize: "9px", color: "#f0e8d8" }).setOrigin(0.5);
     return c;
   }
 
@@ -318,14 +341,17 @@ class GameScene extends Phaser.Scene {
   private makeGate(x: number, y: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
     const g = this.add.graphics();
-    g.fillStyle(0x352747, 1); g.fillRoundedRect(-30, -58, 60, 116, 5);
-    g.lineStyle(4, 0x7055a5, 1); g.strokeRoundedRect(-24, -52, 48, 108, 4);
-    g.fillStyle(0x17131f, 1); g.fillRect(-16, -42, 32, 96);
-    g.lineStyle(2, 0x8060ac, 0.8);
-    g.lineBetween(-10, -36, -10, 42); g.lineBetween(10, -36, 10, 42);
-    g.fillStyle(0xf39a45, 0.8); g.fillCircle(0, -7, 6);
+    const frame = this.level === 2 ? 0x79a38c : 0x7055a5;
+    const glow = this.level === 2 ? 0x9ce2c4 : 0xf39a45;
+    g.fillStyle(0x15141e, 1); g.fillRoundedRect(-34, -61, 68, 122, 8);
+    g.fillStyle(this.level === 2 ? 0x233c3c : 0x352747, 1); g.fillRoundedRect(-29, -56, 58, 112, 6);
+    g.lineStyle(5, frame, 1); g.strokeRoundedRect(-25, -52, 50, 106, 6);
+    g.lineStyle(1, glow, 0.55); g.strokeRoundedRect(-18, -45, 36, 92, 4);
+    g.fillStyle(0x101019, 1); g.fillRoundedRect(-15, -41, 30, 88, 4);
+    g.lineStyle(2, frame, 0.9); g.lineBetween(-9, -34, -9, 38); g.lineBetween(9, -34, 9, 38);
+    g.fillStyle(glow, 0.9); g.fillCircle(0, -7, 7);
     c.add(g);
-    this.add.text(x, y + 67, "EXIT", { fontFamily: "monospace", fontSize: "10px", color: "#f39a45" }).setOrigin(0.5);
+    this.add.text(x, y + 67, this.level === 2 ? "EXIT 02" : "EXIT 01", { fontFamily: "monospace", fontSize: "10px", color: this.level === 2 ? "#9ce2c4" : "#f39a45" }).setOrigin(0.5);
     return c;
   }
 
@@ -352,7 +378,7 @@ class GameScene extends Phaser.Scene {
 
     // The lantern's position determines where the shadow appears; this dotted route
     // then leads toward the switch so the player can read the puzzle at a glance.
-    const routeColor = this.demandSatisfied ? 0xf39a45 : 0x7055a5;
+    const routeColor = this.level === 2 ? (this.demandSatisfied ? 0x9ce2c4 : 0x4e8d83) : (this.demandSatisfied ? 0xf39a45 : 0x7055a5);
     const routeAlpha = this.demandSatisfied ? 0.95 : 0.55;
     route.lineStyle(1, routeColor, routeAlpha * 0.45);
     route.lineBetween(this.lanternX, 456, projectedX, 480);
@@ -385,8 +411,9 @@ class GameScene extends Phaser.Scene {
     const px = this.player.x;
     if (!this.hasCoffee && Phaser.Math.Distance.Between(px, this.player.y, this.coffee.x, this.coffee.y) < 55) {
       this.hasCoffee = true; this.coffee.setVisible(false); this.demandSatisfied = true;
-      this.demandText.setText("UNION DEMAND: COFFEE BREAK APPROVED ✓");
-      this.say("SHADOW: 'Acceptable. I will consider doing my job.'"); this.refreshShadow(); return;
+      this.demandText.setText(this.level === 1 ? "UNION DEMAND: COFFEE BREAK APPROVED ✓" : "FUSE RECOVERED ✓  //  ALIGN LANTERN LEFT");
+      this.say(this.level === 1 ? "SHADOW: 'Acceptable. I will consider doing my job.'" : "FUSE SECURED. THE LANTERN MUST BE MOVED LEFT.");
+      this.refreshShadow(); return;
     }
     if (Phaser.Math.Distance.Between(px, this.player.y, this.lanternX, 438) < 72) {
       const direction = px < this.lanternX ? 1 : -1;
@@ -395,24 +422,26 @@ class GameScene extends Phaser.Scene {
     }
     if (Phaser.Math.Distance.Between(px, this.player.y, this.switchObject.x, this.switchObject.y) < 65) {
       if (!this.demandSatisfied) {
-        this.say("THE SWITCH IS LOCKED. SETTLE THE SHADOW'S COFFEE DEMAND FIRST.");
+        this.say(this.level === 1 ? "GET THE SHADOW ITS COFFEE FIRST." : "RECOVER THE FUSE FIRST.");
+        return;
+      }
+      const aligned = this.level === 1 ? this.lanternX >= 350 : this.lanternX <= 245;
+      if (!aligned) {
+        this.say(this.level === 1 ? "LANTERN MISALIGNED. MOVE IT RIGHT." : "LANTERN MISALIGNED. MOVE IT LEFT INTO THE GREEN ZONE.");
         return;
       }
       if (!this.switchOn) {
         this.switchOn = true;
         const switchArt = this.switchObject.getAt(0) as Phaser.GameObjects.Graphics;
         switchArt.clear();
+        const color = this.level === 2 ? 0x9ce2c4 : 0xf39a45;
         switchArt.fillStyle(0x21182f, 1); switchArt.fillRoundedRect(-17, -20, 34, 29, 4);
-        switchArt.lineStyle(2, 0xf39a45, 1); switchArt.strokeRoundedRect(-17, -20, 34, 29, 4);
-        switchArt.fillStyle(0xf39a45, 1); switchArt.fillCircle(0, -6, 8);
+        switchArt.lineStyle(2, color, 1); switchArt.strokeRoundedRect(-17, -20, 34, 29, 4);
+        switchArt.fillStyle(color, 1); switchArt.fillCircle(0, -6, 8);
         switchArt.fillStyle(0xffdf91, 1); switchArt.fillCircle(0, -6, 3);
-        switchArt.lineStyle(2, 0xf39a45, 0.9); switchArt.lineBetween(-8, -25, 8, -25);
-        this.switchObject.setAlpha(1);
-        this.say("SWITCH ONLINE. THE EXIT IS UNLOCKED.");
+        this.say(this.level === 1 ? "SWITCH ONLINE. REACH EXIT 01 AND PRESS ENTER." : "CIRCUIT RESTORED. REACH EXIT 02.");
         this.updateGate();
-      } else {
-        this.say("SWITCH IS ALREADY ONLINE. GET TO THE EXIT.");
-      }
+      } else this.say("SWITCH IS ALREADY ONLINE. REACH THE EXIT.");
       return;
     }
     if (Phaser.Math.Distance.Between(px, this.player.y, this.shadow.x, this.shadow.y) < 70 && !this.demandSatisfied) {
@@ -423,34 +452,55 @@ class GameScene extends Phaser.Scene {
 
   private updateGate(): void {
     if (this.switchOn) {
-      this.gate.setAlpha(1);
-      const gateArt = this.gate.getAt(0) as Phaser.GameObjects.Graphics;
-      gateArt.clear();
-      gateArt.fillStyle(0x352747, 0.48); gateArt.fillRoundedRect(-30, -58, 60, 116, 5);
-      gateArt.lineStyle(4, 0xf39a45, 1); gateArt.strokeRoundedRect(-24, -52, 48, 108, 4);
-      gateArt.fillStyle(0x17131f, 0.35); gateArt.fillRect(-16, -42, 32, 96);
-      gateArt.lineStyle(2, 0xf39a45, 0.8);
-      gateArt.lineBetween(-10, -36, -10, 42); gateArt.lineBetween(10, -36, 10, 42);
-      gateArt.fillStyle(0xffdf91, 1); gateArt.fillCircle(0, -7, 7);
+      const art = this.gate.getAt(0) as Phaser.GameObjects.Graphics;
+      const frame = this.level === 2 ? 0x79a38c : 0xf39a45;
+      const glow = this.level === 2 ? 0x9ce2c4 : 0xffdf91;
+      art.clear();
+      art.fillStyle(this.level === 2 ? 0x233c3c : 0x352747, 0.55); art.fillRoundedRect(-29,-56,58,112,6);
+      art.lineStyle(5,frame,1); art.strokeRoundedRect(-25,-52,50,106,6);
+      art.lineStyle(2,glow,0.85); art.strokeRoundedRect(-17,-44,34,90,4);
+      art.fillStyle(0x101019,0.4); art.fillRoundedRect(-14,-40,28,86,4);
+      art.fillStyle(glow,1); art.fillCircle(0,-7,8);
     }
-    if (this.switchOn && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.gate.x, this.gate.y) < 78) {
-      this.won = true; this.showWin();
-    }
+    if (this.switchOn && this.isAtExit() && this.level === 2) { this.won = true; this.showWin(); }
   }
 
   private showWin(): void {
     this.add.rectangle(W / 2, H / 2, W, H, 0x100d16, 0.88).setDepth(20);
-    this.add.text(W / 2, 215, "COLLECTIVE ESCAPE!", {
+    this.add.text(W / 2, 215, "SHIFT 02 COMPLETE!", {
       fontFamily: "monospace", fontSize: "34px", color: "#f39a45", fontStyle: "bold", align: "center"
     }).setOrigin(0.5).setDepth(21);
     this.add.text(W / 2, 280,
       "The shadow has agreed to leave the forest.\nManagement has agreed to stop calling it 'the dark bit.'\n\nA historic victory for workplace relations.",
       { fontFamily: "monospace", fontSize: "15px", color: "#f0e8d8", align: "center", lineSpacing: 9 }
     ).setOrigin(0.5).setDepth(21);
-    this.add.text(W / 2, 385, "PRESS R TO RESTART YOUR SHIFT", {
+    this.add.text(W / 2, 385, "PRESS R TO RESTART FROM SHIFT 01", {
       fontFamily: "monospace", fontSize: "12px", color: "#c5a8ff"
     }).setOrigin(0.5).setDepth(21);
   }
+
+  private drawLevelTwoBackdrop(): void {
+    const g=this.add.graphics().setDepth(-10);
+    g.fillStyle(0x102027,0.92);g.fillRect(0,255,W,245);
+    g.fillStyle(0x1b3437,1);g.beginPath();g.moveTo(0,395);g.lineTo(95,320);g.lineTo(190,370);g.lineTo(315,285);g.lineTo(435,380);g.lineTo(560,305);g.lineTo(690,370);g.lineTo(815,275);g.lineTo(960,365);g.lineTo(960,500);g.lineTo(0,500);g.closePath();g.fillPath();
+    g.fillStyle(0x0b171d,0.8);
+    for(const [x,y,h] of [[38,325,100],[150,345,80],[270,318,112],[590,332,96],[735,310,120],[910,335,90]]){g.fillTriangle(x-28,y+h,x,y,x+28,y+h);g.fillRect(x-4,y+h-4,8,42);}
+    g.fillStyle(0x9ce2c4,0.15);g.fillCircle(760,130,92);g.fillStyle(0x9ce2c4,0.24);g.fillCircle(760,130,44);g.fillStyle(0xd7f3e6,0.45);g.fillCircle(760,130,30);
+    for(let i=0;i<22;i++){const x=(i*137+31)%W;const y=105+((i*53)%185);g.fillStyle(i%3===0?0x9ce2c4:0x78a6a0,0.32);g.fillCircle(x,y,i%4===0?2:1);}
+  }
+  private isAtExit(): boolean { return Phaser.Math.Distance.Between(this.player.x,this.player.y,this.gate.x,this.gate.y)<78; }
+  private handleExitEnter(): void { if(this.level===1){this.transitionToShiftTwo();return;}this.won=true;this.showWin(); }
+  private transitionToShiftTwo(): void {
+    if(this.transitioning)return;this.transitioning=true;
+    const overlay=this.add.rectangle(W/2,H/2,W,H,0x08070d,1).setDepth(30).setAlpha(0);
+    const panel=this.add.rectangle(W/2,H/2,390,142,0x17212a,0.98).setDepth(31).setAlpha(0);
+    const title=this.add.text(W/2,H/2-25,"SHIFT CHANGE",{fontFamily:"monospace",fontSize:"24px",color:"#9ce2c4",letterSpacing:3}).setOrigin(0.5).setDepth(32).setAlpha(0);
+    const sub=this.add.text(W/2,H/2+16,"RECONFIGURING TERRAIN  //  02",{fontFamily:"monospace",fontSize:"11px",color:"#d7f3e6",letterSpacing:1}).setOrigin(0.5).setDepth(32).setAlpha(0);
+    const bar=this.add.rectangle(W/2-150,H/2+48,0,4,0x9ce2c4).setOrigin(0,0.5).setDepth(32);
+    this.tweens.add({targets:[overlay,panel,title,sub],alpha:1,duration:260,ease:"Sine.out"});
+    this.tweens.add({targets:bar,width:300,duration:1050,delay:180,ease:"Cubic.inOut",onComplete:()=>{this.registry.set("shiftLevel",2);this.scene.restart();}});
+  }
+  private restartFromShiftOne(): void {this.registry.set("shiftLevel",1);this.scene.restart();}
 
   private say(text: string): void {
     this.message = text; this.dialogueText.setText(text); this.messageUntil = this.time.now + 2800;
