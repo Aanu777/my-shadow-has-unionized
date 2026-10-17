@@ -844,6 +844,31 @@ class GameScene extends Phaser.Scene {
         g.fillStyle(0x0b171d, 1); g.fillCircle(o.x + o.w / 2, o.y + 1, 10);
         g.lineStyle(2, 0x79a38c, 1); g.strokeCircle(o.x + o.w / 2, o.y + 1, 8);
         g.fillStyle(0x9ce2c4, 0.8); g.fillCircle(o.x + o.w / 2, o.y + 1, 3);
+        // Toxic steam pulses out of the vents, then thins into the foundry air.
+        const vapor = this.add.container(o.x + o.w / 2, o.y - 5).setDepth(4);
+        const steam = this.add.graphics();
+        steam.fillStyle(0x9ce2c4, 0.22); steam.fillEllipse(-7, -4, 15, 20);
+        steam.fillStyle(0xbfeedd, 0.3); steam.fillEllipse(5, -12, 12, 17);
+        steam.fillStyle(0x9ce2c4, 0.18); steam.fillEllipse(-1, -20, 17, 18);
+        vapor.add(steam);
+        this.tweens.add({
+          targets: vapor, y: o.y - 36, alpha: 0,
+          duration: 900 + i * 110, delay: i * 180, repeat: -1,
+          onRepeat: () => { vapor.setY(o.y - 5); vapor.setAlpha(0.9); },
+          ease: "Sine.out"
+        });
+      } else {
+        // A piston cycles in and out of the live pipe machinery.
+        const piston = this.add.container(o.x + o.w / 2, o.y + 18).setDepth(4);
+        const pistonArt = this.add.graphics();
+        pistonArt.fillStyle(0x0b171d, 1); pistonArt.fillRoundedRect(-7, -13, 14, 28, 3);
+        pistonArt.fillStyle(0x55766b, 1); pistonArt.fillRoundedRect(-4, -16, 8, 24, 2);
+        pistonArt.fillStyle(0x9ce2c4, 1); pistonArt.fillRect(-5, -17, 10, 3);
+        piston.add(pistonArt);
+        this.tweens.add({
+          targets: piston, y: o.y + 25, duration: 430 + i * 90,
+          yoyo: true, repeat: -1, ease: "Sine.inOut", delay: i * 120
+        });
       }
       this.add.text(o.x + o.w / 2, o.y - 14, i % 2 === 0 ? "LIVE PIPE" : "VENT / HOT", {
         fontFamily: "monospace", fontSize: "8px", color: "#9ce2c4",
