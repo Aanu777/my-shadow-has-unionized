@@ -289,9 +289,9 @@ function animate(): void {
   const delta = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
   for (const relay of relays) {
-    const symbol = relay.group.children[1];
+    const symbol = relay.group.children[3];
     if (symbol) symbol.rotation.y += delta * (relay.active ? 0.2 : 0.65);
-    const glow = relay.group.children[2];
+    const glow = relay.group.children[4];
     if (glow) glow.scale.setScalar(1 + Math.sin(t * 2.2 + relay.position.x) * 0.045);
   }
   if (started && !ended) {
@@ -319,7 +319,7 @@ function animate(): void {
       interaction.textContent = "EXPLORE THE FOUNDRY";
     }
     for (const relay of relays) {
-      const glow = relay.group.children[2] as THREE.Mesh | undefined;
+      const glow = relay.group.children[4] as THREE.Mesh | undefined;
       if (glow) {
         const material = glow.material as THREE.MeshStandardMaterial;
         material.emissiveIntensity = relay.active ? 2.8 : 0.6 + Math.max(0, Math.sin(t * 2 + relay.position.x)) * 0.5;
