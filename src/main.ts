@@ -271,44 +271,108 @@ class GameScene extends Phaser.Scene {
   private makePumpkin(x: number, y: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
     const groundShadow = this.add.graphics();
-    groundShadow.fillStyle(0x000000, 0.28);
-    groundShadow.fillEllipse(0, 18, 44, 10);
+    groundShadow.fillStyle(0x05040a, 0.42);
+    groundShadow.fillEllipse(0, 19, 48, 11);
+    groundShadow.fillStyle(0xf39a45, 0.12);
+    groundShadow.fillEllipse(0, 18, 35, 7);
     c.add(groundShadow);
+
+    // Layered, hand-drawn pumpkin body: dark silhouette, lobes, carved grooves and rim light.
     const g = this.add.graphics();
-    g.fillStyle(0xe8792f, 1);
-    g.fillEllipse(0, 0, 34, 31);
-    g.fillEllipse(-8, 0, 18, 29);
-    g.fillEllipse(8, 0, 18, 29);
-    g.fillStyle(0x7c9b52, 1);
-    g.fillRoundedRect(-3, -21, 6, 9, 2);
+    g.fillStyle(0x3b1721, 1);
+    g.fillEllipse(0, 0, 39, 35);
+    g.fillStyle(0xb94725, 1);
+    g.fillEllipse(-9, 1, 19, 31);
+    g.fillEllipse(9, 1, 19, 31);
+    g.fillStyle(0xf17a2e, 1);
+    g.fillEllipse(0, 0, 23, 32);
+    g.fillStyle(0xffa447, 0.92);
+    g.fillEllipse(-2, -3, 14, 24);
+    g.fillStyle(0xd95a26, 1);
+    g.fillEllipse(-15, 1, 7, 24);
+    g.fillEllipse(15, 1, 7, 24);
+    g.lineStyle(1.5, 0x8f351f, 0.9);
+    g.beginPath(); g.arc(-8, 0, 10, -1.18, 1.18, false); g.strokePath();
+    g.beginPath(); g.arc(8, 0, 10, Math.PI - 1.18, Math.PI + 1.18, false); g.strokePath();
+    g.lineStyle(1, 0xffbd67, 0.72);
+    g.lineBetween(-7, -12, -9, -5);
+    g.lineBetween(2, -13, 3, -6);
+    // Stem and a small leaf make the silhouette readable even at game scale.
+    g.fillStyle(0x493a22, 1); g.fillRoundedRect(-4, -22, 8, 11, 2);
+    g.fillStyle(0x759447, 1); g.fillRoundedRect(-2, -23, 4, 9, 1);
+    g.fillStyle(0x9bb85b, 1);
+    g.fillEllipse(7, -20, 13, 5);
+    g.lineStyle(1, 0x4e6c38, 1); g.lineBetween(2, -20, 12, -20);
     c.add(g);
+
     const face = this.add.graphics();
-    face.fillStyle(0x24172b, 1);
-    face.fillTriangle(-9, -5, -3, 1, -11, 1);
-    face.fillTriangle(9, -5, 3, 1, 11, 1);
-    face.fillTriangle(-6, 7, 6, 7, 0, 12);
+    // Warm, glowing carved eyes with dark sockets and sharp pumpkin-gold pupils.
+    face.fillStyle(0x401821, 1);
+    face.fillTriangle(-11, -7, -3, 1, -12, 2);
+    face.fillTriangle(11, -7, 3, 1, 12, 2);
+    face.fillStyle(0xffd36e, 1);
+    face.fillTriangle(-9, -5, -5, 0, -10, 0);
+    face.fillTriangle(9, -5, 5, 0, 10, 0);
+    face.fillStyle(0x401821, 1);
+    face.fillTriangle(-8, 5, -4, 7, -6, 10);
+    face.fillTriangle(-4, 7, 0, 5, 0, 10);
+    face.fillTriangle(0, 5, 4, 7, 0, 10);
+    face.fillTriangle(4, 7, 8, 5, 6, 10);
+    face.fillStyle(0xffd36e, 0.92);
+    face.fillTriangle(-7, 5, 7, 5, 0, 12);
+    face.fillStyle(0x7e291f, 1);
+    face.fillTriangle(-3, 6, 0, 10, 1, 6);
     c.add(face);
     return c;
   }
 
   private makeLantern(x: number, y: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
-    const glow = this.add.circle(0, -13, 40, 0xf39a45, 0.09);
+    const aura = this.add.circle(0, -15, 53, 0xf39a45, 0.055);
+    const glow = this.add.circle(0, -15, 34, 0xffa33f, 0.11);
     const g = this.add.graphics();
-    g.lineStyle(2, 0xf0c77c, 1); g.strokeRoundedRect(-11, -28, 22, 26, 4);
-    g.fillStyle(0xf39a45, 1); g.fillRoundedRect(-8, -25, 16, 20, 3);
-    g.fillStyle(0xffdf91, 1); g.fillTriangle(0, -23, -4, -11, 2, -8);
-    g.lineStyle(2, 0xf0c77c, 1);
-    g.beginPath(); g.arc(0, -28, 6, Math.PI, 0, false); g.strokePath();
-    c.add([glow, g]); c.setDepth(3); return c;
+    // Antique iron lantern with a glass chamber, brass rails and a living flame.
+    g.fillStyle(0x17131b, 0.92); g.fillRoundedRect(-15, -31, 30, 31, 5);
+    g.fillStyle(0x6b3a26, 1); g.fillRoundedRect(-12, -29, 24, 25, 4);
+    g.fillStyle(0x321f25, 1); g.fillRoundedRect(-9, -26, 18, 20, 3);
+    g.fillStyle(0xf39a45, 0.28); g.fillRoundedRect(-7, -24, 14, 17, 2);
+    g.fillStyle(0xffb84f, 0.28); g.fillEllipse(0, -15, 25, 27);
+    g.fillStyle(0xffd36e, 1);
+    g.fillTriangle(0, -25, -5, -13, -2, -7);
+    g.fillTriangle(0, -23, 5, -12, 1, -9);
+    g.fillStyle(0xfff0b2, 1); g.fillTriangle(0, -21, -2, -12, 2, -13);
+    g.lineStyle(2, 0xe0b86e, 1); g.strokeRoundedRect(-15, -31, 30, 31, 5);
+    g.lineStyle(1, 0x8d613c, 1);
+    g.lineBetween(-9, -27, -9, -5); g.lineBetween(9, -27, 9, -5);
+    g.lineBetween(0, -28, 0, -4);
+    g.fillStyle(0x3b2a2c, 1); g.fillRoundedRect(-16, -34, 32, 5, 2);
+    g.fillStyle(0xd8ad68, 1); g.fillRoundedRect(-12, -35, 24, 3, 1);
+    g.fillStyle(0x3b2a2c, 1); g.fillRoundedRect(-13, -3, 26, 6, 2);
+    g.fillStyle(0xd8ad68, 1); g.fillRoundedRect(-10, -2, 20, 2, 1);
+    g.lineStyle(2, 0xe0b86e, 1);
+    g.beginPath(); g.arc(0, -34, 9, Math.PI, 0, false); g.strokePath();
+    g.lineStyle(1, 0x9b7549, 1); g.beginPath(); g.arc(0, -34, 6, Math.PI, 0, false); g.strokePath();
+    g.fillStyle(0xe0b86e, 1); g.fillCircle(-13, -30, 2); g.fillCircle(13, -30, 2);
+    c.add([aura, glow, g]); c.setDepth(3); return c;
   }
 
   private makeShadow(x: number, y: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
     const g = this.add.graphics();
-    g.fillStyle(0x08070d, 0.92); g.fillEllipse(0, 0, 30, 36);
-    g.fillEllipse(-8, -1, 15, 31); g.fillEllipse(8, -1, 15, 31);
-    g.fillStyle(0x9c7be8, 1); g.fillCircle(-5, -5, 2); g.fillCircle(5, -5, 2);
+    g.fillStyle(0x05040b, 0.96);
+    g.fillEllipse(0, -3, 33, 35);
+    g.fillTriangle(-15, 2, -12, 22, -4, 9);
+    g.fillTriangle(-5, 8, 2, 25, 5, 7);
+    g.fillTriangle(5, 7, 13, 21, 15, 0);
+    g.fillStyle(0x191126, 1);
+    g.fillEllipse(0, -8, 23, 25);
+    g.fillStyle(0x9c7be8, 0.2);
+    g.fillEllipse(0, -7, 29, 31);
+    g.fillStyle(0xe0d0ff, 1);
+    g.fillTriangle(-9, -8, -3, -5, -10, -3);
+    g.fillTriangle(9, -8, 3, -5, 10, -3);
+    g.fillStyle(0x9c7be8, 0.8);
+    g.fillTriangle(-2, 2, 2, 2, 0, 7);
     c.add(g); c.setDepth(4); return c;
   }
 
@@ -370,12 +434,20 @@ class GameScene extends Phaser.Scene {
     this.shadow.setAlpha(this.demandSatisfied ? 1 : 0.78);
     this.shadow.setScale(1 + Math.sin(this.time.now * 0.003) * 0.035, 1 - Math.sin(this.time.now * 0.003) * 0.025);
     this.shadowArt.clear();
-    this.shadowArt.fillStyle(0x08070d, 0.92);
-    this.shadowArt.fillEllipse(0, 0, 30, 36);
-    this.shadowArt.fillEllipse(-8, -1, 15, 31);
-    this.shadowArt.fillEllipse(8, -1, 15, 31);
-    this.shadowArt.fillStyle(this.demandSatisfied ? 0xf39a45 : 0x9c7be8, 1);
-    this.shadowArt.fillCircle(-5, -5, 2.5); this.shadowArt.fillCircle(5, -5, 2.5);
+    this.shadowArt.fillStyle(0x05040b, 0.96);
+    this.shadowArt.fillEllipse(0, -3, 33, 35);
+    this.shadowArt.fillTriangle(-15, 2, -12, 22, -4, 9);
+    this.shadowArt.fillTriangle(-5, 8, 2, 25, 5, 7);
+    this.shadowArt.fillTriangle(5, 7, 13, 21, 15, 0);
+    this.shadowArt.fillStyle(0x191126, 1);
+    this.shadowArt.fillEllipse(0, -8, 23, 25);
+    this.shadowArt.fillStyle(this.demandSatisfied ? 0xf39a45 : 0x9c7be8, 0.22);
+    this.shadowArt.fillEllipse(0, -7, 29, 31);
+    this.shadowArt.fillStyle(this.demandSatisfied ? 0xffdf91 : 0xe0d0ff, 1);
+    this.shadowArt.fillTriangle(-9, -8, -3, -5, -10, -3);
+    this.shadowArt.fillTriangle(9, -8, 3, -5, 10, -3);
+    this.shadowArt.fillStyle(this.demandSatisfied ? 0xf39a45 : 0x9c7be8, 0.9);
+    this.shadowArt.fillTriangle(-2, 2, 2, 2, 0, 7);
     this.shadowLabel.setPosition(projectedX, projectedY - 31);
     this.shadowLabel.setText(this.demandSatisfied ? "READY TO WORK" : "ON BREAK");
     this.shadowLabel.setColor(this.demandSatisfied ? "#f39a45" : "#c5a8ff");
