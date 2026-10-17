@@ -175,6 +175,40 @@ const move = new THREE.Vector3();
 const rayOrigin = new THREE.Vector3();
 const velocity = new THREE.Vector3();
 const toastTimer = { id: 0 };
+
+// Lightweight first-person character physics. The camera is the player's eye,
+// while the horizontal body is approximated by a cylinder/capsule footprint.
+const PLAYER_EYE_HEIGHT = 1.72;
+const PLAYER_RADIUS = 0.34;
+const PLAYER_HEIGHT = 1.8;
+const GRAVITY = 22;
+const JUMP_SPEED = 8.2;
+const WALK_ACCELERATION = 25;
+const GROUND_FRICTION = 12;
+let verticalVelocity = 0;
+let grounded = true;
+let coyoteTime = 0;
+type Collider = { minX: number; maxX: number; minZ: number; maxZ: number };
+const colliders: Collider[] = [
+  // Structural walls and end bulkhead frame
+  { minX: -8.35, maxX: -7.45, minZ: -25, maxZ: 15 },
+  { minX: 7.45, maxX: 8.35, minZ: -25, maxZ: 15 },
+  { minX: -8, maxX: 8, minZ: 12.9, maxZ: 13.8 },
+  // Relay consoles
+  { minX: -4.95, maxX: -3.45, minZ: -7.55, maxZ: -6.05 },
+  { minX: -0.75, maxX: 0.75, minZ: -7.55, maxZ: -6.05 },
+  { minX: 3.45, maxX: 4.95, minZ: -7.55, maxZ: -6.05 },
+  // Side machinery
+  { minX: -6.7, maxX: -4.1, minZ: -16.7, maxZ: -14.9 },
+  { minX: 4.1, maxX: 6.7, minZ: -16.7, maxZ: -14.9 },
+  // Low floor-level equipment that the player must navigate around
+  { minX: -3.95, maxX: -2.45, minZ: 7.4, maxZ: 8.6 },
+  { minX: 2.45, maxX: 3.95, minZ: 5.9, maxZ: 7.1 },
+  { minX: -3.95, maxX: -2.45, minZ: 1.9, maxZ: 3.1 },
+  { minX: 2.45, maxX: 3.95, minZ: 0.4, maxZ: 1.6 },
+  { minX: -3.95, maxX: -2.45, minZ: -3.6, maxZ: -2.4 },
+  { minX: 2.45, maxX: 3.95, minZ: -5.1, maxZ: -3.9 }
+];
 const gateLeft = scene.children.find((o) => o instanceof THREE.Mesh && Math.abs(o.position.z + 18.2) < 0.01 && o.position.x === 0) as THREE.Mesh | undefined;
 
 function notify(message: string): void {
@@ -219,6 +253,11 @@ document.addEventListener("keydown", (event: KeyboardEvent) => {
   if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
   keys.add(event.code);
   if (event.code === "KeyE" && !event.repeat && started && !ended) interact();
+  if ((event.code === "Space" || event.code === "KeyW") && !event.repeat && started && grounded && coyoteTime > 0) {
+    verticalVelocity = JUMP_SPEED;
+    grounded = false;
+    coyoteTime = 0;
+  }
   if (event.code === "Escape" && started && !ended && document.pointerLockElement !== renderer.domElement) {
     intro.classList.remove("dismissed");
   }
@@ -228,6 +267,22 @@ window.addEventListener("blur", () => keys.clear());
 renderer.domElement.addEventListener("click", () => {
   if (started && !ended && document.pointerLockElement !== renderer.domElement) renderer.domElement.requestPointerLock?.();
 });
+
+function collidesAt(x: number, z: number): boolean {
+  const r = PLAYER_RADIUS;
+  return colliders.some((c) =>
+    x + r > c.minX && x - r < c.maxX &&
+    z + r > c.minZ && z - r < c.maxZ
+  );
+}
+
+function moveWithCollision(dx: number, dz: number): void {
+  // Resolve axes independently so the player can slide smoothly along walls.
+  const nextX = THREE.MathUtils.clamp(camera.position.x + dx, -7.05, 7.05);
+  if (!collidesAt(nextX, camera.position.z)) camera.position.x = nextX;
+  const nextZ = THREE.MathUtils.clamp(camera.position.z + dz, -20.8, 12.35);
+  if (!collidesAt(camera.position.x, nextZ)) camera.position.z = nextZ;
+}
 
 function nearestTarget(): { relay?: Relay; gate: boolean; distance: number } {
   // Interaction is first-person and gaze-based: nearby objects behind the player
@@ -320,13 +375,47 @@ function animate(): void {
     if (keys.has("KeyS") || keys.has("ArrowDown")) move.sub(forward);
     if (keys.has("KeyD") || keys.has("ArrowRight")) move.add(right);
     if (keys.has("KeyA") || keys.has("ArrowLeft")) move.sub(right);
-    if (move.lengthSq() > 0) {
-      move.normalize().multiplyScalar((keys.has("ShiftLeft") ? 7.4 : 4.8) * delta);
-      camera.position.add(move);
-      camera.position.x = THREE.MathUtils.clamp(camera.position.x, -6.8, 6.8);
-      camera.position.z = THREE.MathUtils.clamp(camera.position.z, -16.6, 11.5);
+
+    const hasInput = move.lengthSq() > 0;
+    if (hasInput) {
+      move.normalize();
+      const sprinting = keys.has("ShiftLeft") || keys.has("ShiftRight");
+      const maxSpeed = sprinting ? 7.1 : 4.65;
+      const accel = grounded ? WALK_ACCELERATION : WALK_ACCELERATION * 0.32;
+      velocity.x += move.x * accel * delta;
+      velocity.z += move.z * accel * delta;
+      const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
+      if (horizontalSpeed > maxSpeed) {
+        const scale = maxSpeed / horizontalSpeed;
+        velocity.x *= scale;
+        velocity.z *= scale;
+      }
+    } else if (grounded) {
+      const friction = Math.max(0, 1 - GROUND_FRICTION * delta);
+      velocity.x *= friction;
+      velocity.z *= friction;
+      if (Math.abs(velocity.x) < 0.025) velocity.x = 0;
+      if (Math.abs(velocity.z) < 0.025) velocity.z = 0;
     }
-    camera.position.y = 1.72 + Math.sin(t * 8) * (move.lengthSq() > 0 ? 0.035 : 0.008);
+
+    moveWithCollision(velocity.x * delta, velocity.z * delta);
+
+    // Gravity, jump arc, and a stable eye-height landing plane.
+    verticalVelocity -= GRAVITY * delta;
+    let eyeY = camera.position.y + verticalVelocity * delta;
+    if (eyeY <= PLAYER_EYE_HEIGHT) {
+      eyeY = PLAYER_EYE_HEIGHT;
+      verticalVelocity = 0;
+      grounded = true;
+      coyoteTime = 0.1;
+    } else {
+      grounded = false;
+      coyoteTime = Math.max(0, coyoteTime - delta);
+    }
+    camera.position.y = eyeY;
+    if (grounded && hasInput) {
+      camera.position.y += Math.sin(t * 10.5) * Math.min(0.025, Math.hypot(velocity.x, velocity.z) * 0.004);
+    }
     const target = nearestTarget();
     if (target.distance <= 2.65) {
       interaction.textContent = target.gate ? (gateOpen ? "[ E ] OPEN THE BULKHEAD" : "BULKHEAD LOCKED") : target.relay?.active ? "RELAY ONLINE" : "[ E ] ACTIVATE RELAY";
