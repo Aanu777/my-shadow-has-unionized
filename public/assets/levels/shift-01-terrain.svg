@@ -2,7 +2,14 @@
   <defs>
     <radialGradient id="moonGlow"><stop offset="0" stop-color="#9a7db0" stop-opacity=".24"/><stop offset="1" stop-color="#9a7db0" stop-opacity="0"/></radialGradient>
     <linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#30233f"/><stop offset="1" stop-color="#241a31"/></linearGradient>
-  </defs>
+      <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#382344"/><stop offset=".35" stop-color="#21152d"/><stop offset="1" stop-color="#100c19"/></linearGradient>
+    <linearGradient id="moss" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#8b5a43"/><stop offset=".45" stop-color="#c18b55"/><stop offset="1" stop-color="#5d405f"/></linearGradient>
+    <pattern id="soilTexture" width="48" height="24" patternUnits="userSpaceOnUse">
+      <path d="M4 7h9m11 9h5m10-11h4M15 21h7" stroke="#8b5a82" stroke-width="1" opacity=".5"/>
+      <circle cx="35" cy="17" r="1.5" fill="#c18b55" opacity=".6"/>
+      <path d="M2 20l4-3m26-8l3-2" stroke="#4d3458" stroke-width="2"/>
+    </pattern>
+</defs>
   <!-- Background illustration only; the gameplay ground is drawn separately. -->
   <rect width="960" height="600" fill="#21182f"/>
   <circle cx="780" cy="125" r="104" fill="url(#moonGlow)"/>
@@ -25,5 +32,19 @@
     <path d="M258 397L260 319M259 365L239 338M259 349L278 322M260 337L251 319M260 331L271 311" stroke-width="5"/>
     <path d="M620 397L622 315M621 365L601 337M621 348L641 320M622 337L613 318M622 330L634 309" stroke-width="5"/>
     <path d="M925 397L927 314M926 365L907 338M926 348L945 321M927 337L918 319M927 330L939 309" stroke-width="5"/>
+  </g>
+  <!-- Foreground ground: a clearly visible, layered haunted-forest soil bank. -->
+  <path d="M0 500H960V600H0Z" fill="url(#soil)"/>
+  <path d="M0 500H960" stroke="#d09a60" stroke-width="3"/>
+  <path d="M0 505H960" stroke="#6c456f" stroke-width="4"/>
+  <path d="M0 510H960V600H0Z" fill="url(#soilTexture)" opacity=".95"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M32 504l-8 14 13 8-5 16m114-37l8 11-10 13 4 18m112-43l-9 15 12 9-6 17m122-39l7 12-13 12 5 15m120-39l-8 14 10 9-3 16m125-38l9 13-12 11 6 15m115-39l-7 12 11 11-4 16m109-38l-10 15 12 8-3 17" stroke="#100c19" stroke-width="4" opacity=".9"/>
+    <path d="M70 506l-5 8m173-8l-5 8m193-8l-5 8m183-8l-5 8m185-8l-5 8m130-8l-5 8" stroke="#b7a06a" stroke-width="2" opacity=".85"/>
+  </g>
+  <g fill="#c18b55" opacity=".8">
+    <path d="M54 500l-5-8 8 4 5-7 2 11z"/><path d="M204 500l-4-7 7 3 5-6 1 10z"/>
+    <path d="M389 500l-5-8 8 4 4-6 2 10z"/><path d="M581 500l-4-7 8 3 4-6 2 10z"/>
+    <path d="M774 500l-5-8 8 4 5-6 1 10z"/><path d="M912 500l-4-7 7 3 4-6 2 10z"/>
   </g>
 </svg>
