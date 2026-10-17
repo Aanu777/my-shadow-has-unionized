@@ -16,6 +16,7 @@ export class ShiftThreeScene extends Phaser.Scene {
   private grounded = false;
   private files: ArchiveFile[] = [];
   private consoles: Phaser.GameObjects.Container[] = [];
+  private routeGates: Phaser.GameObjects.Container[] = [];
   private consoleStates = [false, false];
   private door!: Phaser.GameObjects.Container;
   private doorOpen = false;
@@ -41,7 +42,7 @@ export class ShiftThreeScene extends Phaser.Scene {
 
   create(): void {
     this.playerVx = 0; this.playerVy = 0; this.grounded = false;
-    this.files = []; this.consoles = []; this.consoleStates = [false, false];
+    this.files = []; this.consoles = []; this.routeGates = []; this.consoleStates = [false, false];
     this.doorOpen = false; this.won = false; this.dead = false;
     this.eWasDown = false; this.rWasDown = false; this.checkpointX = 110;
     this.conveyorArrows = []; this.conveyorRollers = []; this.scannerBeams = []; this.drones = [];
@@ -54,6 +55,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     this.drawFloor();
     this.drawConveyor(480, 730, 0);
     this.drawConveyor(1080, 1340, 1);
+    this.routeGates = [this.createRouteGate(610), this.createRouteGate(1210)];
     this.createScanner(655, 0.2);
     this.createScanner(1270, 2.5);
     this.createDrone(900, 1110, 414, 0);
@@ -124,6 +126,12 @@ export class ShiftThreeScene extends Phaser.Scene {
     const beltTwo = nextX > 1080 && nextX < 1340;
     if (beltOne) nextX += this.consoleStates[0] ? -78 * dt : 92 * dt;
     if (beltTwo) nextX += this.consoleStates[1] ? -78 * dt : 92 * dt;
+    const gateXs = [610, 1210];
+    gateXs.forEach((gateX, index) => {
+      if (this.consoleStates[index]) return;
+      const crossed = (oldX < gateX && nextX >= gateX - 20) || (oldX > gateX && nextX <= gateX + 20);
+      if (crossed) { nextX = oldX < gateX ? gateX - 22 : gateX + 22; this.playerVx = 0; }
+    });
     nextX = Phaser.Math.Clamp(nextX, 18, WORLD - 20);
     if (nextY >= FLOOR - 17) { nextY = FLOOR - 17; this.playerVy = 0; this.grounded = true; }
     else this.grounded = false;
@@ -340,7 +348,7 @@ export class ShiftThreeScene extends Phaser.Scene {
   private createConsoles(): void {
     // Consoles are positioned after each conveyor; E reverses their direction.
     // Belt A's console is at x=752, Sorter B's at x=1364.
-    const positions = [752, 1364];
+    const positions = [430, 1035];
     positions.forEach((x, i) => {
       const c = this.add.container(x, FLOOR - 18).setDepth(7);
       const g = this.add.graphics();
@@ -355,6 +363,21 @@ export class ShiftThreeScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(8);
       this.consoles[i] = c;
     });
+  }
+
+  private createRouteGate(x: number): Phaser.GameObjects.Container {
+    const gate = this.add.container(x, FLOOR - 90).setDepth(9);
+    const g = this.add.graphics();
+    g.fillStyle(0x05040a, 1); g.fillRect(-24, -94, 48, 188);
+    g.fillStyle(0x34243e, 1); g.fillRect(-19, -90, 38, 180);
+    g.lineStyle(2, 0x9b7ca9, 1); g.strokeRect(-19, -90, 38, 180);
+    g.fillStyle(0x120e19, 1); g.fillRect(-11, -82, 22, 164);
+    for (let y = -74; y < 78; y += 18) { g.fillStyle(0xf4b860, 1); g.fillRect(-10, y, 20, 7); }
+    g.fillStyle(0xff6c67, 1); g.fillRect(-5, -16, 10, 32);
+    g.fillStyle(0x08070d, 1); g.fillRect(-31, -101, 62, 9);
+    g.fillStyle(0x6b4c7b, 1); g.fillRect(-35, -106, 70, 5);
+    gate.add(g);
+    return gate;
   }
 
   private makePumpkin(x: number, y: number): Phaser.GameObjects.Container {
@@ -432,6 +455,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     }
     const index = this.activeConsolePuzzle;
     this.consoleStates[index] = true;
+    this.tweens.add({ targets: this.routeGates[index], y: FLOOR - 280, duration: 650, ease: "Cubic.inOut" });
     this.activeConsolePuzzle = -1;
     this.consoleInputProgress = 0;
     const art = this.consoles[index].getAt(0) as Phaser.GameObjects.Graphics;
