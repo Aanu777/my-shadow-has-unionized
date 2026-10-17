@@ -360,7 +360,7 @@ function loadAsset(file: string, placements: Array<[number, number, number, numb
       fitModel(source, 2.25);
       for (const [x, z, height, rotation] of placements) {
         const instance = source.clone(true);
-        instance.position.set(x, height, z);
+        instance.position.set(x, height + source.position.y, z);
         instance.rotation.y = rotation;
         scene.add(instance);
         importedProps.push(instance);
@@ -385,7 +385,7 @@ function loadFactoryAsset(file: string, placements: Array<[number, number, numbe
       fitModel(source, 2.4);
       for (const [x, z, height, rotation] of placements) {
         const instance = source.clone(true);
-        instance.position.set(x, height, z);
+        instance.position.set(x, height + source.position.y, z);
         instance.rotation.y = rotation;
         scene.add(instance);
         importedProps.push(instance);
