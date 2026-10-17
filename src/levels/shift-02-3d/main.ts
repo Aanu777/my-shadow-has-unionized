@@ -230,15 +230,30 @@ renderer.domElement.addEventListener("click", () => {
 });
 
 function nearestTarget(): { relay?: Relay; gate: boolean; distance: number } {
-  rayOrigin.copy(camera.position);
+  // Interaction is first-person and gaze-based: nearby objects behind the player
+  // must never activate just because the camera is standing close to them.
+  const lookDirection = camera.getWorldDirection(new THREE.Vector3()).normalize();
   let nearest: Relay | undefined;
   let distance = Infinity;
+
   for (const relay of relays) {
-    const d = camera.position.distanceTo(new THREE.Vector3(relay.position.x, 1.2, relay.position.z));
-    if (d < distance) { distance = d; nearest = relay; }
+    const targetPosition = new THREE.Vector3(relay.position.x, 1.2, relay.position.z);
+    const toTarget = targetPosition.clone().sub(camera.position);
+    const d = toTarget.length();
+    const facing = toTarget.normalize().dot(lookDirection);
+    if (d <= 2.65 && facing > 0.78 && d < distance) {
+      distance = d;
+      nearest = relay;
+    }
   }
-  const gateDistance = camera.position.distanceTo(new THREE.Vector3(0, 1.4, -17.2));
-  if (gateDistance < distance) return { gate: true, distance: gateDistance };
+
+  const gatePosition = new THREE.Vector3(0, 1.4, -17.2);
+  const toGate = gatePosition.clone().sub(camera.position);
+  const gateDistance = toGate.length();
+  const gateFacing = toGate.normalize().dot(lookDirection);
+  if (gateDistance <= 2.65 && gateFacing > 0.7 && gateDistance < distance) {
+    return { gate: true, distance: gateDistance };
+  }
   return { relay: nearest, gate: false, distance };
 }
 function interact(): void {
