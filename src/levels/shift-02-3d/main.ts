@@ -187,13 +187,15 @@ const WALK_ACCELERATION = 25;
 const GROUND_FRICTION = 12;
 let verticalVelocity = 0;
 let grounded = true;
-let coyoteTime = 0;
+let coyoteTime = 0.1;
 type Collider = { minX: number; maxX: number; minZ: number; maxZ: number };
 const colliders: Collider[] = [
   // Structural walls and end bulkhead frame
   { minX: -8.35, maxX: -7.45, minZ: -25, maxZ: 15 },
   { minX: 7.45, maxX: 8.35, minZ: -25, maxZ: 15 },
   { minX: -8, maxX: 8, minZ: 12.9, maxZ: 13.8 },
+  // The sealed bulkhead blocks the route until the relay sequence is solved.
+  { minX: -2.35, maxX: 2.35, minZ: -18.45, maxZ: -17.65 },
   // Relay consoles
   { minX: -4.95, maxX: -3.45, minZ: -7.55, maxZ: -6.05 },
   { minX: -0.75, maxX: 0.75, minZ: -7.55, maxZ: -6.05 },
@@ -338,6 +340,8 @@ function interact(): void {
   notify(`${relay.kind.toUpperCase()} RELAY ACCEPTED.`);
   if (nextRelay === sequence.length) {
     gateOpen = true;
+    const gateColliderIndex = colliders.findIndex((c) => c.minX === -2.35 && c.maxX === 2.35 && c.minZ === -18.45);
+    if (gateColliderIndex >= 0) colliders.splice(gateColliderIndex, 1);
     if (gateLeft) gateLeft.position.y = 8;
     for (const child of scene.children) {
       if (child instanceof THREE.Mesh && (Math.abs(child.position.z + 17.87) < 0.02 || Math.abs(child.position.z + 17.98) < 0.02) && Math.abs(child.position.x) < 2.3) child.position.y += 5;
