@@ -45,6 +45,8 @@ class GameScene extends Phaser.Scene {
   private messageUntil = 0;
   private message = "THE SHADOW IS ON A BREAK. AGAIN.";
   private floorY = 500;
+  private worldWidth = W;
+  private obstacles: Array<{ x: number; y: number; w: number; h: number }> = [];
 
   constructor() { super("GameScene"); }
   preload(): void { preloadShift01Background(this); }
@@ -68,21 +70,41 @@ class GameScene extends Phaser.Scene {
     this.enterWasDown = false;
     this.messageUntil = 0;
     this.message = "THE SHADOW IS ON A BREAK. AGAIN.";
+    this.worldWidth = this.level === 2 ? W * 2 : W;
+    this.obstacles = this.level === 2 ? [
+      { x: 650, y: 456, w: 72, h: 44 },
+      { x: 900, y: 438, w: 94, h: 62 },
+      { x: 1165, y: 465, w: 66, h: 35 },
+      { x: 1500, y: 448, w: 112, h: 52 }
+    ] : [];
     this.lanternX = this.level === 1 ? 260 : 350;
     this.lanternMin = this.level === 1 ? 190 : 175;
     this.lanternMax = this.level === 1 ? 405 : 405;
     this.cameras.main.setBackgroundColor(this.level === 1 ? "#17131f" : "#101c22");
     // Do not draw Shift 01's SVG into Shift 02; each shift owns its backdrop.
     if (this.level === 1) drawShift01Background(this);
-    else this.drawLevelTwoBackdrop();
+    else {
+      // Two connected foundry spans turn Shift 02 into a side-scrolling level.
+      this.drawLevelTwoBackdrop(0);
+      this.drawLevelTwoBackdrop(W);
+    }
     this.createAtmosphere();
 
     // Only the solid ground remains. All floating platforms are removed.
-    this.platforms = [{ x: 0, y: this.floorY, w: W, h: H - this.floorY }];
+    this.platforms = [
+      { x: 0, y: this.floorY, w: this.worldWidth, h: H - this.floorY },
+      ...this.obstacles.map(({ x, y, w, h }) => ({ x, y, w, h }))
+    ];
     this.drawPlatforms();
+    if (this.level === 2) this.drawFoundryObstacles();
 
     this.player = this.makePumpkin(105, 483);
     this.player.setDepth(5);
+    if (this.level === 2) {
+      this.cameras.main.setBounds(0, 0, this.worldWidth, H);
+      this.cameras.main.startFollow(this.player, true, 0.09, 0.08);
+      this.cameras.main.setDeadzone(250, 0);
+    }
     this.playerBody = this.add.rectangle(0, 0, 30, 34, 0xffffff, 0);
     this.player.add(this.playerBody);
     this.playerArt = this.player.getAt(1) as Phaser.GameObjects.Graphics;
@@ -97,8 +119,8 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.coffee = this.makeCoffee(this.level === 1 ? 342 : 475, 467, this.level === 1 ? "COFFEE" : "FUSE");
-    this.switchObject = this.makeSwitch(670, 470);
-    this.gate = this.makeGate(865, 425);
+    this.switchObject = this.makeSwitch(this.level === 2 ? 1320 : 670, 470);
+    this.gate = this.makeGate(this.level === 2 ? 1830 : 865, 425);
     this.gate.setDepth(3);
 
     this.statusText = this.add.text(28, 24, this.level === 1 ? "PROBATION  //  SHIFT 01" : "NIGHT AUDIT  //  SHIFT 02", {
@@ -111,14 +133,14 @@ class GameScene extends Phaser.Scene {
       fontFamily: "monospace", fontSize: "12px", color: "#f0e8d8",
       backgroundColor: "#21182f", padding: { x: 12, y: 7 },
       align: "center", wordWrap: { width: 820 }
-    }).setOrigin(0.5).setDepth(8);
+    }).setOrigin(0.5).setDepth(8).setScrollFactor(0);
 
     this.add.text(W - 26, 24,
       "MOVE  A/D OR ←/→\nJUMP  SPACE / W / ↑\nINTERACT  E   •   ENTER  EXIT\nRESTART  R", {
       fontFamily: "monospace", fontSize: "11px", color: "#d8cfe6",
       backgroundColor: "#21182f", padding: { x: 10, y: 8 },
       lineSpacing: 5, align: "right"
-    }).setOrigin(1, 0).setDepth(8);
+    }).setOrigin(1, 0).setDepth(8).setScrollFactor(0);
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -136,7 +158,7 @@ class GameScene extends Phaser.Scene {
       fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff",
       backgroundColor: "#21182f", padding: { x: 8, y: 6 },
       lineSpacing: 4, wordWrap: { width: 440 }
-    }).setDepth(8);
+    }).setDepth(8).setScrollFactor(0);
   }
 
   update(_time: number, delta: number): void {
@@ -171,7 +193,7 @@ class GameScene extends Phaser.Scene {
 
     const oldX = this.player.x;
     const oldY = this.player.y;
-    let nextX = Phaser.Math.Clamp(oldX + this.playerVx * dt, 18, W - 18);
+    let nextX = Phaser.Math.Clamp(oldX + this.playerVx * dt, 18, this.worldWidth - 18);
     let nextY = oldY + this.playerVy * dt;
     this.grounded = false;
 
@@ -185,6 +207,15 @@ class GameScene extends Phaser.Scene {
         nextY = p.y - 17;
         this.playerVy = 0;
         this.grounded = true;
+      }
+    }
+    // Debris has solid sides, so the player must jump over it or climb onto it.
+    if (this.level === 2) {
+      for (const obstacle of this.obstacles) {
+        const verticalOverlap = nextY + 17 > obstacle.y + 3 && nextY - 17 < obstacle.y + obstacle.h;
+        if (!verticalOverlap) continue;
+        if (oldX + 15 <= obstacle.x && nextX + 15 > obstacle.x) nextX = obstacle.x - 15;
+        else if (oldX - 15 >= obstacle.x + obstacle.w && nextX - 15 < obstacle.x + obstacle.w) nextX = obstacle.x + obstacle.w + 15;
       }
     }
     if (nextY > H + 80) {
@@ -542,7 +573,11 @@ class GameScene extends Phaser.Scene {
   }
 
   private refreshShadow(): void {
-    const projectedX = Phaser.Math.Clamp(this.lanternX + 180 + (this.player.x - 260) * 0.22, 445, 625);
+    const projectedX = Phaser.Math.Clamp(
+      this.lanternX + 180 + (this.player.x - 260) * 0.22,
+      this.level === 2 ? 700 : 445,
+      this.level === 2 ? 1010 : 625
+    );
     const projectedY = this.demandSatisfied ? 447 : 463;
     const shadowBob = Math.sin(this.time.now * 0.004) * 2;
     this.shadow.setPosition(projectedX, projectedY + shadowBob);
@@ -651,21 +686,21 @@ class GameScene extends Phaser.Scene {
   }
 
   private showWin(): void {
-    this.add.rectangle(W / 2, H / 2, W, H, 0x100d16, 0.88).setDepth(20);
+    this.add.rectangle(W / 2, H / 2, W, H, 0x100d16, 0.88).setDepth(20).setScrollFactor(0);
     this.add.text(W / 2, 215, "SHIFT 02 COMPLETE!", {
       fontFamily: "monospace", fontSize: "34px", color: "#f39a45", fontStyle: "bold", align: "center"
-    }).setOrigin(0.5).setDepth(21);
+    }).setOrigin(0.5).setDepth(21).setScrollFactor(0);
     this.add.text(W / 2, 280,
       "You restored the broken circuit and escaped the night forest.\nThe shadow has filed a formal request for paid overtime.\n\nA historic victory for workplace relations.",
       { fontFamily: "monospace", fontSize: "15px", color: "#f0e8d8", align: "center", lineSpacing: 9 }
-    ).setOrigin(0.5).setDepth(21);
+    ).setOrigin(0.5).setDepth(21).setScrollFactor(0);
     this.add.text(W / 2, 385, "PRESS R TO RESTART FROM SHIFT 01", {
       fontFamily: "monospace", fontSize: "12px", color: "#c5a8ff"
-    }).setOrigin(0.5).setDepth(21);
+    }).setOrigin(0.5).setDepth(21).setScrollFactor(0);
   }
 
-  private drawLevelTwoBackdrop(): void {
-    const g = this.add.graphics().setDepth(-10);
+  private drawLevelTwoBackdrop(offsetX = 0): void {
+    const g = this.add.graphics().setDepth(-10).setPosition(offsetX, 0);
     // Paint an opaque full-canvas base FIRST. Shift 01's SVG is at depth -20,
     // so this masks every pixel of that environment, including its sky and ground.
     // The Shift 02 skyline, moon, swamp and gameplay floor are drawn above this base.
@@ -734,6 +769,34 @@ class GameScene extends Phaser.Scene {
     g.lineTo(321,512); g.lineTo(395,522); g.lineTo(467,514); g.lineTo(545,524); g.lineTo(624,512);
     g.lineTo(701,521); g.lineTo(779,513); g.lineTo(850,522); g.lineTo(916,513); g.lineTo(960,518); g.strokePath();
   }
+  private drawFoundryObstacles(): void {
+    const g = this.add.graphics().setDepth(3);
+    for (let i = 0; i < this.obstacles.length; i++) {
+      const o = this.obstacles[i];
+      // Corroded machinery with broken pipe mouths and mint warning seams.
+      g.fillStyle(0x071014, 0.72); g.fillEllipse(o.x + o.w / 2, 500, o.w + 24, 9);
+      g.fillStyle(i % 2 === 0 ? 0x263c3d : 0x1b3035, 1);
+      g.fillRoundedRect(o.x, o.y + 5, o.w, o.h - 5, 4);
+      g.fillStyle(0x3b5551, 1); g.fillRoundedRect(o.x + 4, o.y, o.w - 8, 13, 3);
+      g.lineStyle(2, 0x5f9380, 0.9); g.lineBetween(o.x + 7, o.y + 4, o.x + o.w - 8, o.y + 4);
+      g.lineStyle(1, 0x9ce2c4, 0.75);
+      for (let x = o.x + 12; x < o.x + o.w - 8; x += 18) {
+        g.lineBetween(x, o.y + 17, x - 3, Math.min(o.y + o.h - 6, o.y + 30));
+      }
+      g.fillStyle(0x9ce2c4, 0.85);
+      g.fillRect(o.x + 9, o.y + 10, 4, 2); g.fillRect(o.x + o.w - 15, o.y + 10, 4, 2);
+      if (i === 1 || i === 3) {
+        g.fillStyle(0x0b171d, 1); g.fillCircle(o.x + o.w / 2, o.y + 1, 10);
+        g.lineStyle(2, 0x79a38c, 1); g.strokeCircle(o.x + o.w / 2, o.y + 1, 8);
+        g.fillStyle(0x9ce2c4, 0.8); g.fillCircle(o.x + o.w / 2, o.y + 1, 3);
+      }
+      this.add.text(o.x + o.w / 2, o.y - 14, i % 2 === 0 ? "LIVE PIPE" : "VENT / HOT", {
+        fontFamily: "monospace", fontSize: "8px", color: "#9ce2c4",
+        backgroundColor: "#0b171d", padding: { x: 3, y: 2 }
+      }).setOrigin(0.5).setDepth(4);
+    }
+  }
+
   private isAtExit(): boolean { return Phaser.Math.Distance.Between(this.player.x,this.player.y,this.gate.x,this.gate.y)<78; }
   private handleExitEnter(): void { if(this.level===1){this.transitionToShiftTwo();return;}this.won=true;this.showWin(); }
   private transitionToShiftTwo(): void {
