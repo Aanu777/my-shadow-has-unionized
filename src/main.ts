@@ -287,44 +287,52 @@ class GameScene extends Phaser.Scene {
   }
 
   private drawPlatforms(): void {
-    const g = this.add.graphics();
+    // Keep the established screenshot palette: plum soil, lavender edge,
+    // muted olive grass and tiny dusty-rose mushrooms. No realistic terrain
+    // textures that fight the game's clean silhouette style.
+    const g = this.add.graphics().setDepth(2);
     for (const p of this.platforms) {
-      g.fillStyle(0x352747, 1);
-      g.fillRoundedRect(p.x, p.y, p.w, p.h, 4);
-      g.fillStyle(0x7055a5, 1);
-      g.fillRect(p.x, p.y, p.w, 5);
-      g.fillStyle(0x4b365b, 1);
-      for (let x = p.x + 12; x < p.x + p.w; x += 28) {
-        g.fillRect(x, p.y + 12, 2, Math.min(30, p.h - 12));
+      const ground = p.y >= 450;
+      g.fillStyle(ground ? 0x382846 : 0x352747, 1);
+      g.fillRect(p.x, p.y, p.w, p.h);
+      g.fillStyle(ground ? 0x71549a : 0x8060ac, 1);
+      g.fillRect(p.x, p.y, p.w, ground ? 4 : 4);
+
+      if (ground) {
+        // Thin grass blades in the same subdued olive tone as the screenshot.
+        for (let x = p.x + 5; x < p.x + p.w - 3; x += 8) {
+          const n = (Math.floor(x * 13) % 5);
+          g.lineStyle(1, n % 2 === 0 ? 0x68734d : 0x8b8759, 0.82);
+          g.lineBetween(x, p.y, x - 1, p.y - 3 - n);
+        }
+        // Sparse vertical seams make the soil read as chunky pixel-art earth.
+        g.lineStyle(1, 0x4a355d, 0.85);
+        for (let x = p.x + 12; x < p.x + p.w - 4; x += 27) {
+          g.lineBetween(x, p.y + 11, x, Math.min(p.y + 39, p.y + p.h - 2));
+        }
+        g.fillStyle(0x241b30, 0.5);
+        for (let x = p.x + 19; x < p.x + p.w - 10; x += 61) {
+          g.fillRect(x, p.y + 17 + (x % 7), 7, 2);
+        }
+      } else {
+        g.fillStyle(0x4b365b, 1);
+        for (let x = p.x + 10; x < p.x + p.w - 5; x += 28) {
+          g.fillRect(x, p.y + 10, 2, Math.min(18, Math.max(2, p.h - 10)));
+        }
       }
     }
 
-    // Terrain trim: uneven grass, tiny stones and roots break up the flat slabs.
-    const trim = this.add.graphics().setDepth(2);
-    for (const p of this.platforms) {
-      if (p.y < 450) continue;
-      for (let x = p.x + 8; x < p.x + p.w - 5; x += 19) {
-        const height = 3 + ((Math.floor(x) * 7) % 5);
-        trim.lineStyle(1, x % 3 === 0 ? 0x9b8a69 : 0x65734c, 0.8);
-        trim.lineBetween(x, p.y + 1, x - 2, p.y - height);
-        trim.lineBetween(x + 3, p.y + 1, x + 6, p.y - height + 1);
-      }
-      for (let x = p.x + 18; x < p.x + p.w - 12; x += 57) {
-        trim.fillStyle(0x17131f, 0.35);
-        trim.fillEllipse(x, p.y + 16 + (x % 4), 9, 3);
-      }
-    }
-
-    // Small fungi at the forest floor add a few memorable points of colour.
-    for (const [x, y] of [[58, 492], [285, 492], [744, 492], [928, 492]]) {
-      const mushroom = this.add.graphics().setDepth(2);
-      mushroom.fillStyle(0xd9c9b7, 0.9);
-      mushroom.fillRoundedRect(x - 2, y - 2, 4, 8, 2);
-      mushroom.fillStyle(0x9c5268, 0.95);
-      mushroom.fillEllipse(x, y - 4, 13, 8);
-      mushroom.fillStyle(0xf0e8d8, 0.9);
-      mushroom.fillCircle(x - 3, y - 5, 1);
-      mushroom.fillCircle(x + 2, y - 3, 1);
+    // Tiny decorative mushrooms sit just above the ground line, like the
+    // existing in-game sprites; positions avoid the coffee, switch and exit.
+    const mushrooms = this.add.graphics().setDepth(3);
+    for (const [x, y] of [[58, 500], [285, 500], [744, 500], [928, 500]]) {
+      mushrooms.fillStyle(0xd9c9b7, 0.95);
+      mushrooms.fillRect(x - 1, y - 1, 3, 6);
+      mushrooms.fillStyle(0x9c5268, 1);
+      mushrooms.fillEllipse(x, y - 3, 11, 7);
+      mushrooms.fillStyle(0xf0e8d8, 0.95);
+      mushrooms.fillRect(x - 3, y - 4, 2, 2);
+      mushrooms.fillRect(x + 1, y - 2, 2, 2);
     }
   }
 
