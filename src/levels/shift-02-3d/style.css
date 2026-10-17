@@ -68,3 +68,27 @@ button:hover::after{transform:translateX(110%)}
   .interaction{min-width:210px;max-width:90vw;padding:8px 10px;letter-spacing:.08em}
   .bottom-hud{padding-top:10px;letter-spacing:.04em}
 }
+
+
+/* Level 02 -> 03 transit sequence */
+.transit-screen{position:absolute;z-index:20;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:#080711;color:#f1eee8;text-align:center}
+.transit-screen[hidden]{display:none}
+.transit-screen::before{content:"";position:absolute;inset:-30%;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(197,168,255,.045) 6px 7px);transform:rotate(-7deg);animation:transit-scan 1.4s linear infinite}
+.transit-noise{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(91,48,125,.34),transparent 55%),linear-gradient(90deg,rgba(243,154,69,.08),transparent 30%,rgba(197,168,255,.08));animation:transit-pulse .6s ease-in-out infinite alternate}
+.transit-screen::after{content:"";position:absolute;inset:0;border-left:2px solid #c5a8ff;border-right:2px solid #f39a45;clip-path:polygon(0 0,48% 0,45% 12%,52% 25%,47% 38%,54% 51%,46% 67%,52% 83%,48% 100%,0 100%);background:rgba(197,168,255,.035);animation:rift-open .65s cubic-bezier(.2,.8,.2,1) both}
+.transit-eyebrow,.transit-copy,.transit-foot{position:relative;z-index:1;font-size:9px;letter-spacing:.18em;color:#c5a8ff}
+.transit-title{position:relative;z-index:1;margin:34px 0 26px;font-family:'Space Grotesk',sans-serif;font-size:clamp(42px,8vw,92px);font-weight:600;line-height:.9;letter-spacing:-.065em;text-shadow:0 0 42px rgba(197,168,255,.22)}
+.transit-title em{font-style:normal;color:#e6a66a}
+.transit-copy{color:#e6a66a;min-height:14px;letter-spacing:.11em}
+.transit-progress{position:relative;z-index:1;width:min(380px,70vw);height:3px;margin-top:22px;background:rgba(197,168,255,.18);overflow:hidden}
+.transit-progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,#c5a8ff,#f39a45);box-shadow:0 0 16px #c5a8ff}
+.transit-active .transit-progress span{animation:transit-load 3.2s cubic-bezier(.65,0,.25,1) forwards}
+.transit-foot{position:absolute;z-index:1;bottom:28px;left:30px;right:30px;display:flex;justify-content:space-between;color:#756982;font-size:8px}
+.transit-active .transit-title{animation:transit-title-in .5s cubic-bezier(.2,.8,.2,1) both}
+.transit-active .transit-screen::after{animation:rift-open .65s cubic-bezier(.2,.8,.2,1) both}
+@keyframes transit-load{0%{width:0}14%{width:12%}38%{width:38%}61%{width:55%}78%{width:82%}100%{width:100%}}
+@keyframes rift-open{0%{transform:scaleX(.02);opacity:0}45%{opacity:1}100%{transform:scaleX(1);opacity:.6}}
+@keyframes transit-pulse{from{opacity:.35;transform:scale(1)}to{opacity:.9;transform:scale(1.04)}}
+@keyframes transit-scan{from{background-position:0 0}to{background-position:0 16px}}
+@keyframes transit-title-in{from{opacity:0;transform:translateY(14px);filter:blur(8px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@media(prefers-reduced-motion:reduce){.transit-screen::before,.transit-noise,.transit-active .transit-progress span,.transit-active .transit-title{animation-duration:.01ms!important}}
