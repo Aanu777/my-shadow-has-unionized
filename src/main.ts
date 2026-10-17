@@ -53,6 +53,11 @@ class GameScene extends Phaser.Scene {
   private checkpointReached = false;
   private dead = false;
   private deathOverlay: Phaser.GameObjects.GameObject[] = [];
+  private relayNodes: Phaser.GameObjects.Container[] = [];
+  private relayNodeActive: boolean[] = [false, false, false];
+  private relaySequence: number[] = [2, 0, 1];
+  private relayProgress = 0;
+  private puzzleHintUntil = 0;
 
   constructor() { super("GameScene"); }
   preload(): void { preloadShift01Background(this); }
@@ -70,6 +75,7 @@ class GameScene extends Phaser.Scene {
     this.checkpointReached = false;
     this.checkpointX = this.level === 2 ? 1000 : 105;
     this.deathOverlay = [];
+    this.relayNodes = []; this.relayNodeActive = [false, false, false]; this.relayProgress = 0; this.puzzleHintUntil = 0;
     this.hasCoffee = false;
     this.coffeeHintShown = false;
     this.demandSatisfied = false;
@@ -86,10 +92,7 @@ class GameScene extends Phaser.Scene {
     this.message = "THE SHADOW IS ON A BREAK. AGAIN.";
     this.worldWidth = this.level === 2 ? W * 2 : W;
     this.obstacles = this.level === 2 ? [
-      { x: 650, y: 456, w: 72, h: 44 },
-      { x: 900, y: 438, w: 94, h: 62 },
-      { x: 1165, y: 465, w: 66, h: 35 },
-      { x: 1500, y: 448, w: 112, h: 52 }
+      { x: 900, y: 438, w: 78, h: 62 }, { x: 1320, y: 448, w: 82, h: 52 }, { x: 1765, y: 456, w: 56, h: 44 }
     ] : [];
     // Irregular gaps force real jumps instead of a flat walk to the exit.
     this.groundGaps = this.level === 2 ? [
@@ -122,10 +125,7 @@ class GameScene extends Phaser.Scene {
       ...this.obstacles.map(({ x, y, w, h }) => ({ x, y, w, h }))
     ];
     this.drawPlatforms();
-    if (this.level === 2) {
-      this.drawFoundryObstacles();
-      this.drawCheckpoint();
-    }
+    if (this.level === 2) { this.drawFoundryObstacles(); this.drawCheckpoint(); this.createRelayPuzzle(); }
 
     this.player = this.makePumpkin(105, 483);
     this.player.setDepth(5);
@@ -151,6 +151,7 @@ class GameScene extends Phaser.Scene {
     this.switchObject = this.makeSwitch(this.level === 2 ? 1320 : 670, 470);
     this.gate = this.makeGate(this.level === 2 ? 1830 : 865, 425);
     this.gate.setDepth(3);
+    if (this.level === 2) { this.lantern.setVisible(false); this.shadow.setVisible(false); this.shadowLabel.setVisible(false); this.coffee.setVisible(false); this.switchObject.setVisible(false); }
 
     this.statusText = this.add.text(28, 24, this.level === 1 ? "PROBATION  //  SHIFT 01" : "NIGHT AUDIT  //  SHIFT 02", {
       fontFamily: "monospace", fontSize: "13px", color: "#f39a45", letterSpacing: 2
@@ -170,6 +171,7 @@ class GameScene extends Phaser.Scene {
       backgroundColor: "#21182f", padding: { x: 10, y: 8 },
       lineSpacing: 5, align: "right"
     }).setOrigin(1, 0).setDepth(8).setScrollFactor(0);
+    if (this.level === 2) { this.statusText.setVisible(false); this.demandText.setVisible(false); this.dialogueText.setVisible(false); }
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -180,13 +182,9 @@ class GameScene extends Phaser.Scene {
   }
 
   private physicslessHint(): void {
-    this.add.text(28, 78,
-      this.level === 1
-        ? "GOAL: GET COFFEE → ALIGN LANTERN RIGHT → ACTIVATE SWITCH.\nAT EXIT, PRESS ENTER TO LOAD SHIFT 02."
-        : "GOAL: RECOVER FUSE → ALIGN LANTERN LEFT → ACTIVATE SWITCH.\nAT EXIT, PRESS ENTER TO FINISH SHIFT 02.", {
-      fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff",
-      backgroundColor: "#21182f", padding: { x: 8, y: 6 },
-      lineSpacing: 4, wordWrap: { width: 440 }
+    if (this.level === 1) this.add.text(28, 78,
+      "GOAL: GET COFFEE → ALIGN LANTERN RIGHT → ACTIVATE SWITCH.\nAT EXIT, PRESS ENTER TO LOAD SHIFT 02.", {
+      fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff", backgroundColor: "#21182f", padding: { x: 8, y: 6 }, lineSpacing: 4, wordWrap: { width: 440 }
     }).setDepth(8).setScrollFactor(0);
   }
 
@@ -274,7 +272,7 @@ class GameScene extends Phaser.Scene {
     );
 
     const eDown = this.keys.E.isDown;
-    if (eDown && !this.eWasDown) this.interact();
+    if (eDown && !this.eWasDown) { if (this.level === 2) this.interactWithRelay(); else this.interact(); }
     this.eWasDown = eDown;
     const rDown = this.keys.R.isDown;
     if (rDown && !this.rWasDown) this.restartFromShiftOne();
@@ -283,8 +281,7 @@ class GameScene extends Phaser.Scene {
     if (enterDown && !this.enterWasDown && this.switchOn && this.isAtExit()) this.handleExitEnter();
     this.enterWasDown = enterDown;
 
-    this.refreshShadow();
-    this.updateCoffee();
+    if (this.level === 1) { this.refreshShadow(); this.updateCoffee(); } else this.updateRelayHint();
     this.updateGate();
     if (this.time.now > this.messageUntil && this.messageUntil !== 0) {
       this.dialogueText.setText("A/D MOVE   SPACE JUMP   E INTERACT");
@@ -293,11 +290,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private createAtmosphere(): void {
-    const fireflyPoints = [
-      [82, 365], [145, 330], [220, 286], [318, 365], [375, 310],
-      [430, 355], [535, 290], [585, 345], [700, 315], [742, 365],
-      [835, 300], [900, 355], [510, 420], [290, 445], [760, 445]
-    ];
+    const fireflyPoints = this.level === 2 ? [[74,88],[184,171],[302,74],[438,145],[557,62],[708,120],[864,78],[104,248],[354,218],[623,235],[818,192],[482,320],[902,278]] : [[82,365],[145,330],[220,286],[318,365],[375,310],[430,355],[535,290],[585,345],[700,315],[742,365],[835,300],[900,355],[510,420],[290,445],[760,445]];
     fireflyPoints.forEach(([x, y], i) => {
       const dot = this.add.circle(x, y, i % 4 === 0 ? 2 : 1.4, this.level === 2 ? (i % 3 === 0 ? 0x9ce2c4 : 0x5f9380) : (i % 3 === 0 ? 0xf39a45 : 0xc5a8ff), 0.15).setDepth(1);
       this.tweens.add({
@@ -360,12 +353,10 @@ class GameScene extends Phaser.Scene {
 
   private makePumpkin(x: number, y: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
-    const groundShadow = this.add.graphics();
-    groundShadow.fillStyle(0x05040a, 0.42);
-    groundShadow.fillEllipse(0, 19, 48, 11);
-    groundShadow.fillStyle(0xf39a45, 0.12);
-    groundShadow.fillEllipse(0, 18, 35, 7);
-    c.add(groundShadow);
+    const groundShadow = this.add.graphics(); groundShadow.fillStyle(0x05040a,0.42); groundShadow.fillEllipse(0,19,48,11); groundShadow.fillStyle(this.level===2?0x65d9df:0xf39a45,0.12); groundShadow.fillEllipse(0,18,35,7); c.add(groundShadow);
+    if(this.level===2){
+      const suit=this.add.graphics();suit.fillStyle(0x020711,1);suit.fillRoundedRect(-14,-5,28,23,7);suit.fillStyle(0x172b43,1);suit.fillRoundedRect(-11,-4,22,20,6);suit.fillStyle(0x42657c,1);suit.fillRoundedRect(-9,-2,18,15,5);suit.fillStyle(0x9ce2c4,0.9);suit.fillRect(-8,1,16,2);suit.fillStyle(0x07111e,1);suit.fillRoundedRect(-17,0,7,14,3);suit.fillRoundedRect(10,0,7,14,3);suit.fillStyle(0x9ce2c4,1);suit.fillRect(-16,3,5,2);suit.fillRect(11,3,5,2);suit.fillStyle(0x020711,1);suit.fillRoundedRect(-9,13,7,10,2);suit.fillRoundedRect(2,13,7,10,2);suit.fillStyle(0x54788d,1);suit.fillRoundedRect(-9,19,8,4,1);suit.fillRoundedRect(2,19,8,4,1);suit.fillStyle(0x0b1424,1);suit.fillRoundedRect(-8,-24,16,7,3);suit.fillStyle(0x1b334b,1);suit.fillCircle(0,-13,16);suit.fillStyle(0x47768b,1);suit.fillCircle(0,-13,13);suit.fillStyle(0x06101d,1);suit.fillEllipse(0,-13,23,17);suit.fillStyle(0x78d8d8,0.92);suit.fillEllipse(0,-14,19,12);suit.fillStyle(0xc4ffff,0.75);suit.fillEllipse(-4,-17,7,3);suit.lineStyle(1,0xd7f3e6,0.8);suit.beginPath();suit.arc(0,-13,15,3.45,5.95,false);suit.strokePath();suit.fillStyle(0x9ce2c4,1);suit.fillCircle(-4,-13,1.6);suit.fillCircle(4,-13,1.6);c.add(suit);const visor=this.add.graphics();visor.fillStyle(0x07111e,1);visor.fillEllipse(-4,-13,3,4);visor.fillEllipse(4,-13,3,4);visor.fillStyle(0xe2ffff,0.9);visor.fillCircle(-4,-14,1);visor.fillCircle(4,-14,1);c.add(visor);return c;
+    }
 
     // Layered, hand-drawn pumpkin body: dark silhouette, lobes, carved grooves and rim light.
     const g = this.add.graphics();
@@ -490,7 +481,7 @@ class GameScene extends Phaser.Scene {
       g.fillStyle(0xf5bd70, 0.9); g.fillCircle(-6, -23, 1.2); g.fillCircle(1, -24, 1.2);
     }
     c.add(g); c.setDepth(5);
-    this.add.text(x, y + 15, label, { fontFamily: "monospace", fontSize: "9px", color: label === "FUSE" ? "#9ce2c4" : "#f0e8d8" }).setOrigin(0.5);
+    if (this.level === 1) this.add.text(x, y + 15, label, { fontFamily: "monospace", fontSize: "9px", color: "#f0e8d8" }).setOrigin(0.5);
     return c;
   }
 
@@ -504,7 +495,7 @@ class GameScene extends Phaser.Scene {
     g.lineStyle(2, 0x7055a5, 0.85);
     g.lineBetween(-8, -25, 8, -25);
     c.add(g);
-    this.add.text(x, y + 16, "SWITCH", { fontFamily: "monospace", fontSize: "9px", color: "#c5b7d7" }).setOrigin(0.5);
+    if (this.level === 1) this.add.text(x, y + 16, "SWITCH", { fontFamily: "monospace", fontSize: "9px", color: "#c5b7d7" }).setOrigin(0.5);
     return c;
   }
 
@@ -513,11 +504,7 @@ class GameScene extends Phaser.Scene {
     const art = this.add.graphics();
     this.drawGateArt(art, false);
     c.add(art);
-    this.add.text(x, y + 73, this.level === 2 ? "EXIT 02" : "EXIT 01", {
-      fontFamily: "monospace", fontSize: "10px",
-      color: this.level === 2 ? "#9ce2c4" : "#f39a45",
-      backgroundColor: "#17131f", padding: { x: 5, y: 3 }
-    }).setOrigin(0.5).setDepth(6);
+    if (this.level === 1) this.add.text(x, y + 73, "EXIT 01", { fontFamily: "monospace", fontSize: "10px", color: "#f39a45", backgroundColor: "#17131f", padding: { x: 5, y: 3 } }).setOrigin(0.5).setDepth(6);
     return c;
   }
 
@@ -735,6 +722,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private drawLevelTwoBackdrop(offsetX = 0): void {
+    if (this.level === 2) { this.drawOrbitalBackdrop(offsetX); return; }
     const g = this.add.graphics().setDepth(-10).setPosition(offsetX, 0).setScrollFactor(0.34, 1);
     // Paint an opaque full-canvas base FIRST. Shift 01's SVG is at depth -20,
     // so this masks every pixel of that environment, including its sky and ground.
@@ -797,6 +785,44 @@ class GameScene extends Phaser.Scene {
     }
     // Foreground bank is drawn by the collision platforms so it scrolls at full speed.
   }
+  private drawOrbitalBackdrop(offsetX: number): void {
+    const g=this.add.graphics().setDepth(-10).setPosition(offsetX,0).setScrollFactor(0.22,1);
+    g.fillStyle(0x050813,1);g.fillRect(0,0,W,H);
+    g.fillStyle(0x11152b,0.7);g.fillEllipse(270,170,480,150);g.fillStyle(0x17223a,0.45);g.fillEllipse(340,160,320,88);g.fillStyle(0x111e2c,0.65);g.fillEllipse(720,240,540,120);
+    g.fillStyle(0x172b3c,1);g.fillCircle(770,138,92);g.fillStyle(0x203d4c,1);g.fillCircle(748,120,78);g.fillStyle(0x91d4d0,0.12);g.fillCircle(730,111,62);
+    g.lineStyle(2,0x5b879b,0.48);g.beginPath();g.ellipse(770,145,139,29,-0.18,0,Math.PI*2);g.strokePath();g.lineStyle(1,0x8bc7c5,0.24);g.beginPath();g.ellipse(770,145,153,34,-0.18,0,Math.PI*2);g.strokePath();
+    for(let i=0;i<74;i++){const x=(i*137+31)%W,y=22+((i*67+19)%295);g.fillStyle(i%7===0?0x9ce2c4:0xd2e5f5,i%5===0?0.8:0.48);g.fillCircle(x,y,i%13===0?1.8:i%4===0?1.2:0.65);}
+    g.fillStyle(0x101b2a,1);g.fillRect(0,366,W,134);g.fillStyle(0x172738,1);g.fillRect(32,337,160,82);g.fillRect(220,358,112,61);g.fillRect(392,327,176,92);g.fillRect(617,354,122,65);g.fillRect(788,337,140,82);
+    g.fillStyle(0x233b4b,1);g.fillRect(48,347,126,4);g.fillRect(407,337,145,4);g.fillRect(803,347,110,4);g.fillStyle(0x9ce2c4,0.62);
+    for(const [x,y] of [[73,372],[94,372],[115,372],[431,365],[453,365],[475,365],[497,365],[823,369],[845,369],[867,369]])g.fillRect(x,y,5,3);
+    g.fillStyle(0x0a111d,1);g.fillRect(0,420,W,80);g.lineStyle(2,0x304c60,0.75);g.beginPath();g.moveTo(0,420);g.lineTo(155,420);g.lineTo(178,409);g.lineTo(334,409);g.lineTo(354,420);g.lineTo(592,420);g.lineTo(617,408);g.lineTo(777,408);g.lineTo(802,420);g.lineTo(W,420);g.strokePath();
+  }
+
+  private createRelayPuzzle(): void {
+    const specs=[{x:1210,shape:0},{x:1575,shape:1},{x:680,shape:2}];
+    this.relayNodes=specs.map(({x,shape})=>{
+      const node=this.add.container(x,this.floorY-3).setDepth(4),g=this.add.graphics();
+      g.fillStyle(0x030710,0.7);g.fillEllipse(0,0,56,12);g.fillStyle(0x111f31,1);g.fillRoundedRect(-16,-55,32,54,4);g.fillStyle(0x243c4b,1);g.fillRoundedRect(-12,-51,24,46,3);g.lineStyle(2,0x5d8799,0.95);g.strokeRoundedRect(-12,-51,24,46,3);g.fillStyle(0x07101b,1);g.fillCircle(0,-31,13);g.lineStyle(2,0x527b91,1);
+      if(shape===0)g.strokeCircle(0,-31,8);else if(shape===1){g.beginPath();g.moveTo(0,-41);g.lineTo(9,-31);g.lineTo(0,-21);g.lineTo(-9,-31);g.closePath();g.strokePath();}else{g.beginPath();g.moveTo(0,-42);g.lineTo(10,-24);g.lineTo(-10,-24);g.closePath();g.strokePath();}
+      g.fillStyle(0x9ce2c4,0.18);g.fillCircle(0,-31,4);node.add(g);this.tweens.add({targets:node,y:this.floorY-5,duration:1400+shape*150,yoyo:true,repeat:-1,ease:"Sine.inOut"});return node;
+    });
+    const board=this.add.container(300,395).setDepth(4),bg=this.add.graphics();bg.fillStyle(0x08111d,0.9);bg.fillRoundedRect(-62,-31,124,48,5);bg.lineStyle(1,0x42677a,0.9);bg.strokeRoundedRect(-62,-31,124,48,5);bg.lineStyle(1,0x42677a,0.7);bg.lineBetween(-43,-7,43,-7);bg.lineStyle(2,0x9ce2c4,0.9);bg.beginPath();bg.moveTo(-38,-18);bg.lineTo(-29,-2);bg.lineTo(-47,-2);bg.closePath();bg.strokePath();bg.strokeCircle(0,-10,8);bg.beginPath();bg.moveTo(38,-19);bg.lineTo(47,-10);bg.lineTo(38,-1);bg.lineTo(29,-10);bg.closePath();bg.strokePath();board.add(bg);this.tweens.add({targets:board,alpha:{from:0.78,to:1},duration:1200,yoyo:true,repeat:-1,ease:"Sine.inOut"});
+  }
+  private interactWithRelay(): void {
+    let target=-1,best=70;this.relayNodes.forEach((node,index)=>{const d=Phaser.Math.Distance.Between(this.player.x,this.player.y,node.x,node.y);if(d<best){best=d;target=index;}});
+    if(target<0)return;if(this.relayNodeActive[target]){this.showPuzzlePulse("NODE ALREADY SYNCHRONIZED");return;}
+    if(target!==this.relaySequence[this.relayProgress]){this.relayProgress=0;this.relayNodeActive=[false,false,false];this.relayNodes.forEach((node,index)=>this.paintRelayNode(node,index,false));this.showPuzzlePulse("SIGNAL COLLAPSE");this.cameras.main.shake(130,0.0025);return;}
+    this.relayNodeActive[target]=true;this.relayProgress++;this.paintRelayNode(this.relayNodes[target],target,true);this.showPuzzlePulse(this.relayProgress===3?"SIGNAL RESTORED":"RELAY SYNCHRONIZED");this.cameras.main.flash(110,70,170,160,false);
+    if(this.relayProgress===3){this.switchOn=true;this.updateGate();const halo=this.add.circle(this.gate.x,this.gate.y-25,48,0x9ce2c4,0.12).setDepth(2);this.tweens.add({targets:halo,alpha:0.02,scale:1.4,duration:700,yoyo:true,repeat:-1});}
+  }
+  private paintRelayNode(node:Phaser.GameObjects.Container,index:number,active:boolean):void{
+    const g=node.getAt(0) as Phaser.GameObjects.Graphics;g.clear();g.fillStyle(0x030710,0.7);g.fillEllipse(0,0,56,12);g.fillStyle(0x111f31,1);g.fillRoundedRect(-16,-55,32,54,4);g.fillStyle(active?0x244d50:0x243c4b,1);g.fillRoundedRect(-12,-51,24,46,3);g.lineStyle(2,active?0x9ce2c4:0x5d8799,0.95);g.strokeRoundedRect(-12,-51,24,46,3);g.fillStyle(0x07101b,1);g.fillCircle(0,-31,13);g.lineStyle(2,active?0x9ce2c4:0x527b91,1);
+    if(index===0)g.strokeCircle(0,-31,8);else if(index===1){g.beginPath();g.moveTo(0,-41);g.lineTo(9,-31);g.lineTo(0,-21);g.lineTo(-9,-31);g.closePath();g.strokePath();}else{g.beginPath();g.moveTo(0,-42);g.lineTo(10,-24);g.lineTo(-10,-24);g.closePath();g.strokePath();}g.fillStyle(0x9ce2c4,active?1:0.18);g.fillCircle(0,-31,4);
+    if(active){const ring=this.add.circle(node.x,node.y-31,19,0x9ce2c4,0.12).setDepth(3);this.tweens.add({targets:ring,scale:1.6,alpha:0,duration:420,onComplete:()=>ring.destroy()});}
+  }
+  private showPuzzlePulse(message:string):void{this.dialogueText.setVisible(true).setText(message).setColor("#b9f5dc").setBackgroundColor("#08111d");this.dialogueText.setPosition(W/2,H-42);this.puzzleHintUntil=this.time.now+1000;}
+  private updateRelayHint():void{if(this.time.now>=this.puzzleHintUntil)this.dialogueText.setVisible(false);}
+
   private drawCheckpoint(): void {
     this.checkpointMarker = this.add.container(this.checkpointX, this.floorY - 2).setDepth(4);
     const g = this.add.graphics();
@@ -808,10 +834,6 @@ class GameScene extends Phaser.Scene {
     g.fillStyle(0x9ce2c4, 1); g.fillCircle(0, -32, 5);
     g.fillStyle(0xd7f3e6, 1); g.fillCircle(-1, -33, 2);
     this.checkpointMarker.add(g);
-    this.add.text(this.checkpointX, this.floorY - 78, "MIDPOINT // CHECKPOINT", {
-      fontFamily: "monospace", fontSize: "9px", color: "#9ce2c4",
-      backgroundColor: "#0b171d", padding: { x: 4, y: 3 }
-    }).setOrigin(0.5).setDepth(4);
   }
 
   private drawFoundryObstacles(): void {
@@ -870,10 +892,6 @@ class GameScene extends Phaser.Scene {
           yoyo: true, repeat: -1, ease: "Sine.inOut", delay: i * 120
         });
       }
-      this.add.text(o.x + o.w / 2, o.y - 14, i % 2 === 0 ? "LIVE PIPE" : "VENT / HOT", {
-        fontFamily: "monospace", fontSize: "8px", color: "#9ce2c4",
-        backgroundColor: "#0b171d", padding: { x: 3, y: 2 }
-      }).setOrigin(0.5).setDepth(4);
     }
   }
 
