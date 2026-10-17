@@ -62,6 +62,7 @@ class GameScene extends Phaser.Scene {
     this.drawPlatforms();
 
     this.player = this.makePumpkin(105, 483);
+    this.player.setDepth(5);
     this.playerBody = this.add.rectangle(0, 0, 30, 34, 0xffffff, 0);
     this.player.add(this.playerBody);
     this.playerArt = this.player.getAt(1) as Phaser.GameObjects.Graphics;
@@ -78,6 +79,7 @@ class GameScene extends Phaser.Scene {
     this.coffee = this.makeCoffee(this.level === 1 ? 342 : 475, 467, this.level === 1 ? "COFFEE" : "FUSE");
     this.switchObject = this.makeSwitch(670, 470);
     this.gate = this.makeGate(865, 425);
+    this.gate.setDepth(3);
 
     this.statusText = this.add.text(28, 24, this.level === 1 ? "PROBATION  //  SHIFT 01" : "NIGHT AUDIT  //  SHIFT 02", {
       fontFamily: "monospace", fontSize: "13px", color: "#f39a45", letterSpacing: 2
@@ -246,11 +248,11 @@ class GameScene extends Phaser.Scene {
           g.lineStyle(1, this.level === 2 ? 0x79a38c : (n % 2 === 0 ? 0x8b7954 : 0xb5a16a), 0.82);
           g.lineBetween(x, p.y, x - 1, p.y - 3 - n);
         }
-        g.lineStyle(1, this.level === 2 ? 0x35544d : 0x5c456b, 0.9);
+        g.lineStyle(1, this.level === 2 ? 0x35544d : 0x3d294c, 0.95);
         for (let x = p.x + 12; x < p.x + p.w - 4; x += 27) {
           g.lineBetween(x, p.y + 11, x, Math.min(p.y + 39, p.y + p.h - 2));
         }
-        g.fillStyle(0x241b30, 0.5);
+        g.fillStyle(this.level === 2 ? 0x142126 : 0x130e1c, 0.75);
         for (let x = p.x + 19; x < p.x + p.w - 10; x += 61) {
           g.fillRect(x, p.y + 17 + (x % 7), 7, 2);
         }
@@ -385,10 +387,19 @@ class GameScene extends Phaser.Scene {
       g.fillStyle(0x9ce2c4, 1); g.fillRect(-5, -6, 10, 12);
       g.fillStyle(0xd7f3e6, 1); g.fillRect(-2, -13, 4, 3); g.fillRect(-2, 10, 4, 3);
     } else {
-      g.fillStyle(0xeee1d0, 1); g.fillRoundedRect(-9, -11, 18, 17, 3);
-      g.lineStyle(3, 0xeee1d0, 1); g.strokeCircle(10, -3, 5);
-      g.fillStyle(0x6d3d29, 1); g.fillRect(-6, -8, 12, 3);
-      g.lineStyle(2, 0xf0e8d8, 0.6); g.lineBetween(-4, -16, -6, -21); g.lineBetween(3, -16, 1, -22);
+      // Takeaway cup with a dark plum sleeve, brass rim, and warm coffee surface.
+      g.fillStyle(0x09070f, 0.35); g.fillEllipse(0, 8, 34, 7);
+      g.fillStyle(0xe4d3bd, 1); g.fillRoundedRect(-10, -12, 20, 19, 3);
+      g.fillStyle(0x392344, 1); g.fillRoundedRect(-9, -5, 18, 9, 2);
+      g.fillStyle(0xc18b55, 1); g.fillRect(-10, -12, 20, 3);
+      g.fillStyle(0x2a172f, 1); g.fillRoundedRect(-8, -15, 16, 4, 2);
+      g.fillStyle(0x6b3c2d, 1); g.fillEllipse(0, -12, 13, 3);
+      g.lineStyle(3, 0xe4d3bd, 1); g.strokeCircle(11, -3, 5);
+      g.lineStyle(1, 0xc18b55, 1); g.strokeCircle(11, -3, 3);
+      g.fillStyle(0xc18b55, 1); g.fillCircle(0, 0, 2);
+      g.lineStyle(2, 0xf5bd70, 0.8);
+      g.beginPath(); g.moveTo(-4, -17); g.lineTo(-6, -21); g.moveTo(3, -17); g.lineTo(1, -22); g.strokePath();
+      g.fillStyle(0xf5bd70, 0.9); g.fillCircle(-6, -23, 1.2); g.fillCircle(1, -24, 1.2);
     }
     c.add(g); c.setDepth(5);
     this.add.text(x, y + 15, label, { fontFamily: "monospace", fontSize: "9px", color: label === "FUSE" ? "#9ce2c4" : "#f0e8d8" }).setOrigin(0.5);
