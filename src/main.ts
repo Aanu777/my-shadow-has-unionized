@@ -51,10 +51,30 @@ class GameScene extends Phaser.Scene {
 
   create(): void {
     this.level = Number(this.registry.get("shiftLevel") ?? 1);
+    // Scene.restart reuses this scene instance: reset every run/shift flag here.
+    this.transitioning = false;
+    this.won = false;
+    this.hasCoffee = false;
+    this.coffeeHintShown = false;
+    this.demandSatisfied = false;
+    this.switchOn = false;
+    this.playerVx = 0;
+    this.playerVy = 0;
+    this.grounded = false;
+    this.jumpBuffer = 0;
+    this.coyoteTime = 0;
+    this.eWasDown = false;
+    this.rWasDown = false;
+    this.enterWasDown = false;
+    this.messageUntil = 0;
+    this.message = "THE SHADOW IS ON A BREAK. AGAIN.";
     this.lanternX = this.level === 1 ? 260 : 350;
+    this.lanternMin = this.level === 1 ? 190 : 175;
+    this.lanternMax = this.level === 1 ? 405 : 405;
     this.cameras.main.setBackgroundColor(this.level === 1 ? "#17131f" : "#101c22");
-    drawShift01Background(this);
-    if (this.level === 2) this.drawLevelTwoBackdrop();
+    // Do not draw Shift 01's SVG into Shift 02; each shift owns its backdrop.
+    if (this.level === 1) drawShift01Background(this);
+    else this.drawLevelTwoBackdrop();
     this.createAtmosphere();
 
     // Only the solid ground remains. All floating platforms are removed.
