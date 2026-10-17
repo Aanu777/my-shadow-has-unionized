@@ -325,7 +325,103 @@ function buildEnvironment(): void {
 }
 buildEnvironment();
 
-// Asset-led set dressing: these are real CC0 glTF meshes, loaded as optional
+// A readable exit landmark: a high-contrast EXIT sign, illuminated door jambs,
+// and floor chevrons create a clear visual route to the bulkhead from the relay room.
+const exitMint = new THREE.MeshStandardMaterial({
+  color: "#baffd9",
+  emissive: "#39ffad",
+  emissiveIntensity: 3.2,
+  roughness: 0.24
+});
+const exitDark = new THREE.MeshStandardMaterial({
+  color: "#102b25",
+  emissive: "#06271c",
+  emissiveIntensity: 0.7,
+  metalness: 0.42,
+  roughness: 0.32
+});
+const exitSign = new THREE.Group();
+exitSign.name = "exit-sign";
+exitSign.position.set(0, 4.55, -17.55);
+scene.add(exitSign);
+const signBack = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.82, 0.16), materials.dark);
+signBack.castShadow = true;
+exitSign.add(signBack);
+const signFace = new THREE.Mesh(new THREE.PlaneGeometry(2.68, 0.61), exitDark);
+signFace.position.z = 0.09;
+exitSign.add(signFace);
+const signCanvas = document.createElement("canvas");
+signCanvas.width = 512;
+signCanvas.height = 128;
+const signContext = signCanvas.getContext("2d");
+if (signContext) {
+  signContext.fillStyle = "#09251b";
+  signContext.fillRect(0, 0, 512, 128);
+  signContext.strokeStyle = "#65ffc0";
+  signContext.lineWidth = 7;
+  signContext.strokeRect(8, 8, 496, 112);
+  signContext.fillStyle = "#baffd9";
+  signContext.font = "bold 82px Arial, sans-serif";
+  signContext.textAlign = "center";
+  signContext.textBaseline = "middle";
+  signContext.fillText("EXIT  →", 256, 66);
+}
+const signTexture = new THREE.CanvasTexture(signCanvas);
+signTexture.colorSpace = THREE.SRGBColorSpace;
+const signText = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.66, 0.6),
+  new THREE.MeshBasicMaterial({ map: signTexture, transparent: false, toneMapped: false })
+);
+signText.position.z = 0.105;
+signText.name = "exit-sign-glow";
+exitSign.add(signText);
+for (const x of [-1.33, 1.33]) {
+  const border = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.68, 0.035), exitMint);
+  border.position.set(x, 0, 0.12);
+  exitSign.add(border);
+}
+const exitSignLight = new THREE.PointLight("#45ffb0", 7, 10, 1.8);
+exitSignLight.position.set(0, 4.55, -16.8);
+scene.add(exitSignLight);
+
+// Tall luminous jambs outline the actual opening, so the exit reads as a doorway.
+for (const x of [-2.58, 2.58]) {
+  const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.09, 4.25, 0.1), exitMint);
+  jamb.position.set(x, 2.12, -17.52);
+  jamb.name = "exit-jamb";
+  scene.add(jamb);
+}
+const exitThreshold = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.045, 0.42), exitMint);
+exitThreshold.position.set(0, 0.045, -17.2);
+exitThreshold.name = "exit-threshold";
+scene.add(exitThreshold);
+
+// Repeating floor arrows point deeper into the foundry toward the exit.
+const exitArrowMaterial = new THREE.MeshBasicMaterial({
+  color: "#6dffc0",
+  transparent: true,
+  opacity: 0.82,
+  toneMapped: false,
+  side: THREE.DoubleSide
+});
+for (const z of [-9.1, -11.5, -13.9, -16.0]) {
+  const arrowShape = new THREE.Shape();
+  arrowShape.moveTo(-0.38, -0.28);
+  arrowShape.lineTo(0.38, -0.28);
+  arrowShape.lineTo(0.38, 0.02);
+  arrowShape.lineTo(0.72, 0.02);
+  arrowShape.lineTo(0, 0.72);
+  arrowShape.lineTo(-0.72, 0.02);
+  arrowShape.lineTo(-0.38, 0.02);
+  arrowShape.closePath();
+  const arrow = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), exitArrowMaterial);
+  arrow.rotation.x = -Math.PI / 2;
+  arrow.position.set(0, 0.055, z);
+  arrow.name = "exit-floor-arrow";
+  scene.add(arrow);
+}
+
+ // Asset-led set dressing: these are real CC0 glTF meshes, loaded as optional
 // scene assets. The authored environment below keeps the level playable if a CDN
 // is unavailable, but the models are not replaced by UI tricks or flat images.
 const gltfLoader = new GLTFLoader();
@@ -573,10 +669,10 @@ function updateObjective(): void {
   relayProgress.innerHTML = `SIGNAL <strong>${nextRelay} / ${sequence.length}</strong>`;
   if (gateOpen) {
     objectiveTitle.textContent = "The exit is unlocked";
-    objectiveCopy.textContent = "Reach the bulkhead and press E. Management has lost control.";
+    objectiveCopy.textContent = "Follow the glowing green floor arrows to the EXIT sign, then press E at the bulkhead.";
   } else {
     objectiveTitle.textContent = nextRelay === 0 ? "Decode the maintenance rhythm" : nextRelay < sequence.length ? "Signal pattern in progress" : "Signal accepted";
-    objectiveCopy.textContent = "Begin with the pointed mark, then the solid mark, then the ring. Reverse the first pair before the ring returns.";
+    objectiveCopy.textContent = "Decode the six-beat relay signal. Once it is accepted, follow the green EXIT arrows to the bulkhead.";
   }
 }
 function startGame(): void {
@@ -724,6 +820,13 @@ function animate(): void {
   if (distantPlanet) distantPlanet.rotation.y += delta * 0.035;
   const planetRim = scene.getObjectByName("planet-rim");
   if (planetRim) planetRim.rotation.z += delta * 0.025;
+  const exitSign = scene.getObjectByName("exit-sign");
+  if (exitSign) {
+    const pulse = 0.88 + (Math.sin(t * 2.6) + 1) * 0.12;
+    exitSign.scale.y = pulse;
+  }
+  exitSignLight.intensity = gateOpen ? 11 + Math.sin(t * 3.4) * 1.2 : 5.5 + Math.sin(t * 2.2) * 1.0;
+
   for (const relay of relays) {
     const symbol = relay.group.getObjectByName("relay-symbol");
     if (symbol) {
