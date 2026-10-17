@@ -233,7 +233,7 @@ class GameScene extends Phaser.Scene {
       [835, 300], [900, 355], [510, 420], [290, 445], [760, 445]
     ];
     fireflyPoints.forEach(([x, y], i) => {
-      const dot = this.add.circle(x, y, i % 4 === 0 ? 2 : 1.4, i % 3 === 0 ? 0xf39a45 : 0xc5a8ff, 0.15).setDepth(1);
+      const dot = this.add.circle(x, y, i % 4 === 0 ? 2 : 1.4, this.level === 2 ? (i % 3 === 0 ? 0x9ce2c4 : 0x5f9380) : (i % 3 === 0 ? 0xf39a45 : 0xc5a8ff), 0.15).setDepth(1);
       this.tweens.add({
         targets: dot, alpha: { from: 0.12, to: i % 3 === 0 ? 0.85 : 0.58 },
         scale: { from: 0.75, to: 1.5 }, x: x + (i % 2 === 0 ? 10 : -12),
@@ -242,7 +242,7 @@ class GameScene extends Phaser.Scene {
       });
     });
     for (let i = 0; i < 5; i++) {
-      const spark = this.add.circle(260 + (i - 2) * 12, 414 - (i % 3) * 8, 1.5, 0xffdf91, 0.6).setDepth(4);
+      const spark = this.add.circle(this.lanternX + (i - 2) * 12, 414 - (i % 3) * 8, 1.5, this.level === 2 ? 0xb5efd3 : 0xffdf91, 0.6).setDepth(4);
       this.tweens.add({
         targets: spark, y: spark.y - 9 - (i % 3) * 3, alpha: 0,
         duration: 700 + i * 130, delay: i * 170, repeat: -1,
