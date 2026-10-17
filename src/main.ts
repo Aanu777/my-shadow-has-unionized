@@ -645,13 +645,70 @@ class GameScene extends Phaser.Scene {
   }
 
   private drawLevelTwoBackdrop(): void {
-    const g=this.add.graphics().setDepth(-10);
-    g.fillStyle(0x102027,0.92);g.fillRect(0,255,W,245);
-    g.fillStyle(0x1b3437,1);g.beginPath();g.moveTo(0,395);g.lineTo(95,320);g.lineTo(190,370);g.lineTo(315,285);g.lineTo(435,380);g.lineTo(560,305);g.lineTo(690,370);g.lineTo(815,275);g.lineTo(960,365);g.lineTo(960,500);g.lineTo(0,500);g.closePath();g.fillPath();
-    g.fillStyle(0x0b171d,0.8);
-    for(const [x,y,h] of [[38,325,100],[150,345,80],[270,318,112],[590,332,96],[735,310,120],[910,335,90]]){g.fillTriangle(x-28,y+h,x,y,x+28,y+h);g.fillRect(x-4,y+h-4,8,42);}
-    g.fillStyle(0x9ce2c4,0.15);g.fillCircle(760,130,92);g.fillStyle(0x9ce2c4,0.24);g.fillCircle(760,130,44);g.fillStyle(0xd7f3e6,0.45);g.fillCircle(760,130,30);
-    for(let i=0;i<22;i++){const x=(i*137+31)%W;const y=105+((i*53)%185);g.fillStyle(i%3===0?0x9ce2c4:0x78a6a0,0.32);g.fillCircle(x,y,i%4===0?2:1);}
+    const g = this.add.graphics().setDepth(-10);
+    // Shift 02 is a derelict lantern foundry swallowed by the swamp.
+    g.fillStyle(0x0b171d, 0.96); g.fillRect(0, 245, W, 255);
+    g.fillStyle(0x142329, 1);
+    // Distant factory skyline with chimneys, roof breaks and tiny lit windows.
+    for (const [x, y, w, h] of [[0,342,94,58],[112,348,62,52],[190,335,64,65],[277,348,67,52],[362,332,61,68],[428,350,52,50],[500,342,60,58],[590,347,65,53],[675,338,66,62],[762,350,69,50],[849,342,65,58]]) {
+      g.fillRect(x, y, w, h);
+      g.fillStyle(0x20383a, 1); g.fillRect(x + 7, y + 9, Math.max(4, w - 14), 2);
+      g.fillStyle(0x9ce2c4, 0.62);
+      for (let wx = x + 12; wx < x + w - 7; wx += 19) g.fillRect(wx, y + 19 + ((wx + y) % 7), 4, 8);
+      g.fillStyle(0x142329, 1);
+    }
+    g.fillRect(390, 286, 12, 54); g.fillRect(386, 276, 20, 8);
+    g.fillRect(704, 307, 14, 38); g.fillRect(700, 297, 22, 8);
+    g.fillRect(875, 303, 13, 43); g.fillRect(871, 293, 21, 8);
+    // Broken ridge planes create visible depth instead of a flat gradient.
+    g.fillStyle(0x203b3a, 1); g.beginPath();
+    g.moveTo(0, 397); g.lineTo(76, 354); g.lineTo(136, 369); g.lineTo(206, 315);
+    g.lineTo(259, 354); g.lineTo(327, 334); g.lineTo(385, 372); g.lineTo(451, 326);
+    g.lineTo(508, 358); g.lineTo(573, 294); g.lineTo(633, 348); g.lineTo(690, 329);
+    g.lineTo(754, 364); g.lineTo(816, 311); g.lineTo(866, 348); g.lineTo(921, 316);
+    g.lineTo(960, 341); g.lineTo(960, 500); g.lineTo(0, 500); g.closePath(); g.fillPath();
+    g.lineStyle(2, 0x5f9380, 0.65); g.beginPath();
+    g.moveTo(0,397); g.lineTo(76,354); g.lineTo(136,369); g.lineTo(206,315); g.lineTo(259,354);
+    g.lineTo(327,334); g.lineTo(385,372); g.lineTo(451,326); g.lineTo(508,358); g.lineTo(573,294);
+    g.lineTo(633,348); g.lineTo(690,329); g.lineTo(754,364); g.lineTo(816,311); g.lineTo(866,348);
+    g.lineTo(921,316); g.lineTo(960,341); g.strokePath();
+    // Thick pipework and joints across the ruined back wall.
+    g.lineStyle(14, 0x0b171d, 1); g.beginPath(); g.moveTo(0,408); g.lineTo(0,383); g.lineTo(105,383); g.lineTo(105,399); g.lineTo(165,399); g.lineTo(165,374); g.lineTo(218,374); g.strokePath();
+    g.lineStyle(5, 0x4c7169, 1); g.strokePath();
+    g.lineStyle(16, 0x0b171d, 1); g.beginPath(); g.moveTo(585,392); g.lineTo(585,365); g.lineTo(656,365); g.lineTo(656,386); g.lineTo(730,386); g.lineTo(730,354); g.lineTo(804,354); g.lineTo(804,389); g.lineTo(960,389); g.strokePath();
+    g.lineStyle(5, 0x4c7169, 1); g.strokePath();
+    // Masonry frames and broken brick seams at the edges.
+    g.fillStyle(0x17272a, 1); g.fillRect(0,263,47,237); g.fillRect(915,281,45,219);
+    g.fillStyle(0x42655d, 1); g.fillRect(0,263,47,7); g.fillRect(915,281,45,7);
+    g.lineStyle(1, 0x8bb7a0, 0.24);
+    for (let y = 289; y < 490; y += 22) { g.lineBetween(0,y,47,y); g.lineBetween(915,y+9,960,y+9); }
+    g.lineStyle(1, 0x54796e, 0.2);
+    for (let y = 300; y < 490; y += 28) { g.lineBetween(22,y,22,y+12); g.lineBetween(938,y+9,938,y+22); }
+    // Dead swamp trees in the foreground, intentionally different from Shift 01 pines.
+    g.fillStyle(0x0b171d, 1);
+    for (const [x,y,h] of [[58,394,106],[265,403,97],[630,395,105],[915,392,108]]) {
+      g.fillTriangle(x-17,y+70,x,y,x+15,y+70);
+      g.fillTriangle(x-15,y+38,x-27,y+53,x-7,y+49);
+      g.fillTriangle(x+10,y+51,x+28,y+63,x+9,y+65);
+      g.fillRect(x-3,y+58,6,h-58);
+    }
+    // Pale swamp lights and a cool moon halo.
+    g.fillStyle(0x9ce2c4, 0.1); g.fillCircle(760,130,100);
+    g.fillStyle(0x9ce2c4, 0.2); g.fillCircle(760,130,44);
+    g.fillStyle(0xd7f3e6, 0.42); g.fillCircle(760,130,29);
+    for (let i = 0; i < 20; i++) {
+      const x = (i * 137 + 31) % W, y = 105 + ((i * 53) % 185);
+      g.fillStyle(i % 3 === 0 ? 0x9ce2c4 : 0x78a6a0, 0.4);
+      g.fillCircle(x, y, i % 4 === 0 ? 2 : 1);
+    }
+    // Layered swamp-bank edge; gameplay collision floor remains unchanged at y=500.
+    g.fillStyle(0x122629, 1); g.fillRect(0, 500, W, 100);
+    g.fillStyle(0x79a38c, 1); g.fillRect(0, 500, W, 4);
+    g.fillStyle(0x375d56, 1); g.fillRect(0, 505, W, 4);
+    g.lineStyle(2, 0x426d64, 0.8); g.beginPath();
+    g.moveTo(0,516); g.lineTo(67,511); g.lineTo(116,521); g.lineTo(187,513); g.lineTo(249,523);
+    g.lineTo(321,512); g.lineTo(395,522); g.lineTo(467,514); g.lineTo(545,524); g.lineTo(624,512);
+    g.lineTo(701,521); g.lineTo(779,513); g.lineTo(850,522); g.lineTo(916,513); g.lineTo(960,518); g.strokePath();
   }
   private isAtExit(): boolean { return Phaser.Math.Distance.Between(this.player.x,this.player.y,this.gate.x,this.gate.y)<78; }
   private handleExitEnter(): void { if(this.level===1){this.transitionToShiftTwo();return;}this.won=true;this.showWin(); }
