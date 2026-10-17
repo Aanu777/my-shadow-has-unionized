@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import "./style.css";
+import { drawShift01Background } from "./levels/shift-01/background";
 
 const W = 960;
 const H = 600;
@@ -45,7 +46,7 @@ class GameScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor("#17131f");
-    this.drawBackdrop();
+    drawShift01Background(this);
     this.createAtmosphere();
 
     this.platforms = [
