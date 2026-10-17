@@ -1,5 +1,9 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import "./style.css";
 
 const root = document.querySelector<HTMLDivElement>("#game-view");
@@ -33,6 +37,16 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.15;
 root.appendChild(renderer.domElement);
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  0.48,
+  0.58,
+  0.82
+);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
 
 scene.add(new THREE.HemisphereLight("#b8a6df", "#201426", 1.4));
 const moonLight = new THREE.DirectionalLight("#c8b5ff", 2.1);
@@ -61,13 +75,16 @@ for (const z of [8, 1, -6, -13, -20]) {
 }
 
 const materials = {
-  floor: new THREE.MeshStandardMaterial({ color: "#242033", roughness: 0.84, metalness: 0.25 }),
-  wall: new THREE.MeshStandardMaterial({ color: "#30283e", roughness: 0.76, metalness: 0.45 }),
-  dark: new THREE.MeshStandardMaterial({ color: "#171321", roughness: 0.68, metalness: 0.55 }),
-  copper: new THREE.MeshStandardMaterial({ color: "#a96543", roughness: 0.42, metalness: 0.68 }),
-  glow: new THREE.MeshStandardMaterial({ color: "#e7a76c", emissive: "#d46c35", emissiveIntensity: 2.1, roughness: 0.35 }),
-  violet: new THREE.MeshStandardMaterial({ color: "#7660a8", emissive: "#4b347b", emissiveIntensity: 0.6, roughness: 0.4 }),
-  glass: new THREE.MeshStandardMaterial({ color: "#171b37", emissive: "#282a65", emissiveIntensity: 0.8, metalness: 0.65, roughness: 0.18 })
+  floor: new THREE.MeshStandardMaterial({ color: "#252333", roughness: 0.34, metalness: 0.42 }),
+  wall: new THREE.MeshStandardMaterial({ color: "#343143", roughness: 0.58, metalness: 0.62 }),
+  dark: new THREE.MeshStandardMaterial({ color: "#14131f", roughness: 0.5, metalness: 0.72 }),
+  copper: new THREE.MeshStandardMaterial({ color: "#a96543", roughness: 0.32, metalness: 0.78 }),
+  glow: new THREE.MeshStandardMaterial({ color: "#ffd4a0", emissive: "#e7793d", emissiveIntensity: 3.2, roughness: 0.22 }),
+  violet: new THREE.MeshStandardMaterial({ color: "#8c7bc4", emissive: "#5541a0", emissiveIntensity: 1.15, roughness: 0.28 }),
+  glass: new THREE.MeshPhysicalMaterial({ color: "#1d2344", emissive: "#282a65", emissiveIntensity: 1.05, metalness: 0.72, roughness: 0.12, clearcoat: 0.8, clearcoatRoughness: 0.15 }),
+  rubber: new THREE.MeshStandardMaterial({ color: "#0a0b12", roughness: 0.94, metalness: 0.04 }),
+  ceramic: new THREE.MeshStandardMaterial({ color: "#55536a", roughness: 0.27, metalness: 0.58 }),
+  warning: new THREE.MeshStandardMaterial({ color: "#ffb35e", emissive: "#c95a22", emissiveIntensity: 1.7, roughness: 0.35 })
 };
 
 function box(parent: THREE.Object3D, x: number, y: number, z: number, w: number, h: number, d: number, material: THREE.Material, cast = true): THREE.Mesh {
@@ -177,30 +194,160 @@ function buildEnvironment(): void {
 
 buildEnvironment();
 
-// Imported CC0 model props add authored silhouettes and real mesh detail. The scene
-// still loads if the optional remote asset host is unavailable.
+// Asset-led set dressing: these are real CC0 glTF meshes, loaded as optional
+// scene assets. The authored environment below keeps the level playable if a CDN
+// is unavailable, but the models are not replaced by UI tricks or flat images.
 const gltfLoader = new GLTFLoader();
-const machineAssetUrl = "https://api.flockbay.com/bootstrap/library/models/v1/9039d1705335f47d3766f467a9aa188a9cac395e2b5eec87a69d971b2a1e9eab/machine_generator.glb";
-const importedProps: THREE.Group[] = [];
-gltfLoader.load(machineAssetUrl, (gltf) => {
-  const model = gltf.scene;
-  model.scale.setScalar(2.15);
+const importedProps: THREE.Object3D[] = [];
+const kenneyAssetBase = "https://raw.githubusercontent.com/euuuuuuan/voidclad-public/main/assets/vendor/kenney_space_kit/";
+function fitModel(model: THREE.Object3D, targetHeight: number): void {
+  const bounds = new THREE.Box3().setFromObject(model);
+  const size = bounds.getSize(new THREE.Vector3());
+  const maxDimension = Math.max(size.x, size.y, size.z) || 1;
+  model.scale.multiplyScalar(targetHeight / maxDimension);
+  const fitted = new THREE.Box3().setFromObject(model);
+  model.position.y -= fitted.min.y;
   model.traverse((node) => {
     if (node instanceof THREE.Mesh) {
       node.castShadow = true;
       node.receiveShadow = true;
+      const mats = Array.isArray(node.material) ? node.material : [node.material];
+      mats.forEach((mat) => {
+        if (mat instanceof THREE.MeshStandardMaterial) {
+          mat.envMapIntensity = 1.15;
+          mat.needsUpdate = true;
+        }
+      });
     }
   });
-  for (const [x, z, rotation] of [[-5.4, -12.2, 0], [5.4, -12.2, Math.PI], [-5.4, 2.2, 0], [5.4, 2.2, Math.PI]] as const) {
-    const prop = model.clone(true);
-    prop.position.set(x, 0.95, z);
-    prop.rotation.y = rotation;
-    scene.add(prop);
-    importedProps.push(prop);
+}
+function loadAsset(file: string, placements: Array<[number, number, number, number]>): void {
+  gltfLoader.load(
+    kenneyAssetBase + file,
+    (gltf) => {
+      const source = gltf.scene;
+      fitModel(source, 2.25);
+      for (const [x, z, height, rotation] of placements) {
+        const instance = source.clone(true);
+        instance.position.set(x, height, z);
+        instance.rotation.y = rotation;
+        scene.add(instance);
+        importedProps.push(instance);
+      }
+    },
+    undefined,
+    () => console.warn("Optional CC0 model unavailable:", file)
+  );
+}
+loadAsset("turret_single.glb", [[-5.45, -11.7, 0, 0], [5.45, -11.7, 0, Math.PI], [-5.45, 2.6, 0, 0], [5.45, 2.6, 0, Math.PI]]);
+loadAsset("satelliteDish_detailed.glb", [[-5.7, -2.8, 0, 0.25], [5.7, -2.8, 0, -0.25]]);
+loadAsset("satelliteDish_large.glb", [[-5.6, -18.4, 0, 0.2], [5.6, -18.4, 0, -0.2]]);
+
+// Additive architectural detail uses curved profiles, rings, cable runs and
+// inset panels to break the original hard-edged block rhythm.
+function tubeBetween(a: THREE.Vector3, b: THREE.Vector3, radius: number, material: THREE.Material, segments = 10): THREE.Mesh {
+  const direction = new THREE.Vector3().subVectors(b, a);
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, direction.length(), segments), material);
+  mesh.position.copy(a).add(b).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  return mesh;
+}
+function addSetDressing(): void {
+  // Arched ribs, concentric service rings and suspended pipework.
+  for (const z of [11, 5, -1, -7, -13, -19]) {
+    for (const side of [-1, 1]) {
+      const support = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.25, 4.7, 12), materials.ceramic);
+      support.position.set(side * 6.9, 2.35, z);
+      support.castShadow = true;
+      support.receiveShadow = true;
+      scene.add(support);
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.055, 8, 18), materials.copper);
+      collar.rotation.x = Math.PI / 2;
+      collar.position.set(side * 6.9, 1.1, z);
+      scene.add(collar);
+      tubeBetween(new THREE.Vector3(side * 6.9, 4.2, z), new THREE.Vector3(side * 5.7, 4.45, z), 0.075, materials.copper, 12);
+    }
+    const hoop = new THREE.Mesh(new THREE.TorusGeometry(6.7, 0.055, 8, 64), materials.ceramic);
+    hoop.position.set(0, 2.6, z);
+    hoop.rotation.x = Math.PI / 2;
+    hoop.scale.y = 0.62;
+    hoop.castShadow = true;
+    scene.add(hoop);
+    const lightRing = new THREE.Mesh(new THREE.TorusGeometry(5.95, 0.025, 6, 64), materials.glow);
+    lightRing.position.set(0, 4.38, z);
+    lightRing.rotation.x = Math.PI / 2;
+    lightRing.scale.y = 0.22;
+    scene.add(lightRing);
   }
-}, undefined, () => {
-  console.warn("Optional CC0 machine model could not be loaded; continuing with fallback scene props.");
-});
+
+  // Recessed floor plates and small service lights; material roughness varies
+  // across the walking surface for a more convincing industrial finish.
+  for (let z = 12; z > -22; z -= 1.5) {
+    for (const x of [-5.9, -3.9, -1.9, 0.1, 2.1, 4.1, 6.1]) {
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.035, 1.3), (Math.round(z * 10 + x) % 3 === 0) ? materials.dark : materials.floor);
+      plate.position.set(x, 0.012, z);
+      plate.receiveShadow = true;
+      scene.add(plate);
+      if (Math.round(z * 10 + x) % 5 === 0) {
+        const boltMat = materials.copper;
+        for (const bx of [-0.72, 0.72]) {
+          for (const bz of [-0.5, 0.5]) {
+            const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.018, 8), boltMat);
+            bolt.position.set(x + bx, 0.04, z + bz);
+            bolt.rotation.x = Math.PI / 2;
+            scene.add(bolt);
+          }
+        }
+      }
+    }
+  }
+
+  // Cable bundles follow the corridor edges rather than floating as decorations.
+  for (const side of [-1, 1]) {
+    for (let line = 0; line < 3; line++) {
+      const x = side * (5.7 + line * 0.19);
+      tubeBetween(new THREE.Vector3(x, 3.85 + line * 0.13, 13), new THREE.Vector3(x, 3.85 + line * 0.13, -22), 0.035 + line * 0.009, line === 1 ? materials.copper : materials.dark, 8);
+    }
+  }
+
+  // Rounded ventilation drums and reactor housings.
+  for (const [x, z] of [[-6.1, -8.8], [6.1, -8.8], [-6.1, 7.5], [6.1, 7.5]] as const) {
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.72, 1.7, 20, 2), materials.dark);
+    drum.position.set(x, 1.0, z);
+    drum.rotation.z = Math.PI / 2;
+    drum.castShadow = true;
+    drum.receiveShadow = true;
+    scene.add(drum);
+    for (const dx of [-0.58, 0.58]) {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.07, 8, 24), materials.copper);
+      rim.position.set(x + dx, 1.0, z);
+      rim.rotation.y = Math.PI / 2;
+      scene.add(rim);
+    }
+    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.06, 16), materials.violet);
+    axle.position.set(x, 1.0, z + 0.87);
+    axle.castShadow = true;
+    scene.add(axle);
+  }
+
+  // Distant dust catches the light without covering the reticle or objectives.
+  const dustGeometry = new THREE.BufferGeometry();
+  const dustCount = 460;
+  const positions = new Float32Array(dustCount * 3);
+  for (let i = 0; i < dustCount; i++) {
+    positions[i * 3] = -7.2 + Math.random() * 14.4;
+    positions[i * 3 + 1] = 0.45 + Math.random() * 4.2;
+    positions[i * 3 + 2] = -22 + Math.random() * 36;
+  }
+  dustGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({ color: "#d8b6ff", size: 0.035, transparent: true, opacity: 0.48, sizeAttenuation: true, depthWrite: false }));
+  scene.add(dust);
+  dust.name = "atmospheric-dust";
+}
+addSetDressing();
 const relays: Relay[] = [makeRelay("triangle", -4.2, -6.8), makeRelay("circle", 0, -6.8), makeRelay("diamond", 4.2, -6.8)];
 const sequence: Relay["kind"][] = ["triangle", "circle", "diamond"];
 let nextRelay = 0;
@@ -482,7 +629,7 @@ function animate(): void {
       }
     }
   }
-  renderer.render(scene, camera);
+  composer.render();
 }
 animate();
 
@@ -490,5 +637,7 @@ window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
+  composer.setSize(window.innerWidth, window.innerHeight);
+  bloomPass.setSize(window.innerWidth, window.innerHeight);
 });
