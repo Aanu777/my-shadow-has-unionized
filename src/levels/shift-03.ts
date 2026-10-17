@@ -380,7 +380,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     this.say("PAPERWORK VERIFIED. EMPLOYEE STATUS: UNRESOLVED.");
     const art = this.door.getAt(0) as Phaser.GameObjects.Graphics;
     this.tweens.add({
-      targets: this.door, x: this.door.x + 74, alpha: 0.15, duration: 900, ease: "Cubic.inOut",
+      targets: this.door, scaleX: 0.08, alpha: 0.15, duration: 900, ease: "Cubic.inOut",
       onComplete: () => { art.setVisible(false); }
     });
     this.cameras.main.shake(180, 0.003);
