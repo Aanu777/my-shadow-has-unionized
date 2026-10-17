@@ -132,66 +132,163 @@ function makeRelay(kind: Relay["kind"], x: number, z: number): Relay {
 }
 
 function buildEnvironment(): void {
-  box(scene, 0, -0.32, -5, 16, 0.6, 40, materials.floor, false);
-  for (let z = 14; z >= -24; z -= 2) {
-    box(scene, 0, 0.005, z, 15.8, 0.025, 0.035, materials.copper, false);
+  // Continuous floor with a procedural brushed-metal / panel texture.
+  const floorCanvas = document.createElement("canvas");
+  floorCanvas.width = 512;
+  floorCanvas.height = 512;
+  const ctx = floorCanvas.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = "#242231";
+    ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 1700; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      ctx.fillStyle = i % 4 === 0 ? "rgba(201,151,109,.12)" : "rgba(210,211,235,.035)";
+      ctx.fillRect(x, y, 2 + Math.random() * 20, 1);
+    }
+    ctx.strokeStyle = "rgba(160,147,184,.15)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i <= 8; i++) {
+      ctx.beginPath(); ctx.moveTo(i * 64, 0); ctx.lineTo(i * 64, 512); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * 64); ctx.lineTo(512, i * 64); ctx.stroke();
+    }
   }
+  const floorTexture = new THREE.CanvasTexture(floorCanvas);
+  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+  floorTexture.repeat.set(2.5, 7);
+  floorTexture.colorSpace = THREE.SRGBColorSpace;
+  const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture, color: "#b8b4c7", roughness: 0.28, metalness: 0.62 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(15.7, 40), floorMaterial);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, -0.015, -5);
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // Side walls are layered panel systems, not monolithic corridor cubes.
   for (const side of [-1, 1]) {
-    box(scene, side * 8, 2.4, -5, 0.6, 5, 40, materials.wall);
-    box(scene, side * 7.55, 4.65, -5, 0.3, 0.25, 40, materials.dark);
-    for (let z = 11; z >= -21; z -= 4) {
-      box(scene, side * 7.63, 2.5, z, 0.13, 2.7, 1.35, materials.dark);
-      lightStrip(side * 7.54, 3.7, z, 0.06, 0.65);
-      box(scene, side * 7.48, 1.1, z, 0.12, 0.28, 0.42, materials.copper, false);
+    for (let z = 13; z >= -23; z -= 3) {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4.55, 2.72), materials.wall);
+      panel.position.set(side * 7.82, 2.38, z);
+      panel.rotation.y = side * -0.035;
+      panel.castShadow = true;
+      panel.receiveShadow = true;
+      scene.add(panel);
+      const inset = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.45, 1.72), materials.dark);
+      inset.position.set(side * 7.69, 2.45, z);
+      scene.add(inset);
+      const insetGlow = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.055, 1.2), materials.glow);
+      insetGlow.position.set(side * 7.66, 3.72, z);
+      scene.add(insetGlow);
+      const footing = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 2.65, 12), materials.ceramic);
+      footing.rotation.x = Math.PI / 2;
+      footing.position.set(side * 7.43, 0.24, z);
+      footing.castShadow = true;
+      scene.add(footing);
     }
-  }
-  for (let z = 12; z >= -22; z -= 6) {
-    box(scene, 0, 5.05, z, 15.7, 0.32, 0.42, materials.dark);
-    for (let x = -6; x <= 6; x += 3) {
-      box(scene, x, 4.78, z, 0.16, 0.42, 0.6, materials.copper);
-    }
-  }
-  for (const x of [-5.8, 5.8]) {
-    for (const z of [1, -5, -11, -17]) {
-      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 4.2, 8), materials.dark);
-      pipe.position.set(x, 2.3, z);
+    // Main service conduits and copper coolant lines.
+    for (let i = 0; i < 4; i++) {
+      const x = side * (6.75 + i * 0.19);
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(i === 0 ? 0.105 : 0.045, i === 0 ? 0.105 : 0.045, 37, 12), i === 1 ? materials.copper : materials.dark);
+      pipe.position.set(x, 4.1 - i * 0.2, -5);
+      pipe.castShadow = true;
       scene.add(pipe);
-      box(scene, x, 0.35, z, 0.42, 0.12, 0.42, materials.copper, false);
+      for (const z of [10, 2, -6, -14, -22]) {
+        const clamp = new THREE.Mesh(new THREE.TorusGeometry(i === 0 ? 0.13 : 0.07, 0.025, 6, 16), materials.copper);
+        clamp.rotation.x = Math.PI / 2;
+        clamp.position.set(x, 4.1 - i * 0.2, z);
+        scene.add(clamp);
+      }
     }
   }
-  // Window into the planet-lit void at the end of the corridor.
-  box(scene, 0, 3.1, -23.2, 8.8, 4.7, 0.42, materials.dark);
-  box(scene, 0, 3.15, -22.96, 7.8, 3.8, 0.06, materials.glass, false);
-  const planet = new THREE.Mesh(new THREE.SphereGeometry(2.25, 24, 16), new THREE.MeshStandardMaterial({ color: "#a58bc2", emissive: "#4d356c", emissiveIntensity: 0.55, roughness: 1 }));
+
+  // Repeating ceiling trusses have a curved silhouette and warm recessed strips.
+  for (let z = 12; z >= -22; z -= 4) {
+    const crossBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 15.1, 12), materials.dark);
+    crossBeam.rotation.z = Math.PI / 2;
+    crossBeam.position.set(0, 4.92, z);
+    crossBeam.castShadow = true;
+    scene.add(crossBeam);
+    for (const x of [-6.3, -3.15, 0, 3.15, 6.3]) {
+      const mount = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.52, 10), materials.copper);
+      mount.position.set(x, 4.65, z);
+      mount.castShadow = true;
+      scene.add(mount);
+    }
+    const lampHousing = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 4.7, 4, 12), materials.dark);
+    lampHousing.rotation.z = Math.PI / 2;
+    lampHousing.position.set(0, 4.55, z);
+    scene.add(lampHousing);
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.025, 0.1), materials.glow);
+    lamp.position.set(0, 4.45, z);
+    scene.add(lamp);
+  }
+
+  // Window and distant planet: layered frame, glass, and floating debris.
+  const windowFrame = new THREE.Mesh(new THREE.BoxGeometry(9.2, 5.0, 0.45), materials.dark);
+  windowFrame.position.set(0, 3.1, -23.2);
+  windowFrame.castShadow = true;
+  scene.add(windowFrame);
+  const windowGlass = new THREE.Mesh(new THREE.PlaneGeometry(8.1, 3.9), materials.glass);
+  windowGlass.position.set(0, 3.15, -22.94);
+  scene.add(windowGlass);
+  for (const x of [-4.05, -2.7, -1.35, 0, 1.35, 2.7, 4.05]) {
+    const mullion = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 3.9, 8), materials.copper);
+    mullion.position.set(x, 3.15, -22.88);
+    scene.add(mullion);
+  }
+  const planetMaterial = new THREE.MeshStandardMaterial({ color: "#a58bc2", emissive: "#4d356c", emissiveIntensity: 0.7, roughness: 0.86, metalness: 0.06 });
+  const planet = new THREE.Mesh(new THREE.SphereGeometry(2.25, 48, 32), planetMaterial);
   planet.position.set(-1.8, 3.4, -24.4);
   scene.add(planet);
-  const planetLight = new THREE.PointLight("#9b7ac9", 17, 18, 2);
+  const planetRim = new THREE.Mesh(new THREE.TorusGeometry(2.36, 0.025, 8, 80), materials.violet);
+  planetRim.position.copy(planet.position);
+  planetRim.rotation.set(0.6, 0.2, 0.1);
+  scene.add(planetRim);
+  const planetLight = new THREE.PointLight("#9b7ac9", 20, 20, 1.8);
   planetLight.position.set(-2, 4, -20);
   scene.add(planetLight);
-  for (let i = 0; i < 45; i++) {
-    const star = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.035), new THREE.MeshBasicMaterial({ color: i % 4 === 0 ? "#e3b58d" : "#a7a0d8" }));
+  for (let i = 0; i < 70; i++) {
+    const star = new THREE.Mesh(new THREE.SphereGeometry(0.025 + (i % 3) * 0.008, 6, 6), new THREE.MeshBasicMaterial({ color: i % 4 === 0 ? "#e3b58d" : "#a7a0d8" }));
     star.position.set(-6.5 + ((i * 37) % 130) / 10, 1.2 + ((i * 19) % 30) / 10, -24.6);
     scene.add(star);
   }
-  // The sealed gate is physical geometry, not a flat UI overlay.
-  box(scene, 0, 2.25, -18.2, 5.3, 4.5, 0.35, materials.dark);
-  box(scene, 0, 2.2, -17.98, 4.45, 4.05, 0.12, materials.wall);
+
+  // The bulkhead has a frame, curved locking rods and an emissive access seam.
+  const gateFrame = new THREE.Mesh(new THREE.BoxGeometry(5.5, 4.7, 0.42), materials.dark);
+  gateFrame.position.set(0, 2.25, -18.2);
+  gateFrame.castShadow = true;
+  scene.add(gateFrame);
+  const gatePanel = new THREE.Mesh(new THREE.BoxGeometry(4.45, 4.05, 0.16), materials.ceramic);
+  gatePanel.position.set(0, 2.2, -17.98);
+  gatePanel.castShadow = true;
+  scene.add(gatePanel);
   for (let x = -1.8; x <= 1.8; x += 0.9) {
-    box(scene, x, 2.1, -17.87, 0.08, 3.75, 0.1, materials.copper);
+    const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3.75, 10), materials.copper);
+    rib.position.set(x, 2.1, -17.84);
+    scene.add(rib);
   }
-  lightStrip(0, 4.15, -17.78, 3.8, 0.08);
-  // Industrial consoles and cable trays add scale to the room.
+  const gateLight = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.045, 0.08), materials.glow);
+  gateLight.position.set(0, 4.15, -17.78);
+  scene.add(gateLight);
+
+  // Side console banks and the inset equipment have softened, layered profiles.
   for (const side of [-1, 1]) {
-    box(scene, side * 5.4, 0.62, -15.8, 2.3, 1.2, 1.3, materials.dark);
-    box(scene, side * 5.4, 1.28, -15.8, 2.35, 0.1, 1.34, materials.copper);
-    for (let i = 0; i < 4; i++) box(scene, side * 5.4 - 0.72 + i * 0.48, 1.36, -15.8, 0.22, 0.035, 0.16, i % 2 ? materials.violet : materials.glow, false);
-  }
-  for (let z = 8; z >= -14; z -= 5.5) {
-    box(scene, -3.2, 0.18, z, 1.2, 0.25, 0.9, materials.dark);
-    box(scene, 3.2, 0.18, z - 1.5, 1.2, 0.25, 0.9, materials.dark);
+    const consoleBase = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 1.08, 1.18, 12), materials.dark);
+    consoleBase.scale.z = 0.72;
+    consoleBase.position.set(side * 5.35, 0.62, -15.8);
+    consoleBase.castShadow = true;
+    scene.add(consoleBase);
+    const consoleTop = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.12, 12), materials.copper);
+    consoleTop.scale.z = 0.74;
+    consoleTop.position.set(side * 5.35, 1.27, -15.8);
+    scene.add(consoleTop);
+    for (let i = 0; i < 5; i++) {
+      const indicator = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), i % 2 ? materials.violet : materials.glow);
+      indicator.position.set(side * 5.35 - 0.7 + i * 0.35, 1.37, -15.8);
+      scene.add(indicator);
+    }
   }
 }
-
 buildEnvironment();
 
 // Asset-led set dressing: these are real CC0 glTF meshes, loaded as optional
