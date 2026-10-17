@@ -32,6 +32,7 @@ export class ShiftThreeScene extends Phaser.Scene {
   private scannerBeams: Array<{ x: number; beam: Phaser.GameObjects.Rectangle; glow: Phaser.GameObjects.Rectangle; sweep: Phaser.GameObjects.Rectangle; lamp: Phaser.GameObjects.Arc; phase: number }> = [];
   private drones: Phaser.GameObjects.Container[] = [];
   private startTime = 0;
+  private failureCall?: Phaser.Time.TimerEvent;
 
   constructor() { super("ShiftThreeScene"); }
 
@@ -42,6 +43,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     this.eWasDown = false; this.rWasDown = false; this.checkpointX = 110;
     this.conveyorArrows = []; this.conveyorRollers = []; this.scannerBeams = []; this.drones = [];
     this.startTime = this.time.now;
+    this.failureCall = undefined;
     this.cameras.main.setBackgroundColor("#0a0912");
     this.cameras.main.setBounds(0, 0, WORLD, H);
     this.drawArchiveBackdrop();
@@ -561,7 +563,11 @@ export class ShiftThreeScene extends Phaser.Scene {
     const overlay = this.data.get("failureOverlay") as Phaser.GameObjects.GameObject[] | undefined;
     overlay?.forEach(item => item.destroy());
     this.data.remove("failureOverlay");
+    this.failureCall?.remove(false);
+    this.failureCall = undefined;
     this.dead = false;
+    this.tweens.killTweensOf(this.player);
+    this.player.setAlpha(1).setScale(1, 1).setAngle(0);
     this.player.setPosition(this.checkpointX, FLOOR - 17);
     this.playerVx = 0; this.playerVy = 0; this.grounded = false;
     this.cameras.main.centerOn(this.checkpointX, H / 2);
