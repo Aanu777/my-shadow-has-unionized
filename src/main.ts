@@ -1009,101 +1009,23 @@ class GameScene extends Phaser.Scene {
   private transitionToShiftTwo(): void {
     if (this.transitioning) return;
     this.transitioning = true;
-
-    // A bespoke "ink-rip" transition: the old world is swallowed by a jagged
-    // seam, as if the shadow itself is tearing the page into the night shift.
-    const wipe = this.add.graphics().setDepth(30);
-    const seamGlow = this.add.graphics().setDepth(31);
-    const wipeState = { progress: 0 };
-    const drawTear = (progress: number): void => {
-      const edge = progress * (W + 40) - 20;
-      wipe.clear();
-      wipe.fillStyle(0x0b171d, 1);
-      wipe.beginPath();
-      wipe.moveTo(0, 0);
-      wipe.lineTo(edge, 0);
-      for (let y = 0; y <= H; y += 18) {
-        const jagged = Math.sin(y * 0.071) * 9
-          + Math.sin(y * 0.193 + 1.4) * 5
-          + Math.sin(y * 0.031 + 2.2) * 11;
-        wipe.lineTo(Phaser.Math.Clamp(edge + jagged, -30, W + 30), y);
-      }
-      wipe.lineTo(0, H);
-      wipe.closePath();
-      wipe.fillPath();
-
-      // Mint sparks cling to the moving tear, like the next level's dead
-      // factory circuit is trying to burn through the old world.
-      seamGlow.clear();
-      seamGlow.lineStyle(2, 0xf4b860, 0.72);
-      seamGlow.beginPath();
-      for (let y = 0; y <= H; y += 18) {
-        const jagged = Math.sin(y * 0.071) * 9
-          + Math.sin(y * 0.193 + 1.4) * 5
-          + Math.sin(y * 0.031 + 2.2) * 11;
-        const sx = Phaser.Math.Clamp(edge + jagged, 0, W);
-        if (y === 0) seamGlow.moveTo(sx, y);
-        else seamGlow.lineTo(sx, y);
-        if ((Math.floor(y / 18) + Math.floor(progress * 17)) % 3 === 0) {
-          seamGlow.fillStyle(0xffe1a1, 0.85);
-          seamGlow.fillCircle(sx + Math.sin(y + progress * 40) * 3, y, 1.5 + (y % 4) * 0.25);
-        }
-      }
-      seamGlow.strokePath();
-    };
-
-    const title = this.add.text(W / 2, H / 2 - 17, "THE NIGHT SHIFT", {
-      fontFamily: "monospace", fontSize: "27px", color: "#f4b860",
-      fontStyle: "bold", letterSpacing: 4, align: "center"
-    }).setOrigin(0.5).setDepth(32).setAlpha(0).setScale(0.88);
-    const sub = this.add.text(W / 2, H / 2 + 20, "THE LANTERN FOUNDRY IS STILL AWAKE.", {
-      fontFamily: "monospace", fontSize: "10px", color: "#ffdfa0",
-      letterSpacing: 1, align: "center"
-    }).setOrigin(0.5).setDepth(32).setAlpha(0);
-    const sigil = this.add.graphics().setDepth(32).setAlpha(0);
-    sigil.lineStyle(1, 0xf4b860, 0.8);
-    sigil.lineBetween(W / 2 - 142, H / 2 + 43, W / 2 - 26, H / 2 + 43);
-    sigil.lineBetween(W / 2 + 26, H / 2 + 43, W / 2 + 142, H / 2 + 43);
-    sigil.fillStyle(0xf4b860, 1);
-    sigil.fillTriangle(W / 2 - 8, H / 2 + 39, W / 2 + 8, H / 2 + 39, W / 2, H / 2 + 47);
-    sigil.fillCircle(W / 2, H / 2 + 43, 2);
-
-    drawTear(0);
+    // Shift 02 is now a separate, real-time 3D first-person page.
+    // Keep Shift 01 in Phaser and hand off only after the transition beat.
+    const cover = this.add.rectangle(W / 2, H / 2, W, H, 0x0b0914, 1)
+      .setDepth(100).setScrollFactor(0).setAlpha(0);
+    const title = this.add.text(W / 2, H / 2 - 12, "ENTERING THE FOUNDRY", {
+      fontFamily: "monospace", fontSize: "21px", color: "#e4aa73",
+      fontStyle: "bold", letterSpacing: 3, align: "center"
+    }).setOrigin(0.5).setDepth(101).setScrollFactor(0).setAlpha(0);
+    const sub = this.add.text(W / 2, H / 2 + 22, "FIRST-PERSON MODE // SHIFT 02", {
+      fontFamily: "monospace", fontSize: "10px", color: "#c5b8d3",
+      letterSpacing: 2, align: "center"
+    }).setOrigin(0.5).setDepth(101).setScrollFactor(0).setAlpha(0);
     this.tweens.add({
-      targets: wipeState,
-      progress: 1,
-      duration: 1420,
-      ease: "Cubic.inOut",
-      onUpdate: () => drawTear(wipeState.progress),
-      onComplete: () => {
-        // Hold the fully torn-over frame for a beat so the title lands.
-        this.time.delayedCall(430, () => {
-          this.registry.set("shiftLevel", 2);
-          this.scene.restart();
-        });
-      }
+      targets: cover, alpha: 1, duration: 380, ease: "Cubic.in",
+      onComplete: () => { window.location.href = "./shift-02-3d.html"; }
     });
-    this.tweens.add({
-      targets: [title, sub, sigil],
-      alpha: 1,
-      duration: 360,
-      delay: 680,
-      ease: "Cubic.out"
-    });
-    this.tweens.add({
-      targets: title,
-      scale: 1,
-      duration: 420,
-      delay: 680,
-      ease: "Back.out"
-    });
-    this.tweens.add({
-      targets: [title, sub, sigil],
-      alpha: 0,
-      duration: 170,
-      delay: 1600,
-      ease: "Sine.in"
-    });
+    this.tweens.add({ targets: [title, sub], alpha: 1, duration: 260, delay: 180, ease: "Cubic.out" });
   }
   private triggerMissionFailed(): void {
     if (this.dead) return;
@@ -1204,6 +1126,11 @@ class GameScene extends Phaser.Scene {
       launch.on("pointerover", () => launch.setFillStyle(0x315e50, 1));
       launch.on("pointerout", () => launch.setFillStyle(active ? 0x24483e : 0x17272a, 1));
       launch.on("pointerdown", () => {
+        if (level === 2) {
+          // Level selection must launch the new 3D build, not the legacy side-scroller.
+          window.location.href = "./shift-02-3d.html";
+          return;
+        }
         this.registry.set("showLevelSelect", false);
         this.registry.set("shiftLevel", level);
         this.scene.restart();
