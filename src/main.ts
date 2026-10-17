@@ -292,7 +292,7 @@ class GameScene extends Phaser.Scene {
   private createAtmosphere(): void {
     const fireflyPoints = this.level === 2 ? [[74,88],[184,171],[302,74],[438,145],[557,62],[708,120],[864,78],[104,248],[354,218],[623,235],[818,192],[482,320],[902,278]] : [[82,365],[145,330],[220,286],[318,365],[375,310],[430,355],[535,290],[585,345],[700,315],[742,365],[835,300],[900,355],[510,420],[290,445],[760,445]];
     fireflyPoints.forEach(([x, y], i) => {
-      const dot = this.add.circle(x, y, i % 4 === 0 ? 2 : 1.4, this.level === 2 ? (i % 3 === 0 ? 0x9ce2c4 : 0x5f9380) : (i % 3 === 0 ? 0xf39a45 : 0xc5a8ff), 0.15).setDepth(1);
+      const dot = this.add.circle(x, y, i % 4 === 0 ? 2 : 1.4, this.level === 2 ? (i % 3 === 0 ? 0xf4b860 : 0xc77962) : (i % 3 === 0 ? 0xf39a45 : 0xc5a8ff), 0.15).setDepth(1);
       this.tweens.add({
         targets: dot, alpha: { from: 0.12, to: i % 3 === 0 ? 0.85 : 0.58 },
         scale: { from: 0.75, to: 1.5 }, x: x + (i % 2 === 0 ? 10 : -12),
@@ -315,17 +315,17 @@ class GameScene extends Phaser.Scene {
       const ground = p.y >= 450;
       g.fillStyle(this.level === 2 ? 0x17252b : 0x21172f, 1);
       g.fillRect(p.x, p.y, p.w, p.h);
-      g.fillStyle(this.level === 2 ? 0x79a38c : 0x8f5a43, 1);
+      g.fillStyle(this.level === 2 ? 0xb46d56 : 0x8f5a43, 1);
       g.fillRect(p.x, p.y, p.w, 3);
-      g.fillStyle(this.level === 2 ? 0x314b48 : 0x50305f, 0.9);
+      g.fillStyle(this.level === 2 ? 0x3d334f : 0x50305f, 0.9);
       g.fillRect(p.x, p.y + 3, p.w, 2);
       if (ground && this.level === 2) {
         // Orbital catwalk plating: broad panels, recessed joints and sparse cyan guide lights.
-        g.fillStyle(0x101a29, 1); g.fillRect(p.x, p.y + 5, p.w, p.h - 5);
+        g.fillStyle(0x17182e, 1); g.fillRect(p.x, p.y + 5, p.w, p.h - 5);
         g.lineStyle(1, 0x304b61, 0.95);
         for (let x = p.x + 26; x < p.x + p.w - 8; x += 48) {
           g.lineBetween(x, p.y + 7, x, Math.min(p.y + 43, p.y + p.h - 3));
-          g.fillStyle(0x9ce2c4, 0.65); g.fillRect(x + 4, p.y + 7, 7, 2);
+          g.fillStyle(0xf4b860, 0.65); g.fillRect(x + 4, p.y + 7, 7, 2);
           g.fillStyle(0x020711, 1); g.fillCircle(x + 17, p.y + 13, 1.5);
         }
         g.fillStyle(0x233b4e, 1); g.fillRect(p.x, p.y + 3, p.w, 2);
@@ -357,7 +357,7 @@ class GameScene extends Phaser.Scene {
     const c = this.add.container(x, y);
     const groundShadow = this.add.graphics(); groundShadow.fillStyle(0x05040a,0.42); groundShadow.fillEllipse(0,19,48,11); groundShadow.fillStyle(this.level===2?0x65d9df:0xf39a45,0.12); groundShadow.fillEllipse(0,18,35,7); c.add(groundShadow);
     if(this.level===2){
-      const suit=this.add.graphics();suit.fillStyle(0x020711,1);suit.fillRoundedRect(-14,-5,28,23,7);suit.fillStyle(0x172b43,1);suit.fillRoundedRect(-11,-4,22,20,6);suit.fillStyle(0x42657c,1);suit.fillRoundedRect(-9,-2,18,15,5);suit.fillStyle(0x9ce2c4,0.9);suit.fillRect(-8,1,16,2);suit.fillStyle(0x07111e,1);suit.fillRoundedRect(-17,0,7,14,3);suit.fillRoundedRect(10,0,7,14,3);suit.fillStyle(0x9ce2c4,1);suit.fillRect(-16,3,5,2);suit.fillRect(11,3,5,2);suit.fillStyle(0x020711,1);suit.fillRoundedRect(-9,13,7,10,2);suit.fillRoundedRect(2,13,7,10,2);suit.fillStyle(0x54788d,1);suit.fillRoundedRect(-9,19,8,4,1);suit.fillRoundedRect(2,19,8,4,1);suit.fillStyle(0x0b1424,1);suit.fillRoundedRect(-8,-24,16,7,3);suit.fillStyle(0x1b334b,1);suit.fillCircle(0,-13,16);suit.fillStyle(0x47768b,1);suit.fillCircle(0,-13,13);suit.fillStyle(0x06101d,1);suit.fillEllipse(0,-13,23,17);suit.fillStyle(0x78d8d8,0.92);suit.fillEllipse(0,-14,19,12);suit.fillStyle(0xc4ffff,0.75);suit.fillEllipse(-4,-17,7,3);suit.lineStyle(1,0xd7f3e6,0.8);suit.beginPath();suit.arc(0,-13,15,3.45,5.95,false);suit.strokePath();suit.fillStyle(0x9ce2c4,1);suit.fillCircle(-4,-13,1.6);suit.fillCircle(4,-13,1.6);c.add(suit);const visor=this.add.graphics();visor.fillStyle(0x07111e,1);visor.fillEllipse(-4,-13,3,4);visor.fillEllipse(4,-13,3,4);visor.fillStyle(0xe2ffff,0.9);visor.fillCircle(-4,-14,1);visor.fillCircle(4,-14,1);c.add(visor);return c;
+      const suit=this.add.graphics();suit.fillStyle(0x020711,1);suit.fillRoundedRect(-14,-5,28,23,7);suit.fillStyle(0x172b43,1);suit.fillRoundedRect(-11,-4,22,20,6);suit.fillStyle(0x42657c,1);suit.fillRoundedRect(-9,-2,18,15,5);suit.fillStyle(0xf4b860,0.9);suit.fillRect(-8,1,16,2);suit.fillStyle(0x07111e,1);suit.fillRoundedRect(-17,0,7,14,3);suit.fillRoundedRect(10,0,7,14,3);suit.fillStyle(0xf4b860,1);suit.fillRect(-16,3,5,2);suit.fillRect(11,3,5,2);suit.fillStyle(0x020711,1);suit.fillRoundedRect(-9,13,7,10,2);suit.fillRoundedRect(2,13,7,10,2);suit.fillStyle(0x54788d,1);suit.fillRoundedRect(-9,19,8,4,1);suit.fillRoundedRect(2,19,8,4,1);suit.fillStyle(0x0b1424,1);suit.fillRoundedRect(-8,-24,16,7,3);suit.fillStyle(0x1b334b,1);suit.fillCircle(0,-13,16);suit.fillStyle(0x47768b,1);suit.fillCircle(0,-13,13);suit.fillStyle(0x06101d,1);suit.fillEllipse(0,-13,23,17);suit.fillStyle(0x78d8d8,0.92);suit.fillEllipse(0,-14,19,12);suit.fillStyle(0xc4ffff,0.75);suit.fillEllipse(-4,-17,7,3);suit.lineStyle(1,0xffe1a1,0.8);suit.beginPath();suit.arc(0,-13,15,3.45,5.95,false);suit.strokePath();suit.fillStyle(0xf4b860,1);suit.fillCircle(-4,-13,1.6);suit.fillCircle(4,-13,1.6);c.add(suit);const visor=this.add.graphics();visor.fillStyle(0x07111e,1);visor.fillEllipse(-4,-13,3,4);visor.fillEllipse(4,-13,3,4);visor.fillStyle(0xe2ffff,0.9);visor.fillCircle(-4,-14,1);visor.fillCircle(4,-14,1);c.add(visor);return c;
     }
 
     // Layered, hand-drawn pumpkin body: dark silhouette, lobes, carved grooves and rim light.
@@ -464,9 +464,9 @@ class GameScene extends Phaser.Scene {
     const g = this.add.graphics();
     if (label === "FUSE") {
       g.fillStyle(0x182d2d, 1); g.fillRoundedRect(-12, -10, 24, 20, 3);
-      g.lineStyle(2, 0x9ce2c4, 1); g.strokeRoundedRect(-12, -10, 24, 20, 3);
-      g.fillStyle(0x9ce2c4, 1); g.fillRect(-5, -6, 10, 12);
-      g.fillStyle(0xd7f3e6, 1); g.fillRect(-2, -13, 4, 3); g.fillRect(-2, 10, 4, 3);
+      g.lineStyle(2, 0xf4b860, 1); g.strokeRoundedRect(-12, -10, 24, 20, 3);
+      g.fillStyle(0xf4b860, 1); g.fillRect(-5, -6, 10, 12);
+      g.fillStyle(0xffe1a1, 1); g.fillRect(-2, -13, 4, 3); g.fillRect(-2, 10, 4, 3);
     } else {
       // Takeaway cup with a dark plum sleeve, brass rim, and warm coffee surface.
       g.fillStyle(0x09070f, 0.35); g.fillEllipse(0, 8, 34, 7);
@@ -514,9 +514,9 @@ class GameScene extends Phaser.Scene {
     const levelTwo = this.level === 2;
     const stone = levelTwo ? 0x263b3d : 0x30213f;
     const stoneLight = levelTwo ? 0x52776e : 0x67436f;
-    const trim = levelTwo ? 0x79a38c : 0x8d5aab;
-    const flame = levelTwo ? 0x9ce2c4 : 0xffa13b;
-    const hot = levelTwo ? 0xd7f3e6 : 0xffdf91;
+    const trim = levelTwo ? 0xb46d56 : 0x8d5aab;
+    const flame = levelTwo ? 0xf4b860 : 0xffa13b;
+    const hot = levelTwo ? 0xffe1a1 : 0xffdf91;
 
     // Cast shadow and broad, broken-stone plinth.
     g.fillStyle(0x05040a, 0.5); g.fillEllipse(0, 60, 100, 13);
@@ -559,7 +559,7 @@ class GameScene extends Phaser.Scene {
       g.fillCircle(-17, -13, 2); g.fillCircle(16, 9, 2); g.fillCircle(10, -21, 1.5);
     } else {
       // The locked portal has two ember eyes beneath the pumpkin crest.
-      g.fillStyle(levelTwo ? 0x9ce2c4 : 0xc5a8ff, 0.9);
+      g.fillStyle(levelTwo ? 0xf4b860 : 0xc5a8ff, 0.9);
       g.fillTriangle(-13, -1, -5, 3, -14, 5);
       g.fillTriangle(13, -1, 5, 3, 14, 5);
     }
@@ -586,7 +586,7 @@ class GameScene extends Phaser.Scene {
     g.fillTriangle(27, -50, 35, -66, 18, -52);
     g.fillStyle(0x211521, 1); g.fillCircle(0, -57, 15);
     g.fillStyle(levelTwo ? 0x45695c : 0x8f432c, 1); g.fillCircle(0, -57, 12);
-    g.fillStyle(levelTwo ? 0x9ce2c4 : 0xf17a2e, 1); g.fillEllipse(0, -57, 18, 17);
+    g.fillStyle(levelTwo ? 0xf4b860 : 0xf17a2e, 1); g.fillEllipse(0, -57, 18, 17);
     g.fillStyle(hot, active ? 1 : 0.88);
     g.fillTriangle(-7, -60, -2, -55, -8, -54);
     g.fillTriangle(7, -60, 2, -55, 8, -54);
@@ -631,7 +631,7 @@ class GameScene extends Phaser.Scene {
 
     // The lantern's position determines where the shadow appears; this dotted route
     // then leads toward the switch so the player can read the puzzle at a glance.
-    const routeColor = this.level === 2 ? (this.demandSatisfied ? 0x9ce2c4 : 0x4e8d83) : (this.demandSatisfied ? 0xf39a45 : 0x7055a5);
+    const routeColor = this.level === 2 ? (this.demandSatisfied ? 0xf4b860 : 0x9a594e) : (this.demandSatisfied ? 0xf39a45 : 0x7055a5);
     const routeAlpha = this.demandSatisfied ? 0.95 : 0.55;
     route.lineStyle(1, routeColor, routeAlpha * 0.45);
     route.lineBetween(this.lanternX, 456, projectedX, 480);
@@ -687,7 +687,7 @@ class GameScene extends Phaser.Scene {
         this.switchOn = true;
         const switchArt = this.switchObject.getAt(0) as Phaser.GameObjects.Graphics;
         switchArt.clear();
-        const color = this.level === 2 ? 0x9ce2c4 : 0xf39a45;
+        const color = this.level === 2 ? 0xf4b860 : 0xf39a45;
         switchArt.fillStyle(0x21182f, 1); switchArt.fillRoundedRect(-17, -20, 34, 29, 4);
         switchArt.lineStyle(2, color, 1); switchArt.strokeRoundedRect(-17, -20, 34, 29, 4);
         switchArt.fillStyle(color, 1); switchArt.fillCircle(0, -6, 8);
@@ -737,7 +737,7 @@ class GameScene extends Phaser.Scene {
     for (const [x, y, w, h] of [[0,342,94,58],[112,348,62,52],[190,335,64,65],[277,348,67,52],[362,332,61,68],[428,350,52,50],[500,342,60,58],[590,347,65,53],[675,338,66,62],[762,350,69,50],[849,342,65,58]]) {
       g.fillRect(x, y, w, h);
       g.fillStyle(0x20383a, 1); g.fillRect(x + 7, y + 9, Math.max(4, w - 14), 2);
-      g.fillStyle(0x9ce2c4, 0.62);
+      g.fillStyle(0xf4b860, 0.62);
       for (let wx = x + 12; wx < x + w - 7; wx += 19) g.fillRect(wx, y + 19 + ((wx + y) % 7), 4, 8);
       g.fillStyle(0x142329, 1);
     }
@@ -751,19 +751,19 @@ class GameScene extends Phaser.Scene {
     g.lineTo(508, 358); g.lineTo(573, 294); g.lineTo(633, 348); g.lineTo(690, 329);
     g.lineTo(754, 364); g.lineTo(816, 311); g.lineTo(866, 348); g.lineTo(921, 316);
     g.lineTo(960, 341); g.lineTo(960, 500); g.lineTo(0, 500); g.closePath(); g.fillPath();
-    g.lineStyle(2, 0x5f9380, 0.65); g.beginPath();
+    g.lineStyle(2, 0xc77962, 0.65); g.beginPath();
     g.moveTo(0,397); g.lineTo(76,354); g.lineTo(136,369); g.lineTo(206,315); g.lineTo(259,354);
     g.lineTo(327,334); g.lineTo(385,372); g.lineTo(451,326); g.lineTo(508,358); g.lineTo(573,294);
     g.lineTo(633,348); g.lineTo(690,329); g.lineTo(754,364); g.lineTo(816,311); g.lineTo(866,348);
     g.lineTo(921,316); g.lineTo(960,341); g.strokePath();
     // Thick pipework and joints across the ruined back wall.
     g.lineStyle(14, 0x0b171d, 1); g.beginPath(); g.moveTo(0,408); g.lineTo(0,383); g.lineTo(105,383); g.lineTo(105,399); g.lineTo(165,399); g.lineTo(165,374); g.lineTo(218,374); g.strokePath();
-    g.lineStyle(5, 0x4c7169, 1); g.strokePath();
+    g.lineStyle(5, 0x754b54, 1); g.strokePath();
     g.lineStyle(16, 0x0b171d, 1); g.beginPath(); g.moveTo(585,392); g.lineTo(585,365); g.lineTo(656,365); g.lineTo(656,386); g.lineTo(730,386); g.lineTo(730,354); g.lineTo(804,354); g.lineTo(804,389); g.lineTo(960,389); g.strokePath();
-    g.lineStyle(5, 0x4c7169, 1); g.strokePath();
+    g.lineStyle(5, 0x754b54, 1); g.strokePath();
     // Masonry frames and broken brick seams at the edges.
     g.fillStyle(0x17272a, 1); g.fillRect(0,263,47,237); g.fillRect(915,281,45,219);
-    g.fillStyle(0x42655d, 1); g.fillRect(0,263,47,7); g.fillRect(915,281,45,7);
+    g.fillStyle(0x4e3d5c, 1); g.fillRect(0,263,47,7); g.fillRect(915,281,45,7);
     g.lineStyle(1, 0x8bb7a0, 0.24);
     for (let y = 289; y < 490; y += 22) { g.lineBetween(0,y,47,y); g.lineBetween(915,y+9,960,y+9); }
     g.lineStyle(1, 0x54796e, 0.2);
@@ -777,24 +777,35 @@ class GameScene extends Phaser.Scene {
       g.fillRect(x-3,y+58,6,h-58);
     }
     // Pale swamp lights and a cool moon halo.
-    g.fillStyle(0x9ce2c4, 0.1); g.fillCircle(760,130,100);
-    g.fillStyle(0x9ce2c4, 0.2); g.fillCircle(760,130,44);
-    g.fillStyle(0xd7f3e6, 0.42); g.fillCircle(760,130,29);
+    g.fillStyle(0xf4b860, 0.1); g.fillCircle(760,130,100);
+    g.fillStyle(0xf4b860, 0.2); g.fillCircle(760,130,44);
+    g.fillStyle(0xffe1a1, 0.42); g.fillCircle(760,130,29);
     for (let i = 0; i < 20; i++) {
       const x = (i * 137 + 31) % W, y = 105 + ((i * 53) % 185);
-      g.fillStyle(i % 3 === 0 ? 0x9ce2c4 : 0x78a6a0, 0.4);
+      g.fillStyle(i % 3 === 0 ? 0xf4b860 : 0x78a6a0, 0.4);
       g.fillCircle(x, y, i % 4 === 0 ? 2 : 1);
     }
     // Foreground bank is drawn by the collision platforms so it scrolls at full speed.
   }
   private drawOrbitalBackdrop(offsetX: number): void {
-    // The backdrop is a hand-authored SVG asset: layered orbital habitat, ringed planet,
-    // distant starfield, industrial silhouettes and foreground bulkheads.
+    // Pixel-art sky plate. Crisp-edged SVG art sits behind a few independently moving
+    // atmospheric pixels so the level has depth without visual noise.
     this.add.image(offsetX, 0, "shift02-space")
       .setOrigin(0, 0)
       .setDisplaySize(W, H)
       .setDepth(-10)
-      .setScrollFactor(0.22, 1);
+      .setScrollFactor(0.18, 1);
+
+    const glints = this.add.graphics().setDepth(-9).setScrollFactor(0.34, 1);
+    const stars: Array<[number, number, number, number]> = [
+      [64, 88, 2, 0xffdfa0], [174, 144, 1, 0xc7a6ff], [312, 72, 2, 0xffdfa0],
+      [426, 185, 1, 0xc7a6ff], [590, 92, 2, 0xffdfa0], [738, 188, 1, 0xc7a6ff],
+      [858, 76, 2, 0xffdfa0], [924, 223, 1, 0xc7a6ff]
+    ];
+    for (const [x, y, size, color] of stars) {
+      glints.fillStyle(color, 0.85);
+      glints.fillRect(x + offsetX, y, size, size);
+    }
   }
 
   private createRelayPuzzle(): void {
@@ -806,34 +817,34 @@ class GameScene extends Phaser.Scene {
       // Ground shadow and a bolted, layered pedestal.
       g.fillStyle(0x02050b, 0.75); g.fillEllipse(0, 0, 82, 15);
       g.fillStyle(0x101a2a, 1); g.fillRoundedRect(-25, -72, 50, 68, 5);
-      g.fillStyle(0x25394d, 1); g.fillRoundedRect(-21, -69, 42, 60, 4);
-      g.fillStyle(0x0a1423, 1); g.fillRoundedRect(-16, -64, 32, 48, 3);
-      g.lineStyle(1, 0x66869b, 0.9); g.strokeRoundedRect(-21, -69, 42, 60, 4);
-      g.fillStyle(0x9ce2c4, 0.12); g.fillRoundedRect(-13, -61, 26, 41, 3);
+      g.fillStyle(0x34334f, 1); g.fillRoundedRect(-21, -69, 42, 60, 4);
+      g.fillStyle(0x111426, 1); g.fillRoundedRect(-16, -64, 32, 48, 3);
+      g.lineStyle(1, 0x8b6170, 0.9); g.strokeRoundedRect(-21, -69, 42, 60, 4);
+      g.fillStyle(0xf4b860, 0.12); g.fillRoundedRect(-13, -61, 26, 41, 3);
       // Side rails, energy channels and tiny service bolts.
-      g.fillStyle(0x46657a, 1); g.fillRoundedRect(-24, -57, 4, 38, 1); g.fillRoundedRect(20, -57, 4, 38, 1);
-      g.fillStyle(0x9ce2c4, 0.95); g.fillRect(-23, -51, 2, 12); g.fillRect(21, -37, 2, 12);
-      for (const bx of [-17, 17]) { g.fillStyle(0x07101b, 1); g.fillCircle(bx, -62, 2.4); g.fillStyle(0x9ce2c4, 0.9); g.fillCircle(bx, -62, 0.8); }
+      g.fillStyle(0x62485e, 1); g.fillRoundedRect(-24, -57, 4, 38, 1); g.fillRoundedRect(20, -57, 4, 38, 1);
+      g.fillStyle(0xf4b860, 0.95); g.fillRect(-23, -51, 2, 12); g.fillRect(21, -37, 2, 12);
+      for (const bx of [-17, 17]) { g.fillStyle(0x07101b, 1); g.fillCircle(bx, -62, 2.4); g.fillStyle(0xf4b860, 0.9); g.fillCircle(bx, -62, 0.8); }
       // Recessed symbol chamber, lens rings and engraved geometric identity.
       g.fillStyle(0x020711, 1); g.fillCircle(0, -42, 18);
-      g.lineStyle(2, 0x345a70, 1); g.strokeCircle(0, -42, 15);
-      g.lineStyle(1, 0x9ce2c4, 0.5); g.strokeCircle(0, -42, 11);
-      g.fillStyle(0x9ce2c4, 0.1); g.fillCircle(0, -42, 8);
-      g.lineStyle(2.5, 0x8bbcc9, 1);
+      g.lineStyle(2, 0x62485e, 1); g.strokeCircle(0, -42, 15);
+      g.lineStyle(1, 0xf4b860, 0.5); g.strokeCircle(0, -42, 11);
+      g.fillStyle(0xf4b860, 0.1); g.fillCircle(0, -42, 8);
+      g.lineStyle(2.5, 0xc77962, 1);
       if (shape === 0) g.strokeCircle(0, -42, 7);
       else if (shape === 1) { g.beginPath(); g.moveTo(0,-51); g.lineTo(9,-42); g.lineTo(0,-33); g.lineTo(-9,-42); g.closePath(); g.strokePath(); }
       else { g.beginPath(); g.moveTo(0,-52); g.lineTo(10,-34); g.lineTo(-10,-34); g.closePath(); g.strokePath(); }
       g.fillStyle(0xb9fff0, 0.9); g.fillCircle(0, -42, 2);
       // Top crown and floor-contact plates.
       g.fillStyle(0x172b40, 1); g.fillRoundedRect(-12, -78, 24, 8, 2);
-      g.fillStyle(0x9ce2c4, 0.9); g.fillRect(-7, -76, 14, 2);
-      g.fillStyle(0x31495b, 1); g.fillRoundedRect(-27, -9, 54, 7, 2);
+      g.fillStyle(0xf4b860, 0.9); g.fillRect(-7, -76, 14, 2);
+      g.fillStyle(0x41344d, 1); g.fillRoundedRect(-27, -9, 54, 7, 2);
       g.lineStyle(1, 0x62859a, 0.8); g.lineBetween(-24, -5, 24, -5);
       node.add(g);
       // An orbiting reticle gives the pylon a more readable silhouette in space.
       const ring = this.add.graphics();
-      ring.lineStyle(1, 0x77b8c6, 0.35); ring.strokeEllipse(0, -42, 70, 30);
-      ring.lineStyle(1, 0x9ce2c4, 0.6); ring.beginPath(); ring.moveTo(-37,-42); ring.lineTo(-28,-42); ring.moveTo(28,-42); ring.lineTo(37,-42); ring.strokePath();
+      ring.lineStyle(1, 0xc77962, 0.35); ring.strokeEllipse(0, -42, 70, 30);
+      ring.lineStyle(1, 0xf4b860, 0.6); ring.beginPath(); ring.moveTo(-37,-42); ring.lineTo(-28,-42); ring.moveTo(28,-42); ring.lineTo(37,-42); ring.strokePath();
       node.add(ring);
       this.tweens.add({ targets: ring, angle: 360, duration: 9000 + shape * 1100, repeat: -1 });
       this.tweens.add({ targets: node, y: this.floorY - 3, duration: 1450 + shape * 190, yoyo: true, repeat: -1, ease: "Sine.inOut" });
@@ -850,23 +861,23 @@ class GameScene extends Phaser.Scene {
     for (let x=-73; x<=73; x+=12) bg.lineBetween(x,-35,x,14);
     bg.lineBetween(-75,-13,75,-13); bg.lineBetween(-75,7,75,7);
     // Hologram scan bars and three distinct sequence sockets.
-    bg.fillStyle(0x9ce2c4, 0.12); bg.fillRoundedRect(-72,-31,144,7,2);
-    bg.fillStyle(0x9ce2c4, 0.75); bg.fillRect(-69,-28,49,1); bg.fillRect(28,-28,39,1);
+    bg.fillStyle(0xf4b860, 0.12); bg.fillRoundedRect(-72,-31,144,7,2);
+    bg.fillStyle(0xf4b860, 0.75); bg.fillRect(-69,-28,49,1); bg.fillRect(28,-28,39,1);
     const socketXs = [-48, 0, 48];
     socketXs.forEach((sx, idx) => {
       bg.fillStyle(0x06101d, 1); bg.fillCircle(sx, -1, 14);
-      bg.lineStyle(1.5, idx === 1 ? 0x9ce2c4 : 0x5b8298, 0.95); bg.strokeCircle(sx, -1, 11);
-      bg.lineStyle(2, 0x9ce2c4, 0.95);
+      bg.lineStyle(1.5, idx === 1 ? 0xf4b860 : 0x8b6170, 0.95); bg.strokeCircle(sx, -1, 11);
+      bg.lineStyle(2, 0xf4b860, 0.95);
       if (idx === 0) { bg.beginPath(); bg.moveTo(sx,-10); bg.lineTo(sx+8,-1); bg.lineTo(sx,-1); bg.lineTo(sx,-10); bg.strokePath(); }
       if (idx === 1) bg.strokeCircle(sx,-1,5);
       if (idx === 2) { bg.beginPath(); bg.moveTo(sx,-10); bg.lineTo(sx+8,5); bg.lineTo(sx-8,5); bg.closePath(); bg.strokePath(); }
     });
-    bg.lineStyle(2, 0x9ce2c4, 0.8); bg.lineBetween(-34,-1,-15,-1); bg.lineBetween(14,-1,33,-1);
-    bg.fillStyle(0x9ce2c4, 0.8); bg.fillCircle(-75, 17, 2); bg.fillCircle(75, 17, 2);
+    bg.lineStyle(2, 0xf4b860, 0.8); bg.lineBetween(-34,-1,-15,-1); bg.lineBetween(14,-1,33,-1);
+    bg.fillStyle(0xf4b860, 0.8); bg.fillCircle(-75, 17, 2); bg.fillCircle(75, 17, 2);
     bg.lineStyle(1, 0x4b7087, 0.8); bg.lineBetween(-64,17,-7,17); bg.lineBetween(7,17,64,17);
     board.add(bg);
     const beam = this.add.graphics();
-    beam.lineStyle(1, 0x9ce2c4, 0.35); beam.lineBetween(-70, -50, 70, -50);
+    beam.lineStyle(1, 0xf4b860, 0.35); beam.lineBetween(-70, -50, 70, -50);
     board.add(beam);
     this.tweens.add({ targets: board, alpha: { from: 0.82, to: 1 }, duration: 1150, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.tweens.add({ targets: beam, y: 4, duration: 1750, yoyo: true, repeat: -1, ease: "Sine.inOut" });
@@ -877,8 +888,8 @@ class GameScene extends Phaser.Scene {
     cables.beginPath(); cables.moveTo(680, 497); cables.lineTo(680, 478); cables.lineTo(706, 466); cables.lineTo(706, 451);
     cables.moveTo(1210, 497); cables.lineTo(1210, 477); cables.lineTo(1232, 463); cables.lineTo(1232, 451);
     cables.moveTo(1575, 497); cables.lineTo(1575, 478); cables.lineTo(1551, 463); cables.lineTo(1551, 451); cables.strokePath();
-    cables.lineStyle(1, 0x9ce2c4, 0.55);
-    cables.fillStyle(0x9ce2c4, 0.8);
+    cables.lineStyle(1, 0xf4b860, 0.55);
+    cables.fillStyle(0xf4b860, 0.8);
     for (const [x,y] of [[680,478],[1210,477],[1575,478]]) { cables.strokeCircle(x,y,3); cables.fillCircle(x,y,1.2); }
   }
 
@@ -887,12 +898,12 @@ class GameScene extends Phaser.Scene {
     if(target<0)return;if(this.relayNodeActive[target]){this.showPuzzlePulse("NODE ALREADY SYNCHRONIZED");return;}
     if(target!==this.relaySequence[this.relayProgress]){this.relayProgress=0;this.relayNodeActive=[false,false,false];this.relayNodes.forEach((node,index)=>this.paintRelayNode(node,index,false));this.showPuzzlePulse("SIGNAL COLLAPSE");this.cameras.main.shake(130,0.0025);return;}
     this.relayNodeActive[target]=true;this.relayProgress++;this.paintRelayNode(this.relayNodes[target],target,true);this.showPuzzlePulse(this.relayProgress===3?"SIGNAL RESTORED":"RELAY SYNCHRONIZED");this.cameras.main.flash(110,70,170,160,false);
-    if(this.relayProgress===3){this.switchOn=true;this.updateGate();const halo=this.add.circle(this.gate.x,this.gate.y-25,48,0x9ce2c4,0.12).setDepth(2);this.tweens.add({targets:halo,alpha:0.02,scale:1.4,duration:700,yoyo:true,repeat:-1});}
+    if(this.relayProgress===3){this.switchOn=true;this.updateGate();const halo=this.add.circle(this.gate.x,this.gate.y-25,48,0xf4b860,0.12).setDepth(2);this.tweens.add({targets:halo,alpha:0.02,scale:1.4,duration:700,yoyo:true,repeat:-1});}
   }
   private paintRelayNode(node:Phaser.GameObjects.Container,index:number,active:boolean):void{
-    const g=node.getAt(0) as Phaser.GameObjects.Graphics;g.clear();g.fillStyle(0x030710,0.7);g.fillEllipse(0,0,56,12);g.fillStyle(0x111f31,1);g.fillRoundedRect(-16,-55,32,54,4);g.fillStyle(active?0x244d50:0x243c4b,1);g.fillRoundedRect(-12,-51,24,46,3);g.lineStyle(2,active?0x9ce2c4:0x5d8799,0.95);g.strokeRoundedRect(-12,-51,24,46,3);g.fillStyle(0x07101b,1);g.fillCircle(0,-31,13);g.lineStyle(2,active?0x9ce2c4:0x527b91,1);
-    if(index===0)g.strokeCircle(0,-31,8);else if(index===1){g.beginPath();g.moveTo(0,-41);g.lineTo(9,-31);g.lineTo(0,-21);g.lineTo(-9,-31);g.closePath();g.strokePath();}else{g.beginPath();g.moveTo(0,-42);g.lineTo(10,-24);g.lineTo(-10,-24);g.closePath();g.strokePath();}g.fillStyle(0x9ce2c4,active?1:0.18);g.fillCircle(0,-31,4);
-    if(active){const ring=this.add.circle(node.x,node.y-31,19,0x9ce2c4,0.12).setDepth(3);this.tweens.add({targets:ring,scale:1.6,alpha:0,duration:420,onComplete:()=>ring.destroy()});}
+    const g=node.getAt(0) as Phaser.GameObjects.Graphics;g.clear();g.fillStyle(0x030710,0.7);g.fillEllipse(0,0,56,12);g.fillStyle(0x111f31,1);g.fillRoundedRect(-16,-55,32,54,4);g.fillStyle(active?0x244d50:0x29253e,1);g.fillRoundedRect(-12,-51,24,46,3);g.lineStyle(2,active?0xf4b860:0x8b6170,0.95);g.strokeRoundedRect(-12,-51,24,46,3);g.fillStyle(0x07101b,1);g.fillCircle(0,-31,13);g.lineStyle(2,active?0xf4b860:0x8b6170,1);
+    if(index===0)g.strokeCircle(0,-31,8);else if(index===1){g.beginPath();g.moveTo(0,-41);g.lineTo(9,-31);g.lineTo(0,-21);g.lineTo(-9,-31);g.closePath();g.strokePath();}else{g.beginPath();g.moveTo(0,-42);g.lineTo(10,-24);g.lineTo(-10,-24);g.closePath();g.strokePath();}g.fillStyle(0xf4b860,active?1:0.18);g.fillCircle(0,-31,4);
+    if(active){const ring=this.add.circle(node.x,node.y-31,19,0xf4b860,0.12).setDepth(3);this.tweens.add({targets:ring,scale:1.6,alpha:0,duration:420,onComplete:()=>ring.destroy()});}
   }
   private showPuzzlePulse(message:string):void{this.dialogueText.setVisible(true).setText(message).setColor("#b9f5dc").setBackgroundColor("#08111d");this.dialogueText.setPosition(W/2,H-42);this.puzzleHintUntil=this.time.now+1000;}
   private updateRelayHint():void{if(this.time.now>=this.puzzleHintUntil)this.dialogueText.setVisible(false);}
@@ -902,11 +913,11 @@ class GameScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillStyle(0x071014, 0.65); g.fillEllipse(0, 0, 48, 10);
     g.fillStyle(0x132b2b, 1); g.fillRoundedRect(-15, -62, 30, 58, 4);
-    g.lineStyle(2, 0x9ce2c4, 1); g.strokeRoundedRect(-15, -62, 30, 58, 4);
-    g.lineStyle(1, 0xd7f3e6, 0.8); g.lineBetween(-8, -54, 8, -54); g.lineBetween(-8, -47, 8, -47);
-    g.fillStyle(0x9ce2c4, 0.22); g.fillCircle(0, -32, 20);
-    g.fillStyle(0x9ce2c4, 1); g.fillCircle(0, -32, 5);
-    g.fillStyle(0xd7f3e6, 1); g.fillCircle(-1, -33, 2);
+    g.lineStyle(2, 0xf4b860, 1); g.strokeRoundedRect(-15, -62, 30, 58, 4);
+    g.lineStyle(1, 0xffe1a1, 0.8); g.lineBetween(-8, -54, 8, -54); g.lineBetween(-8, -47, 8, -47);
+    g.fillStyle(0xf4b860, 0.22); g.fillCircle(0, -32, 20);
+    g.fillStyle(0xf4b860, 1); g.fillCircle(0, -32, 5);
+    g.fillStyle(0xffe1a1, 1); g.fillCircle(-1, -33, 2);
     this.checkpointMarker.add(g);
   }
 
@@ -921,37 +932,37 @@ class GameScene extends Phaser.Scene {
         g.fillStyle(0x253b4e,1); g.fillRoundedRect(o.x+4,o.y+14,o.w-8,o.h-19,4);
         g.fillStyle(0x405e70,1); g.fillRoundedRect(o.x+7,o.y+4,o.w-14,15,4);
         g.fillStyle(0x152638,1); g.fillRoundedRect(o.x+15,o.y-10,18,28,5);
-        g.fillStyle(0x52768a,1); g.fillRoundedRect(o.x+18,o.y-13,12,25,4);
-        g.lineStyle(2,0x83b6c3,0.9); g.strokeRoundedRect(o.x+4,o.y+14,o.w-8,o.h-19,4);
-        g.fillStyle(0x9ce2c4,0.95); g.fillRect(o.x+10,o.y+20,5,3); g.fillRect(o.x+o.w-15,o.y+20,5,3);
+        g.fillStyle(0x8b6170,1); g.fillRoundedRect(o.x+18,o.y-13,12,25,4);
+        g.lineStyle(2,0xc77962,0.9); g.strokeRoundedRect(o.x+4,o.y+14,o.w-8,o.h-19,4);
+        g.fillStyle(0xf4b860,0.95); g.fillRect(o.x+10,o.y+20,5,3); g.fillRect(o.x+o.w-15,o.y+20,5,3);
         for(let k=0;k<4;k++){g.fillStyle(0x07101b,1);g.fillCircle(o.x+15+k*16,o.y+o.h-10,2.4);g.fillStyle(0x8aaebd,1);g.fillCircle(o.x+15+k*16,o.y+o.h-10,1);}
       } else if (i === 1) {
         // A cracked capacitor crate with a glowing split core.
-        g.fillStyle(0x101a28,1);g.fillRoundedRect(o.x,o.y+3,o.w,o.h-3,4);
+        g.fillStyle(0x17182e,1);g.fillRoundedRect(o.x,o.y+3,o.w,o.h-3,4);
         g.fillStyle(0x293b4b,1);g.fillRoundedRect(o.x+5,o.y+7,o.w-10,o.h-12,3);
-        g.lineStyle(2,0x66869a,0.9);g.strokeRoundedRect(o.x+5,o.y+7,o.w-10,o.h-12,3);
+        g.lineStyle(2,0x8b6170,0.9);g.strokeRoundedRect(o.x+5,o.y+7,o.w-10,o.h-12,3);
         g.lineStyle(3,0x0a1420,1);g.lineBetween(o.x+15,o.y+13,o.x+o.w-15,o.y+o.h-7);
-        g.lineStyle(2,0x9ce2c4,0.85);g.lineBetween(o.x+18,o.y+14,o.x+o.w-17,o.y+o.h-8);
-        g.fillStyle(0x9ce2c4,0.22);g.fillRoundedRect(o.x+o.w/2-7,o.y+13,14,o.h-25,3);
+        g.lineStyle(2,0xf4b860,0.85);g.lineBetween(o.x+18,o.y+14,o.x+o.w-17,o.y+o.h-8);
+        g.fillStyle(0xf4b860,0.22);g.fillRoundedRect(o.x+o.w/2-7,o.y+13,14,o.h-25,3);
         g.fillStyle(0xbaffef,0.95);g.fillRect(o.x+o.w/2-2,o.y+17,4,o.h-34);
-        for(const bx of [o.x+10,o.x+o.w-10]){g.fillStyle(0x07101b,1);g.fillCircle(bx,o.y+11,3);g.fillStyle(0x9ce2c4,1);g.fillCircle(bx,o.y+11,1);}
-        const sparks=this.add.graphics();sparks.fillStyle(0x9ce2c4,0.9);sparks.fillTriangle(o.x+18,o.y-4,o.x+24,o.y-13,o.x+26,o.y-3);sparks.fillTriangle(o.x+o.w-23,o.y-5,o.x+o.w-17,o.y-12,o.x+o.w-16,o.y-3);
+        for(const bx of [o.x+10,o.x+o.w-10]){g.fillStyle(0x07101b,1);g.fillCircle(bx,o.y+11,3);g.fillStyle(0xf4b860,1);g.fillCircle(bx,o.y+11,1);}
+        const sparks=this.add.graphics();sparks.fillStyle(0xf4b860,0.9);sparks.fillTriangle(o.x+18,o.y-4,o.x+24,o.y-13,o.x+26,o.y-3);sparks.fillTriangle(o.x+o.w-23,o.y-5,o.x+o.w-17,o.y-12,o.x+o.w-16,o.y-3);
         const fx=this.add.container(0,0,[sparks]).setDepth(4);this.tweens.add({targets:fx,alpha:{from:1,to:.25},y:-4,duration:460,yoyo:true,repeat:-1,ease:"Sine.inOut"});
       } else {
         // Compact rotary vent with concentric rings and animated vapor.
         g.fillStyle(0x111d2a,1);g.fillRoundedRect(o.x,o.y+7,o.w,o.h-7,4);
         g.fillStyle(0x314a5c,1);g.fillRoundedRect(o.x+5,o.y+9,o.w-10,o.h-15,3);
         g.fillStyle(0x07101b,1);g.fillCircle(o.x+o.w/2,o.y+8,17);
-        g.lineStyle(3,0x57798c,1);g.strokeCircle(o.x+o.w/2,o.y+8,14);
-        g.lineStyle(2,0x9ce2c4,0.9);g.strokeCircle(o.x+o.w/2,o.y+8,8);
-        g.fillStyle(0x9ce2c4,0.85);g.fillCircle(o.x+o.w/2,o.y+8,3);
+        g.lineStyle(3,0x8b6170,1);g.strokeCircle(o.x+o.w/2,o.y+8,14);
+        g.lineStyle(2,0xf4b860,0.9);g.strokeCircle(o.x+o.w/2,o.y+8,8);
+        g.fillStyle(0xf4b860,0.85);g.fillCircle(o.x+o.w/2,o.y+8,3);
         for(let k=0;k<6;k++){const angle=k*Math.PI/3;g.lineStyle(2,0x8aaebd,0.9);g.lineBetween(o.x+o.w/2+Math.cos(angle)*5,o.y+8+Math.sin(angle)*5,o.x+o.w/2+Math.cos(angle)*11,o.y+8+Math.sin(angle)*11);}
         const vapor=this.add.container(o.x+o.w/2,o.y+2).setDepth(4),steam=this.add.graphics();
-        steam.fillStyle(0x9ce2c4,.22);steam.fillEllipse(-9,-4,15,17);steam.fillStyle(0xbfeedd,.25);steam.fillEllipse(6,-14,13,19);steam.fillStyle(0x9ce2c4,.16);steam.fillEllipse(-1,-23,18,17);vapor.add(steam);
+        steam.fillStyle(0xf4b860,.22);steam.fillEllipse(-9,-4,15,17);steam.fillStyle(0xbfeedd,.25);steam.fillEllipse(6,-14,13,19);steam.fillStyle(0xf4b860,.16);steam.fillEllipse(-1,-23,18,17);vapor.add(steam);
         this.tweens.add({targets:vapor,y:o.y-40,alpha:0,duration:1050,repeat:-1,delay:180,onRepeat:()=>{vapor.setY(o.y+2);vapor.setAlpha(.9);},ease:"Sine.out"});
       }
       // Shared hazard edge lighting and floor-mounted anchor brackets.
-      g.lineStyle(1,0x9ce2c4,0.7);g.lineBetween(o.x+5,o.y+4,o.x+o.w-6,o.y+4);
+      g.lineStyle(1,0xf4b860,0.7);g.lineBetween(o.x+5,o.y+4,o.x+o.w-6,o.y+4);
       g.fillStyle(0x0a1420,1);g.fillRoundedRect(o.x+5,o.y+o.h-4,12,8,1);g.fillRoundedRect(o.x+o.w-17,o.y+o.h-4,12,8,1);
     });
   }
@@ -987,7 +998,7 @@ class GameScene extends Phaser.Scene {
       // Mint sparks cling to the moving tear, like the next level's dead
       // factory circuit is trying to burn through the old world.
       seamGlow.clear();
-      seamGlow.lineStyle(2, 0x9ce2c4, 0.72);
+      seamGlow.lineStyle(2, 0xf4b860, 0.72);
       seamGlow.beginPath();
       for (let y = 0; y <= H; y += 18) {
         const jagged = Math.sin(y * 0.071) * 9
@@ -997,7 +1008,7 @@ class GameScene extends Phaser.Scene {
         if (y === 0) seamGlow.moveTo(sx, y);
         else seamGlow.lineTo(sx, y);
         if ((Math.floor(y / 18) + Math.floor(progress * 17)) % 3 === 0) {
-          seamGlow.fillStyle(0xd7f3e6, 0.85);
+          seamGlow.fillStyle(0xffe1a1, 0.85);
           seamGlow.fillCircle(sx + Math.sin(y + progress * 40) * 3, y, 1.5 + (y % 4) * 0.25);
         }
       }
@@ -1005,18 +1016,18 @@ class GameScene extends Phaser.Scene {
     };
 
     const title = this.add.text(W / 2, H / 2 - 17, "THE NIGHT SHIFT", {
-      fontFamily: "monospace", fontSize: "27px", color: "#9ce2c4",
+      fontFamily: "monospace", fontSize: "27px", color: "#f4b860",
       fontStyle: "bold", letterSpacing: 4, align: "center"
     }).setOrigin(0.5).setDepth(32).setAlpha(0).setScale(0.88);
     const sub = this.add.text(W / 2, H / 2 + 20, "THE LANTERN FOUNDRY IS STILL AWAKE.", {
-      fontFamily: "monospace", fontSize: "10px", color: "#d7f3e6",
+      fontFamily: "monospace", fontSize: "10px", color: "#ffdfa0",
       letterSpacing: 1, align: "center"
     }).setOrigin(0.5).setDepth(32).setAlpha(0);
     const sigil = this.add.graphics().setDepth(32).setAlpha(0);
-    sigil.lineStyle(1, 0x9ce2c4, 0.8);
+    sigil.lineStyle(1, 0xf4b860, 0.8);
     sigil.lineBetween(W / 2 - 142, H / 2 + 43, W / 2 - 26, H / 2 + 43);
     sigil.lineBetween(W / 2 + 26, H / 2 + 43, W / 2 + 142, H / 2 + 43);
-    sigil.fillStyle(0x9ce2c4, 1);
+    sigil.fillStyle(0xf4b860, 1);
     sigil.fillTriangle(W / 2 - 8, H / 2 + 39, W / 2 + 8, H / 2 + 39, W / 2, H / 2 + 47);
     sigil.fillCircle(W / 2, H / 2 + 43, 2);
 
@@ -1062,16 +1073,16 @@ class GameScene extends Phaser.Scene {
     this.dead = true;
     this.playerVy = 0;
     const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x03080b, 0.88).setDepth(40).setScrollFactor(0).setAlpha(0);
-    const panel = this.add.rectangle(W / 2, H / 2, 590, 310, 0x0b171d, 0.98).setStrokeStyle(2, 0x5f9380, 0.95).setDepth(41).setScrollFactor(0).setAlpha(0);
+    const panel = this.add.rectangle(W / 2, H / 2, 590, 310, 0x0b171d, 0.98).setStrokeStyle(2, 0xc77962, 0.95).setDepth(41).setScrollFactor(0).setAlpha(0);
     const crack = this.add.graphics().setDepth(42).setScrollFactor(0).setAlpha(0);
-    crack.lineStyle(2, 0x9ce2c4, 0.75);
+    crack.lineStyle(2, 0xf4b860, 0.75);
     crack.beginPath(); crack.moveTo(190, 154); crack.lineTo(228, 179); crack.lineTo(212, 201); crack.lineTo(249, 226); crack.strokePath();
-    crack.lineStyle(1, 0x9ce2c4, 0.35); crack.lineBetween(710, 153, 746, 188); crack.lineBetween(746, 188, 729, 215);
+    crack.lineStyle(1, 0xf4b860, 0.35); crack.lineBetween(710, 153, 746, 188); crack.lineBetween(746, 188, 729, 215);
     const title = this.add.text(W / 2, 190, "MISSION FAILED", {
       fontFamily: "monospace", fontSize: "31px", color: "#b8e8d4", fontStyle: "bold", letterSpacing: 3
     }).setOrigin(0.5).setDepth(43).setScrollFactor(0).setAlpha(0);
     const sub = this.add.text(W / 2, 235, "THE FOUNDRY CLAIMS ANOTHER EMPLOYEE.", {
-      fontFamily: "monospace", fontSize: "10px", color: "#9ce2c4", letterSpacing: 1
+      fontFamily: "monospace", fontSize: "10px", color: "#f4b860", letterSpacing: 1
     }).setOrigin(0.5).setDepth(43).setScrollFactor(0).setAlpha(0);
     const checkpointLabel = this.add.text(W / 2, 270,
       this.checkpointReached ? "LAST SAFE LOCATION: MIDPOINT CHECKPOINT" : "NO CHECKPOINT LOGGED // RETURN TO ENTRY", {
@@ -1079,9 +1090,9 @@ class GameScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(43).setScrollFactor(0).setAlpha(0);
     const makeButton = (x: number, y: number, label: string, primary: boolean, callback: () => void) => {
       const bg = this.add.rectangle(x, y, 210, 43, primary ? 0x24483e : 0x17272a, 1)
-        .setStrokeStyle(1, primary ? 0x9ce2c4 : 0x5f9380, 1).setDepth(43).setScrollFactor(0).setInteractive({ useHandCursor: true }).setAlpha(0);
+        .setStrokeStyle(1, primary ? 0xf4b860 : 0xc77962, 1).setDepth(43).setScrollFactor(0).setInteractive({ useHandCursor: true }).setAlpha(0);
       const text = this.add.text(x, y, label, {
-        fontFamily: "monospace", fontSize: "12px", color: primary ? "#d7f3e6" : "#a9c3b9", fontStyle: "bold"
+        fontFamily: "monospace", fontSize: "12px", color: primary ? "#ffdfa0" : "#a9c3b9", fontStyle: "bold"
       }).setOrigin(0.5).setDepth(44).setScrollFactor(0).setAlpha(0);
       bg.on("pointerover", () => { if (this.dead) bg.setFillStyle(primary ? 0x315e50 : 0x263f40, 1); });
       bg.on("pointerout", () => bg.setFillStyle(primary ? 0x24483e : 0x17272a, 1));
@@ -1124,10 +1135,10 @@ class GameScene extends Phaser.Scene {
     backdrop.lineStyle(1, 0x28423f, 0.45);
     for (let x = 0; x < W; x += 32) backdrop.lineBetween(x, 0, x, H);
     for (let y = 0; y < H; y += 32) backdrop.lineBetween(0, y, W, y);
-    backdrop.fillStyle(0x9ce2c4, 0.06); backdrop.fillCircle(750, 118, 115);
-    backdrop.fillStyle(0xd7f3e6, 0.18); backdrop.fillCircle(750, 118, 42);
+    backdrop.fillStyle(0xf4b860, 0.06); backdrop.fillCircle(750, 118, 115);
+    backdrop.fillStyle(0xffe1a1, 0.18); backdrop.fillCircle(750, 118, 42);
     this.add.text(52, 48, "MY SHADOW HAS UNIONIZED", {
-      fontFamily: "monospace", fontSize: "21px", color: "#d7f3e6", fontStyle: "bold", letterSpacing: 2
+      fontFamily: "monospace", fontSize: "21px", color: "#ffdfa0", fontStyle: "bold", letterSpacing: 2
     }).setDepth(2);
     this.add.text(54, 82, "EMPLOYEE ACCESS TERMINAL  //  SELECT A SHIFT", {
       fontFamily: "monospace", fontSize: "10px", color: "#7cae9c", letterSpacing: 1
@@ -1146,12 +1157,12 @@ class GameScene extends Phaser.Scene {
         fontFamily: "monospace", fontSize: "10px", color: "#a9c3b9", lineSpacing: 6, wordWrap: { width: 270 }
       }).setDepth(3);
       this.add.text(x - 145, y + 48, status, {
-        fontFamily: "monospace", fontSize: "9px", color: active ? "#9ce2c4" : "#769087"
+        fontFamily: "monospace", fontSize: "9px", color: active ? "#f4b860" : "#769087"
       }).setDepth(3);
       const launch = this.add.rectangle(x, y + 126, 270, 35, active ? 0x24483e : 0x17272a, 1)
         .setStrokeStyle(1, color, 1).setDepth(3).setInteractive({ useHandCursor: true });
       const launchText = this.add.text(x, y + 126, active ? "ENTER SHIFT" : "REPLAY SHIFT", {
-        fontFamily: "monospace", fontSize: "10px", color: "#d7f3e6", fontStyle: "bold"
+        fontFamily: "monospace", fontSize: "10px", color: "#ffdfa0", fontStyle: "bold"
       }).setOrigin(0.5).setDepth(4);
       launch.on("pointerover", () => launch.setFillStyle(0x315e50, 1));
       launch.on("pointerout", () => launch.setFillStyle(active ? 0x24483e : 0x17272a, 1));
@@ -1162,7 +1173,7 @@ class GameScene extends Phaser.Scene {
       });
     };
     makeLevelCard(245, 1, "Probation", "Coffee diplomacy. A shadow with boundaries.\nA workplace on the edge.", "AVAILABLE  //  PLUM + AMBER", 0xf39a45, true);
-    makeLevelCard(715, 2, "The Night Shift", "Broken circuits. Live pipes.\nFive gaps. One checkpoint.", "AVAILABLE  //  MINT + IRON", 0x9ce2c4, true);
+    makeLevelCard(715, 2, "The Night Shift", "Broken circuits. Live pipes.\nFive gaps. One checkpoint.", "AVAILABLE  //  MINT + IRON", 0xf4b860, true);
     this.add.text(W / 2, 520, "A/D MOVE     SPACE JUMP     E INTERACT     R RESTART", {
       fontFamily: "monospace", fontSize: "10px", color: "#638b7d", letterSpacing: 1
     }).setOrigin(0.5).setDepth(2);
