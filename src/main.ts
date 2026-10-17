@@ -31,6 +31,7 @@ class GameScene extends Phaser.Scene {
   private demandText!: Phaser.GameObjects.Text;
   private dialogueText!: Phaser.GameObjects.Text;
   private hasCoffee = false;
+  private coffeeHintShown = false;
   private demandSatisfied = false;
   private switchOn = false;
   private won = false;
@@ -344,8 +345,15 @@ class GameScene extends Phaser.Scene {
   }
 
   private updateCoffee(): void {
-    if (!this.hasCoffee && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.coffee.x, this.coffee.y) < 38) {
+    const nearCoffee = !this.hasCoffee
+      && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.coffee.x, this.coffee.y) < 38;
+
+    // Only show the proximity hint once per approach; don't reset the dialogue timer every frame.
+    if (nearCoffee && !this.coffeeHintShown) {
       this.say("PRESS E TO OFFER THE SHADOW A COFFEE.");
+      this.coffeeHintShown = true;
+    } else if (!nearCoffee) {
+      this.coffeeHintShown = false;
     }
   }
 
@@ -374,7 +382,7 @@ class GameScene extends Phaser.Scene {
   private updateGate(): void {
     if (!this.switchOn) return;
     this.gate.setAlpha(0.45);
-    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, this.gate.x, this.gate.y) < 55) {
+    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, this.gate.x, this.gate.y) < 78) {
       this.won = true; this.showWin();
     }
   }
