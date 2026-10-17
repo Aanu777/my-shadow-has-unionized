@@ -184,41 +184,6 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  private drawBackdrop(): void {
-    const g = this.add.graphics();
-    g.fillStyle(0x21182f, 1);
-    g.fillRect(0, 0, W, H);
-    g.fillStyle(0x2c2040, 1);
-    g.fillCircle(780, 125, 54);
-    g.fillStyle(0xf0e8d8, 0.16);
-    g.fillCircle(780, 125, 44);
-
-    // Layered distant hills.
-    g.fillStyle(0x2b2039, 1);
-    g.fillTriangle(0, 405, 190, 210, 380, 405);
-    g.fillTriangle(245, 410, 500, 235, 735, 410);
-    g.fillTriangle(600, 405, 810, 200, 1020, 405);
-    g.fillStyle(0x191520, 1);
-    g.fillRect(0, 485, W, 115);
-
-    for (let i = 0; i < 44; i++) {
-      const x = (i * 137) % W;
-      const y = 75 + ((i * 71) % 320);
-      g.fillStyle(0xf0e8d8, 0.35 + (i % 3) * 0.15);
-      g.fillCircle(x, y, i % 5 === 0 ? 2 : 1);
-    }
-
-    // Bare tree silhouettes.
-    for (const x of [45, 260, 620, 925]) {
-      g.lineStyle(5, 0x17131f, 1);
-      g.lineBetween(x, 430, x + 3, 300);
-      g.lineBetween(x + 2, 345, x - 20, 315);
-      g.lineBetween(x + 2, 370, x + 25, 335);
-      g.lineBetween(x + 1, 320, x + 18, 292);
-    }
-  }
-
-
   private createAtmosphere(): void {
     // The SVG owns the entire background composition (sky, moon, terrain,
     // trees and horizon). Do not draw a second moon or fog layer over it.
