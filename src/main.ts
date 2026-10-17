@@ -220,36 +220,8 @@ class GameScene extends Phaser.Scene {
 
 
   private createAtmosphere(): void {
-    // A soft moon halo gives the sky more depth without obscuring the playfield.
-    const moonHalo = this.add.graphics().setDepth(0);
-    moonHalo.fillStyle(0x9c7be8, 0.035);
-    moonHalo.fillCircle(780, 125, 92);
-    moonHalo.fillStyle(0x9c7be8, 0.045);
-    moonHalo.fillCircle(780, 125, 72);
-
-    // Low forest mist drifts behind the playable objects, adding depth without
-    // interfering with the silhouette puzzle or player readability.
-    const mistA = this.add.ellipse(210, 452, 310, 34, 0x9c7be8, 0.055).setDepth(1);
-    const mistB = this.add.ellipse(700, 438, 390, 42, 0x6c5a91, 0.07).setDepth(1);
-    this.tweens.add({
-      targets: mistA,
-      x: 290,
-      alpha: { from: 0.035, to: 0.09 },
-      duration: 7200,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.inOut"
-    });
-    this.tweens.add({
-      targets: mistB,
-      x: 620,
-      alpha: { from: 0.04, to: 0.085 },
-      duration: 9100,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.inOut"
-    });
-
+    // The SVG owns the entire background composition (sky, moon, terrain,
+    // trees and horizon). Do not draw a second moon or fog layer over it.
     // Fireflies drift through the forest at different speeds and brightnesses.
     const fireflyPoints = [
       [82, 365], [145, 330], [220, 286], [318, 365], [375, 310],
