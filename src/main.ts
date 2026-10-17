@@ -666,6 +666,10 @@ class GameScene extends Phaser.Scene {
 
   private drawLevelTwoBackdrop(): void {
     const g = this.add.graphics().setDepth(-10);
+    // Paint an opaque full-canvas base FIRST. Shift 01's SVG is at depth -20,
+    // so this masks every pixel of that environment, including its sky and ground.
+    // The Shift 02 skyline, moon, swamp and gameplay floor are drawn above this base.
+    g.fillStyle(0x0b171d, 1); g.fillRect(0, 0, W, H);
     // Shift 02 is a derelict lantern foundry swallowed by the swamp.
     g.fillStyle(0x0b171d, 0.96); g.fillRect(0, 245, W, 255);
     g.fillStyle(0x142329, 1);
