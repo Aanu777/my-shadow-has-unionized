@@ -28,7 +28,8 @@ export class ShiftThreeScene extends Phaser.Scene {
   private eWasDown = false;
   private rWasDown = false;
   private conveyorArrows: Phaser.GameObjects.Graphics[] = [];
-  private scannerBeams: Array<{ x: number; beam: Phaser.GameObjects.Rectangle; lamp: Phaser.GameObjects.Arc; phase: number }> = [];
+  private conveyorRollers: Phaser.GameObjects.Container[] = [];
+  private scannerBeams: Array<{ x: number; beam: Phaser.GameObjects.Rectangle; glow: Phaser.GameObjects.Rectangle; sweep: Phaser.GameObjects.Rectangle; lamp: Phaser.GameObjects.Arc; phase: number }> = [];
   private drones: Phaser.GameObjects.Container[] = [];
   private startTime = 0;
 
@@ -39,7 +40,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     this.files = []; this.consoles = []; this.consoleStates = [false, false];
     this.doorOpen = false; this.won = false; this.dead = false;
     this.eWasDown = false; this.rWasDown = false; this.checkpointX = 110;
-    this.conveyorArrows = []; this.scannerBeams = []; this.drones = [];
+    this.conveyorArrows = []; this.conveyorRollers = []; this.scannerBeams = []; this.drones = [];
     this.startTime = this.time.now;
     this.cameras.main.setBackgroundColor("#0a0912");
     this.cameras.main.setBounds(0, 0, WORLD, H);
@@ -124,8 +125,11 @@ export class ShiftThreeScene extends Phaser.Scene {
 
     this.scannerBeams.forEach((scanner, i) => {
       const active = Math.sin(this.time.now * 0.0018 + scanner.phase) > -0.12;
-      scanner.beam.setAlpha(active ? 0.62 : 0.08);
+      scanner.beam.setAlpha(active ? 0.42 + 0.16 * (0.5 + 0.5 * Math.sin(this.time.now * 0.012)) : 0.025);
+      scanner.glow.setAlpha(active ? 0.12 : 0.015);
+      scanner.sweep.setAlpha(active ? 0.78 : 0.04);
       scanner.lamp.setFillStyle(active ? 0xff6c67 : 0x72d8bb, 1);
+      scanner.lamp.setScale(active ? 1 + 0.16 * Math.sin(this.time.now * 0.01) : 0.82);
       if (active && Math.abs(this.player.x - scanner.x) < 18 && this.player.y > 405) {
         this.fail("SECURITY SCAN DETECTED UNAUTHORIZED PUMPKIN.");
       }
@@ -138,7 +142,13 @@ export class ShiftThreeScene extends Phaser.Scene {
         this.fail("DRONE FLAGGED YOUR EMPLOYEE ID. BACK TO THE LAST CHECKPOINT.");
       }
     });
-    this.conveyorArrows.forEach((g, i) => { g.x = Math.sin(this.time.now * 0.002 + i) * 4; });
+    this.conveyorArrows.forEach((g, i) => {
+      const speed = this.consoleStates[i] ? -1 : 1;
+      g.x = Phaser.Math.Wrap(this.time.now * 0.035 * speed, -42, 42);
+    });
+    this.conveyorRollers.forEach((roller, i) => {
+      roller.rotation = this.time.now * 0.004 * (i < 14 ? 1 : -1);
+    });
     const e = this.keys.E.isDown;
     if (e && !this.eWasDown) this.interact();
     this.eWasDown = e;
@@ -210,34 +220,64 @@ export class ShiftThreeScene extends Phaser.Scene {
   }
 
   private drawConveyor(x1: number, x2: number, index: number): void {
+    const width = x2 - x1;
     const g = this.add.graphics().setDepth(4);
-    g.fillStyle(0x100d18, 1); g.fillRoundedRect(x1, FLOOR - 13, x2 - x1, 16, 3);
-    g.fillStyle(0x3a2c47, 1); g.fillRect(x1, FLOOR - 12, x2 - x1, 3);
-    g.lineStyle(1, 0x9b7ca9, 0.8);
-    for (let x = x1 + 8; x < x2 - 5; x += 18) {
-      g.beginPath(); g.moveTo(x, FLOOR - 9); g.lineTo(x + 7, FLOOR - 5); g.lineTo(x, FLOOR - 1); g.strokePath();
+    // Heavy steel chassis with layered bevels and recessed belt channel.
+    g.fillStyle(0x08070d, 1); g.fillRoundedRect(x1 - 4, FLOOR - 18, width + 8, 24, 4);
+    g.fillStyle(0x24202e, 1); g.fillRoundedRect(x1, FLOOR - 17, width, 20, 3);
+    g.fillStyle(0x4a4056, 1); g.fillRect(x1 + 3, FLOOR - 16, width - 6, 2);
+    g.fillStyle(0x0a0911, 1); g.fillRect(x1 + 4, FLOOR - 13, width - 8, 11);
+    g.lineStyle(1, 0x8c7898, 0.9); g.strokeRoundedRect(x1, FLOOR - 17, width, 20, 3);
+    // Side hazard markings make the machinery readable without adding clutter.
+    for (let x = x1 + 5; x < x2 - 10; x += 28) {
+      g.fillStyle(0xf4b860, 0.9);
+      g.fillTriangle(x, FLOOR - 17, x + 10, FLOOR - 17, x, FLOOR - 12);
     }
-    g.lineStyle(2, 0xf4b860, 0.85); g.strokeRect(x1, FLOOR - 15, x2 - x1, 20);
-    const arrows = this.add.graphics().setDepth(5);
-    arrows.fillStyle(0xf4b860, 0.9);
-    for (let x = x1 + 24; x < x2 - 12; x += 52) {
-      arrows.fillTriangle(x, FLOOR - 27, x + 12, FLOOR - 22, x, FLOOR - 17);
+    // Rotating steel rollers, each with a bright axle and spoke.
+    for (let x = x1 + 10; x < x2 - 5; x += 18) {
+      const roller = this.add.container(x, FLOOR - 6).setDepth(5);
+      const rg = this.add.graphics();
+      rg.fillStyle(0x17131f, 1); rg.fillCircle(0, 0, 6);
+      rg.lineStyle(2, 0x7e6d8c, 1); rg.strokeCircle(0, 0, 5);
+      rg.lineStyle(1, 0xf4b860, 0.9); rg.lineBetween(-3, 0, 3, 0);
+      rg.lineBetween(0, -3, 0, 3);
+      rg.fillStyle(0xc5a8ff, 1); rg.fillCircle(0, 0, 1.5);
+      roller.add(rg);
+      this.conveyorRollers.push(roller);
     }
-    arrows.x = index * 2; this.conveyorArrows.push(arrows);
-
+    // Moving direction chevrons travel over the belt; console interaction reverses them.
+    const arrows = this.add.graphics().setDepth(6);
+    arrows.fillStyle(index === 0 ? 0xf4b860 : 0xc5a8ff, 0.92);
+    for (let x = x1 + 18; x < x2 - 10; x += 42) {
+      arrows.fillTriangle(x, FLOOR - 13, x + 11, FLOOR - 9, x, FLOOR - 5);
+      arrows.fillTriangle(x + 12, FLOOR - 13, x + 23, FLOOR - 9, x + 12, FLOOR - 5);
+    }
+    arrows.setAlpha(0.9);
+    this.conveyorArrows.push(arrows);
+    // Small status lamp reflects the selected routing direction.
+    const status = this.add.circle(x2 - 8, FLOOR - 20, 3, 0xff6c67, 1).setDepth(7);
+    this.tweens.add({ targets: status, alpha: { from: 0.35, to: 1 }, duration: 420, yoyo: true, repeat: -1 });
   }
 
   private createScanner(x: number, phase: number): void {
     const housing = this.add.container(x, 0).setDepth(6);
     const g = this.add.graphics();
-    g.fillStyle(0x20162a, 1); g.fillRoundedRect(-16, 74, 32, 28, 3);
-    g.lineStyle(2, 0x735a86, 1); g.strokeRoundedRect(-16, 74, 32, 28, 3);
-    g.fillStyle(0xf4b860, 1); g.fillRect(-8, 82, 16, 3);
-    g.fillStyle(0x39283e, 1); g.fillRect(-4, 100, 8, 365);
+    // Ceiling-mounted scanner head with a glass aperture and warning fins.
+    g.fillStyle(0x08070d, 1); g.fillRoundedRect(-22, 68, 44, 38, 5);
+    g.fillStyle(0x282033, 1); g.fillRoundedRect(-17, 73, 34, 27, 3);
+    g.lineStyle(2, 0x8d719e, 1); g.strokeRoundedRect(-17, 73, 34, 27, 3);
+    g.fillStyle(0x0c0a12, 1); g.fillRoundedRect(-10, 79, 20, 12, 3);
+    g.fillStyle(0xff6c67, 1); g.fillRoundedRect(-6, 82, 12, 5, 2);
+    g.fillStyle(0x4a334f, 1); g.fillRect(-25, 77, 4, 17); g.fillRect(21, 77, 4, 17);
+    g.fillStyle(0xf4b860, 0.95); g.fillRect(-8, 101, 16, 3);
     housing.add(g);
-    const beam = this.add.rectangle(x, 300, 4, 380, 0xff6c67, 0.5).setDepth(7);
-    const lamp = this.add.circle(x, 110, 5, 0xff6c67, 1).setDepth(8);
-    this.scannerBeams.push({ x, beam, lamp, phase });
+    const glow = this.add.rectangle(x, 300, 15, 380, 0xff5369, 0.12).setDepth(6);
+    const beam = this.add.rectangle(x, 300, 3, 380, 0xff7484, 0.48).setDepth(7);
+    const sweep = this.add.rectangle(x, 300, 18, 3, 0xffd5c8, 0.85).setDepth(8);
+    const lamp = this.add.circle(x, 110, 5, 0xff6c67, 1).setDepth(9);
+    this.tweens.add({ targets: sweep, y: { from: 145, to: 460 }, duration: 1050 + phase * 100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.tweens.add({ targets: glow, alpha: { from: 0.07, to: 0.18 }, duration: 500, yoyo: true, repeat: -1 });
+    this.scannerBeams.push({ x, beam, glow, sweep, lamp, phase });
   }
 
   private createDrone(minX: number, maxX: number, y: number, index: number): void {
@@ -414,18 +454,45 @@ export class ShiftThreeScene extends Phaser.Scene {
     if (this.dead) return;
     this.dead = true;
     this.playerVx = 0; this.playerVy = 0;
-    this.cameras.main.shake(180, 0.006);
-    const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x080711, 0.86).setScrollFactor(0).setDepth(50);
-    const title = this.add.text(W / 2, 220, "SECURITY INCIDENT", {
-      fontFamily: "monospace", fontSize: "28px", color: "#ff8d82", fontStyle: "bold", letterSpacing: 2
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
-    const sub = this.add.text(W / 2, 275, message, {
-      fontFamily: "monospace", fontSize: "11px", color: "#e8d9f8", align: "center", wordWrap: { width: 650 }
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
-    const hint = this.add.text(W / 2, 345, "PRESS R TO RESTART FROM CHECKPOINT", {
-      fontFamily: "monospace", fontSize: "10px", color: "#f4b860"
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
-    this.data.set("failureOverlay", [shade, title, sub, hint]);
+    this.cameras.main.shake(260, 0.009);
+    // Security capture: the pumpkin gets flash-scanned, knocked back, then fades into a shadow stamp.
+    const flash = this.add.rectangle(this.player.x, this.player.y, 78, 78, 0xff5369, 0.55).setDepth(18);
+    const stamp = this.add.graphics().setDepth(19);
+    stamp.fillStyle(0x090711, 0.9); stamp.fillEllipse(this.player.x, this.player.y + 12, 48, 16);
+    stamp.lineStyle(2, 0xc5a8ff, 0.9); stamp.strokeEllipse(this.player.x, this.player.y + 12, 48, 16);
+    this.tweens.add({
+      targets: this.player, y: this.player.y - 20, angle: this.player.x < WORLD / 2 ? -18 : 18,
+      scaleX: 0.18, scaleY: 1.25, alpha: 0.12, duration: 420, ease: "Cubic.out"
+    });
+    this.tweens.add({
+      targets: flash, alpha: 0, scale: 2.6, duration: 360,
+      onComplete: () => flash.destroy()
+    });
+    this.tweens.add({
+      targets: stamp, alpha: 0, duration: 650, delay: 120,
+      onComplete: () => stamp.destroy()
+    });
+    this.time.delayedCall(300, () => {
+      const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x080711, 0.88).setScrollFactor(0).setDepth(50);
+      const scanline = this.add.rectangle(W / 2, 202, W, 2, 0xff5369, 0.7).setScrollFactor(0).setDepth(51);
+      this.tweens.add({ targets: scanline, alpha: 0, duration: 280, onComplete: () => scanline.destroy() });
+      const title = this.add.text(W / 2, 220, "SECURITY INCIDENT", {
+        fontFamily: "monospace", fontSize: "28px", color: "#ff8d82", fontStyle: "bold", letterSpacing: 2
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
+      title.setAlpha(0);
+      this.tweens.add({ targets: title, alpha: 1, duration: 220, ease: "Quad.out" });
+      const sub = this.add.text(W / 2, 275, message, {
+        fontFamily: "monospace", fontSize: "11px", color: "#e8d9f8", align: "center", wordWrap: { width: 650 }
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
+      sub.setAlpha(0);
+      this.tweens.add({ targets: sub, alpha: 1, duration: 260, delay: 80 });
+      const hint = this.add.text(W / 2, 345, "PRESS R TO RESTART FROM CHECKPOINT", {
+        fontFamily: "monospace", fontSize: "10px", color: "#f4b860"
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
+      hint.setAlpha(0);
+      this.tweens.add({ targets: hint, alpha: 1, duration: 240, delay: 180 });
+      this.data.set("failureOverlay", [shade, title, sub, hint]);
+    });
   }
 
   private respawnAtCheckpoint(): void {
