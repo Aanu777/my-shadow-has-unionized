@@ -29,7 +29,7 @@ scene.fog = new THREE.FogExp2("#100d1b", 0.023);
 const camera = new THREE.PerspectiveCamera(76, window.innerWidth / window.innerHeight, 0.1, 180);
 camera.position.set(0, 1.72, 8);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -52,7 +52,7 @@ scene.add(new THREE.HemisphereLight("#b8a6df", "#201426", 1.4));
 const moonLight = new THREE.DirectionalLight("#c8b5ff", 2.1);
 moonLight.position.set(-7, 12, 3);
 moonLight.castShadow = true;
-moonLight.shadow.mapSize.set(1024, 1024);
+moonLight.shadow.mapSize.set(2048, 2048);
 scene.add(moonLight);
 moonLight.shadow.camera.left = -12;
 moonLight.shadow.camera.right = 12;
@@ -368,7 +368,7 @@ function loadAsset(file: string, placements: Array<[number, number, number, numb
     () => console.warn("Optional CC0 model unavailable:", file)
   );
 }
-loadAsset("turret_single.glb", [[-5.45, -11.7, 0, 0], [5.45, -11.7, 0, Math.PI], [-5.45, 2.6, 0, 0], [5.45, 2.6, 0, Math.PI]]);
+loadAsset("satelliteDish.glb", [[-5.45, -11.7, 0, 0], [5.45, -11.7, 0, Math.PI], [-5.45, 2.6, 0, 0], [5.45, 2.6, 0, Math.PI]]);
 loadAsset("satelliteDish_detailed.glb", [[-5.7, -2.8, 0, 0.25], [5.7, -2.8, 0, -0.25]]);
 loadAsset("satelliteDish_large.glb", [[-5.6, -18.4, 0, 0.2], [5.6, -18.4, 0, -0.2]]);
 
@@ -686,6 +686,9 @@ function animate(): void {
   });
   amberLight.intensity = 22 + Math.sin(t * 1.7) * 1.6;
   fillLight.intensity = 16 + Math.sin(t * 0.55 + 2) * 2;
+  for (const [index, prop] of importedProps.entries()) {
+    if (index % 2 === 0) prop.rotation.y += Math.sin(t * 0.25 + index) * delta * 0.018;
+  }
   for (const relay of relays) {
     const symbol = relay.group.getObjectByName("relay-symbol");
     if (symbol) {
