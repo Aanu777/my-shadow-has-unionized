@@ -1,6 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
-  <defs><radialGradient id="moonGlow"><stop offset="0" stop-color="#9a7db0" stop-opacity=".24"/><stop offset="1" stop-color="#9a7db0" stop-opacity="0"/></radialGradient></defs>
-  <!-- Single background layer only: sky, moon and stars. No hills, trees, fog or foreground terrain. -->
+  <defs>
+    <radialGradient id="moonGlow"><stop offset="0" stop-color="#9a7db0" stop-opacity=".24"/><stop offset="1" stop-color="#9a7db0" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#30233f"/><stop offset="1" stop-color="#241a31"/></linearGradient>
+  </defs>
+  <!-- Background illustration only; the gameplay ground is drawn separately. -->
   <rect width="960" height="600" fill="#21182f"/>
   <circle cx="780" cy="125" r="104" fill="url(#moonGlow)"/>
   <circle cx="780" cy="125" r="54" fill="#6e5a7c" opacity=".23"/>
@@ -14,5 +17,13 @@
     <rect x="911" y="110" width="2" height="2" opacity=".4"/><rect x="742" y="239" width="2" height="2" opacity=".36"/>
     <rect x="183" y="246" width="2" height="2" opacity=".3"/><rect x="464" y="236" width="2" height="2" opacity=".38"/>
     <rect x="338" y="282" width="2" height="2" opacity=".22"/><rect x="614" y="274" width="2" height="2" opacity=".3"/>
+  </g>
+  <path d="M0 385L88 309L151 344L265 231L351 326L404 365L510 255L615 345L700 316L806 230L895 326L960 369L960 397L0 397Z" fill="url(#ridge)"/>
+  <path d="M0 385L88 309L151 344L265 231L351 326L404 365L510 255L615 345L700 316L806 230L895 326L960 369" fill="none" stroke="#3a2a49" stroke-width="2" opacity=".65"/>
+  <g fill="none" stroke="#17131f" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M44 397L46 314M45 365L26 338M45 348L62 322M46 337L37 319M46 330L57 310" stroke-width="5"/>
+    <path d="M258 397L260 319M259 365L239 338M259 349L278 322M260 337L251 319M260 331L271 311" stroke-width="5"/>
+    <path d="M620 397L622 315M621 365L601 337M621 348L641 320M622 337L613 318M622 330L634 309" stroke-width="5"/>
+    <path d="M925 397L927 314M926 365L907 338M926 348L945 321M927 337L918 319M927 330L939 309" stroke-width="5"/>
   </g>
 </svg>
