@@ -1,13 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
   <defs>
-    <radialGradient id="moonGlow"><stop offset="0" stop-color="#796487" stop-opacity=".25"/><stop offset="1" stop-color="#796487" stop-opacity="0"/></radialGradient>
+    <radialGradient id="moonGlow"><stop offset="0" stop-color="#9a7db0" stop-opacity=".24"/><stop offset="1" stop-color="#9a7db0" stop-opacity="0"/></radialGradient>
     <linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#30233f"/><stop offset="1" stop-color="#241a31"/></linearGradient>
-    <pattern id="soil" width="56" height="26" patternUnits="userSpaceOnUse">
-      <path d="M9 7v10 M36 15v7" stroke="#4b365b" stroke-width="1" opacity=".5"/>
-      <rect x="22" y="19" width="5" height="2" fill="#17131f" opacity=".3"/>
-    </pattern>
   </defs>
-  <!-- Entire background is one finished illustration, not stacked game objects. -->
+  <!-- Background-only illustration: no foreground ground fill. -->
   <rect width="960" height="600" fill="#21182f"/>
   <circle cx="780" cy="125" r="104" fill="url(#moonGlow)"/>
   <circle cx="780" cy="125" r="54" fill="#6e5a7c" opacity=".23"/>
@@ -22,18 +18,14 @@
     <rect x="183" y="246" width="2" height="2" opacity=".3"/><rect x="464" y="236" width="2" height="2" opacity=".38"/>
     <rect x="338" y="282" width="2" height="2" opacity=".22"/><rect x="614" y="274" width="2" height="2" opacity=".3"/>
   </g>
-  <!-- A single connected ridgeline, deliberately subdued behind gameplay. -->
-  <path d="M0 418V386L88 309L151 344L265 231L351 326L404 365L510 255L615 345L700 316L806 230L895 326L960 369V500H0Z" fill="url(#ridge)"/>
-  <path d="M0 418L88 309L151 344L265 231L351 326L404 365L510 255L615 345L700 316L806 230L895 326L960 369" fill="none" stroke="#3a2a49" stroke-width="2" opacity=".65"/>
-  <!-- Sparse angular dead trees, rooted into the same connected terrain. -->
+  <!-- One distant ridgeline ends above the playfield; the lower area is clear sky. -->
+  <path d="M0 385L88 309L151 344L265 231L351 326L404 365L510 255L615 345L700 316L806 230L895 326L960 369L960 397L0 397Z" fill="url(#ridge)"/>
+  <path d="M0 385L88 309L151 344L265 231L351 326L404 365L510 255L615 345L700 316L806 230L895 326L960 369" fill="none" stroke="#3a2a49" stroke-width="2" opacity=".65"/>
+  <!-- Distant tree tops are contained within the ridge band and end above y=400. -->
   <g fill="none" stroke="#17131f" stroke-linecap="square" stroke-linejoin="miter">
-    <path d="M44 439L46 314M45 365L26 338M45 348L62 322M46 337L37 319M46 330L57 310" stroke-width="5"/>
-    <path d="M258 439L260 319M259 365L239 338M259 349L278 322M260 337L251 319M260 331L271 311" stroke-width="5"/>
-    <path d="M620 439L622 315M621 365L601 337M621 348L641 320M622 337L613 318M622 330L634 309" stroke-width="5"/>
-    <path d="M925 439L927 314M926 365L907 338M926 348L945 321M927 337L918 319M927 330L939 309" stroke-width="5"/>
+    <path d="M44 397L46 314M45 365L26 338M45 348L62 322M46 337L37 319M46 330L57 310" stroke-width="5"/>
+    <path d="M258 397L260 319M259 365L239 338M259 349L278 322M260 337L251 319M260 331L271 311" stroke-width="5"/>
+    <path d="M620 397L622 315M621 365L601 337M621 348L641 320M622 337L613 318M622 330L634 309" stroke-width="5"/>
+    <path d="M925 397L927 314M926 365L907 338M926 348L945 321M927 337L918 319M927 330L939 309" stroke-width="5"/>
   </g>
-  <!-- Soft horizon band merges into the playable ground instead of adding a second ridge. -->
-  <rect x="0" y="465" width="960" height="35" fill="#17131f" opacity=".19"/>
-  <!-- Low ground texture in the same muted palette as the existing platform grass. -->
-  <path d="M0 494l5 -4m4 4l-1 -3m16 3l3 -5m4 5l-1 -3m19 3l2 -4m5 4l-1 -2m21 2l3 -5m7 5l-1 -3m22 3l2 -4m8 4l-1 -3m18 3l3 -5m5 5l-1 -2m23 2l2 -4m8 4l-1 -3m20 3l3 -5m6 5l-1 -3m19 3l2 -4m8 4l-1 -3m20 3l3 -5m7 5l-1 -2m22 2l2 -4m8 4l-1 -3m20 3l3 -5m5 5l-1 -2m20 2l2 -4m8 4l-1 -3m20 3l3 -5m5 5l-1 -2m22 2l2 -4m8 4l-1 -3m19 3l3 -5m5 5l-1 -2m21 2l2 -4m8 4l-1 -3m20 3l3 -5m6 5l-1 -2m20 2l2 -4m8 4l-1 -3m21 3l3 -5m6 5l-1 -2m20 2l2 -4m8 4l-1 -3m20 3l3 -5m6 5l-1 -2m20 2l2 -4m8 4l-1 -3m20 3l3 -5m6 5l-1 -2m20 2l2 -4m8 4l-1 -3m20 3l3 -5m6 5l-1 -2" fill="none" stroke="#68734d" stroke-width="1" opacity=".38"/>
 </svg>
