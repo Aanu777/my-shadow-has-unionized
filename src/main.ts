@@ -315,12 +315,19 @@ class GameScene extends Phaser.Scene {
   private makeCoffee(x: number, y: number, label = "COFFEE"): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
     const g = this.add.graphics();
-    g.fillStyle(0xeee1d0, 1); g.fillRoundedRect(-9, -11, 18, 17, 3);
-    g.lineStyle(3, 0xeee1d0, 1); g.strokeCircle(10, -3, 5);
-    g.fillStyle(0x6d3d29, 1); g.fillRect(-6, -8, 12, 3);
-    g.lineStyle(2, 0xf0e8d8, 0.6); g.lineBetween(-4, -16, -6, -21); g.lineBetween(3, -16, 1, -22);
+    if (label === "FUSE") {
+      g.fillStyle(0x182d2d, 1); g.fillRoundedRect(-12, -10, 24, 20, 3);
+      g.lineStyle(2, 0x9ce2c4, 1); g.strokeRoundedRect(-12, -10, 24, 20, 3);
+      g.fillStyle(0x9ce2c4, 1); g.fillRect(-5, -6, 10, 12);
+      g.fillStyle(0xd7f3e6, 1); g.fillRect(-2, -13, 4, 3); g.fillRect(-2, 10, 4, 3);
+    } else {
+      g.fillStyle(0xeee1d0, 1); g.fillRoundedRect(-9, -11, 18, 17, 3);
+      g.lineStyle(3, 0xeee1d0, 1); g.strokeCircle(10, -3, 5);
+      g.fillStyle(0x6d3d29, 1); g.fillRect(-6, -8, 12, 3);
+      g.lineStyle(2, 0xf0e8d8, 0.6); g.lineBetween(-4, -16, -6, -21); g.lineBetween(3, -16, 1, -22);
+    }
     c.add(g); c.setDepth(5);
-    this.add.text(x, y + 15, label, { fontFamily: "monospace", fontSize: "9px", color: "#f0e8d8" }).setOrigin(0.5);
+    this.add.text(x, y + 15, label, { fontFamily: "monospace", fontSize: "9px", color: label === "FUSE" ? "#9ce2c4" : "#f0e8d8" }).setOrigin(0.5);
     return c;
   }
 
@@ -462,7 +469,6 @@ class GameScene extends Phaser.Scene {
       art.fillStyle(0x101019,0.4); art.fillRoundedRect(-14,-40,28,86,4);
       art.fillStyle(glow,1); art.fillCircle(0,-7,8);
     }
-    if (this.switchOn && this.isAtExit() && this.level === 2) { this.won = true; this.showWin(); }
   }
 
   private showWin(): void {
