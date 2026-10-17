@@ -165,13 +165,13 @@ class GameScene extends Phaser.Scene {
       align: "center", wordWrap: { width: 820 }
     }).setOrigin(0.5).setDepth(8).setScrollFactor(0);
 
-    this.add.text(W - 26, 24,
+    const controlsText = this.add.text(W - 26, 24,
       "MOVE  A/D OR ←/→\nJUMP  SPACE / W / ↑\nINTERACT  E   •   ENTER  EXIT\nRESTART  R", {
       fontFamily: "monospace", fontSize: "11px", color: "#d8cfe6",
       backgroundColor: "#21182f", padding: { x: 10, y: 8 },
       lineSpacing: 5, align: "right"
     }).setOrigin(1, 0).setDepth(8).setScrollFactor(0);
-    if (this.level === 2) { this.statusText.setVisible(false); this.demandText.setVisible(false); this.dialogueText.setVisible(false); }
+    if (this.level === 2) { this.statusText.setVisible(false); this.demandText.setVisible(false); this.dialogueText.setVisible(false); controlsText.setVisible(false); }
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -300,16 +300,12 @@ class GameScene extends Phaser.Scene {
         yoyo: true, repeat: -1, delay: i * 95, ease: "Sine.inOut"
       });
     });
-    for (let i = 0; i < 5; i++) {
-      const spark = this.add.circle(this.lanternX + (i - 2) * 12, 414 - (i % 3) * 8, 1.5, this.level === 2 ? 0xb5efd3 : 0xffdf91, 0.6).setDepth(4);
-      this.tweens.add({
-        targets: spark, y: spark.y - 9 - (i % 3) * 3, alpha: 0,
-        duration: 700 + i * 130, delay: i * 170, repeat: -1,
-        onRepeat: () => {
-          spark.setPosition(this.lanternX + (i - 2) * 12, 414 - (i % 3) * 8);
-          spark.setAlpha(0.6);
-        }, ease: "Sine.out"
-      });
+    if (this.level === 1) {
+      for (let i = 0; i < 5; i++) {
+        const spark = this.add.circle(this.lanternX + (i - 2) * 12, 414 - (i % 3) * 8, 1.5, 0xffdf91, 0.6).setDepth(4);
+        this.tweens.add({ targets: spark, y: spark.y - 9 - (i % 3) * 3, alpha: 0, duration: 700 + i * 130, delay: i * 170, repeat: -1,
+          onRepeat: () => { spark.setPosition(this.lanternX + (i - 2) * 12, 414 - (i % 3) * 8); spark.setAlpha(0.6); }, ease: "Sine.out" });
+      }
     }
   }
 
@@ -323,24 +319,30 @@ class GameScene extends Phaser.Scene {
       g.fillRect(p.x, p.y, p.w, 3);
       g.fillStyle(this.level === 2 ? 0x314b48 : 0x50305f, 0.9);
       g.fillRect(p.x, p.y + 3, p.w, 2);
-      if (ground) {
+      if (ground && this.level === 2) {
+        // Orbital catwalk plating: broad panels, recessed joints and sparse cyan guide lights.
+        g.fillStyle(0x101a29, 1); g.fillRect(p.x, p.y + 5, p.w, p.h - 5);
+        g.lineStyle(1, 0x304b61, 0.95);
+        for (let x = p.x + 26; x < p.x + p.w - 8; x += 48) {
+          g.lineBetween(x, p.y + 7, x, Math.min(p.y + 43, p.y + p.h - 3));
+          g.fillStyle(0x9ce2c4, 0.65); g.fillRect(x + 4, p.y + 7, 7, 2);
+          g.fillStyle(0x020711, 1); g.fillCircle(x + 17, p.y + 13, 1.5);
+        }
+        g.fillStyle(0x233b4e, 1); g.fillRect(p.x, p.y + 3, p.w, 2);
+      } else if (ground) {
         for (let x = p.x + 5; x < p.x + p.w - 3; x += 8) {
           const n = (Math.floor(x * 13) % 5);
-          g.lineStyle(1, this.level === 2 ? 0x79a38c : (n % 2 === 0 ? 0x8b5b4d : 0xc18b55), 0.88);
-          g.lineBetween(x, p.y + 1, x - 1, p.y - 2 - n);
+          g.lineStyle(1, n % 2 === 0 ? 0x8b5b4d : 0xc18b55, 0.88); g.lineBetween(x, p.y + 1, x - 1, p.y - 2 - n);
         }
-        g.lineStyle(1, this.level === 2 ? 0x35544d : 0x3d294c, 0.95);
-        for (let x = p.x + 12; x < p.x + p.w - 4; x += 27) {
-          g.lineBetween(x, p.y + 11, x, Math.min(p.y + 39, p.y + p.h - 2));
-        }
-        g.fillStyle(this.level === 2 ? 0x142126 : 0x130e1c, 0.75);
-        for (let x = p.x + 19; x < p.x + p.w - 10; x += 61) {
-          g.fillRect(x, p.y + 17 + (x % 7), 7, 2);
-        }
+        g.lineStyle(1, 0x3d294c, 0.95);
+        for (let x = p.x + 12; x < p.x + p.w - 4; x += 27) g.lineBetween(x, p.y + 11, x, Math.min(p.y + 39, p.y + p.h - 2));
+        g.fillStyle(0x130e1c, 0.75);
+        for (let x = p.x + 19; x < p.x + p.w - 10; x += 61) g.fillRect(x, p.y + 17 + (x % 7), 7, 2);
       }
+
     }
     const mushrooms = this.add.graphics().setDepth(3);
-    for (const [x, y] of [[58, 500], [285, 500], [744, 500], [928, 500]]) {
+    if (this.level === 1) for (const [x, y] of [[58, 500], [285, 500], [744, 500], [928, 500]]) {
       mushrooms.fillStyle(0xd9c9b7, 0.95);
       mushrooms.fillRect(x - 1, y - 1, 3, 6);
       mushrooms.fillStyle(0x9c5268, 1);
