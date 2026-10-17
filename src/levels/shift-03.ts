@@ -473,25 +473,87 @@ export class ShiftThreeScene extends Phaser.Scene {
       onComplete: () => stamp.destroy()
     });
     this.time.delayedCall(300, () => {
-      const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x080711, 0.88).setScrollFactor(0).setDepth(50);
-      const scanline = this.add.rectangle(W / 2, 202, W, 2, 0xff5369, 0.7).setScrollFactor(0).setDepth(51);
-      this.tweens.add({ targets: scanline, alpha: 0, duration: 280, onComplete: () => scanline.destroy() });
-      const title = this.add.text(W / 2, 220, "SECURITY INCIDENT", {
-        fontFamily: "monospace", fontSize: "28px", color: "#ff8d82", fontStyle: "bold", letterSpacing: 2
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
+      const overlay: Phaser.GameObjects.GameObject[] = [];
+      const shade = this.add.rectangle(W / 2, H / 2, W, H, 0x07060c, 0.94).setScrollFactor(0).setDepth(50);
+      overlay.push(shade);
+
+      // Framed incident report: make the failure screen feel like an in-world HR system.
+      const panel = this.add.graphics().setScrollFactor(0).setDepth(51);
+      panel.fillStyle(0x100d18, 0.98);
+      panel.fillRoundedRect(112, 104, W - 224, 392, 8);
+      panel.lineStyle(1, 0x59405f, 0.95);
+      panel.strokeRoundedRect(112, 104, W - 224, 392, 8);
+      panel.lineStyle(3, 0xff5369, 0.95);
+      panel.lineBetween(132, 104, 256, 104);
+      panel.lineBetween(W - 256, 104, W - 132, 104);
+      panel.fillStyle(0xff5369, 0.08);
+      panel.fillRect(113, 105, W - 226, 50);
+      overlay.push(panel);
+
+      const topLabel = this.add.text(144, 123, "DEPARTMENT OF LOST SHADOWS", {
+        fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff", letterSpacing: 2
+      }).setScrollFactor(0).setDepth(52);
+      const incidentId = this.add.text(W - 144, 123, "INCIDENT 03-ERR", {
+        fontFamily: "monospace", fontSize: "9px", color: "#ff8d82", letterSpacing: 1
+      }).setOrigin(1, 0).setScrollFactor(0).setDepth(52);
+      overlay.push(topLabel, incidentId);
+
+      const icon = this.add.graphics().setScrollFactor(0).setDepth(52);
+      icon.lineStyle(2, 0xff5369, 1);
+      icon.strokeCircle(W / 2, 202, 29);
+      icon.lineBetween(W / 2 - 11, 191, W / 2 + 11, 213);
+      icon.lineBetween(W / 2 + 11, 191, W / 2 - 11, 213);
+      icon.lineStyle(1, 0xff5369, 0.35);
+      icon.strokeCircle(W / 2, 202, 39);
+      overlay.push(icon);
+      this.tweens.add({ targets: icon, angle: 180, alpha: { from: 0.65, to: 1 }, duration: 1200, yoyo: true, repeat: -1 });
+
+      const title = this.add.text(W / 2, 260, "EMPLOYEE\nTERMINATED", {
+        fontFamily: "monospace", fontSize: "30px", color: "#fff0ee", fontStyle: "bold",
+        align: "center", lineSpacing: -1, letterSpacing: 2
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
       title.setAlpha(0);
-      this.tweens.add({ targets: title, alpha: 1, duration: 220, ease: "Quad.out" });
-      const sub = this.add.text(W / 2, 275, message, {
-        fontFamily: "monospace", fontSize: "11px", color: "#e8d9f8", align: "center", wordWrap: { width: 650 }
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
+      title.setScale(0.92);
+      this.tweens.add({ targets: title, alpha: 1, scale: 1, duration: 340, ease: "Back.out" });
+      overlay.push(title);
+
+      const status = this.add.text(W / 2, 309, "YOUR SHADOW HAS BEEN REASSIGNED TO THE VOID.", {
+        fontFamily: "monospace", fontSize: "9px", color: "#f4b860", letterSpacing: 1, align: "center"
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
+      const sub = this.add.text(W / 2, 346, message, {
+        fontFamily: "monospace", fontSize: "11px", color: "#c9bfce", align: "center",
+        wordWrap: { width: 610 }, lineSpacing: 5
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
       sub.setAlpha(0);
-      this.tweens.add({ targets: sub, alpha: 1, duration: 260, delay: 80 });
-      const hint = this.add.text(W / 2, 345, "PRESS R TO RESTART FROM CHECKPOINT", {
-        fontFamily: "monospace", fontSize: "10px", color: "#f4b860"
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
+      this.tweens.add({ targets: sub, alpha: 1, duration: 320, delay: 100 });
+      overlay.push(status, sub);
+
+      const divider = this.add.graphics().setScrollFactor(0).setDepth(52);
+      divider.lineStyle(1, 0x59405f, 1);
+      divider.lineBetween(154, 385, W - 154, 385);
+      overlay.push(divider);
+
+      const hint = this.add.text(W / 2, 421, "[ R ]  REINSTATE EMPLOYMENT", {
+        fontFamily: "monospace", fontSize: "12px", color: "#f4b860", letterSpacing: 1
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
       hint.setAlpha(0);
-      this.tweens.add({ targets: hint, alpha: 1, duration: 240, delay: 180 });
-      this.data.set("failureOverlay", [shade, title, sub, hint]);
+      this.tweens.add({ targets: hint, alpha: { from: 0.55, to: 1 }, duration: 620, delay: 220, yoyo: true, repeat: -1 });
+      overlay.push(hint);
+
+      const footer = this.add.text(W / 2, 463, "FORM 404-B  //  APPEAL WINDOW: NEVER", {
+        fontFamily: "monospace", fontSize: "8px", color: "#75677e", letterSpacing: 2
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(52);
+      overlay.push(footer);
+
+      // A quick red scan sweeps through the panel as the report materializes.
+      const scanline = this.add.rectangle(W / 2, 155, W - 250, 2, 0xff5369, 0.85).setScrollFactor(0).setDepth(53);
+      overlay.push(scanline);
+      this.tweens.add({
+        targets: scanline, y: 450, alpha: { from: 0.85, to: 0.1 }, duration: 720, ease: "Sine.inOut",
+        onComplete: () => scanline.setAlpha(0)
+      });
+
+      this.data.set("failureOverlay", overlay);
     });
   }
 
