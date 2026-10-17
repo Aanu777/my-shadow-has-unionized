@@ -1,5 +1,8 @@
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
+
+const rootDir = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   base: "./",
@@ -7,8 +10,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, "index.html"),
-        shift02ThreeD: resolve(__dirname, "shift-02-3d.html")
+        main: resolve(rootDir, "index.html"),
+        shift02ThreeD: resolve(rootDir, "shift-02-3d.html")
       }
     }
   }
