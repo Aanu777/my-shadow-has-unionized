@@ -689,8 +689,14 @@ export class ShiftFourScene extends Phaser.Scene {
   private renderDifficultyChoice():void{const c=[{n:"01 / INTERN REVIEW",color:"#78e6bb",hp:3,d:"EASY · 3 seals · slower attacks · generous core window."},{n:"02 / FORMAL AUDIT",color:"#f4b860",hp:5,d:"NORMAL · 5 seals · mixed attacks · tighter timing."},{n:"03 / EXECUTIVE TRIBUNAL",color:"#ff5369",hp:7,d:"HARD · 7 seals · chained attacks · short vulnerability windows and heavier damage."}][this.selectedDifficulty];this.difficultyChoice.setColor(c.color).setText("◀   "+c.n+"   ▶\n"+"▰ ".repeat(c.hp)+"▱ ".repeat(7-c.hp));this.difficultyDescription.setText(c.d+"\n\nPLAYER INTEGRITY RESETS TO 100% FOR THE REVIEW.");}
   private updateDifficultyPanel():void{const a=this.keys.A.isDown,d=this.keys.D.isDown,e=this.keys.E.isDown,r=this.keys.R.isDown;if(a&&!this.aWasDown){this.selectedDifficulty=(this.selectedDifficulty+2)%3;this.renderDifficultyChoice();}if(d&&!this.dWasDown){this.selectedDifficulty=(this.selectedDifficulty+1)%3;this.renderDifficultyChoice();}if(e&&!this.eWasDown){this.difficultySelectOpen=false;this.difficultyPanel.setVisible(false);this.startBoss();}if(r&&!this.rWasDown){this.difficultySelectOpen=false;this.difficultyPanel.setVisible(false);this.say("REVIEW DEFERRED. AUTHORIZATION REMAINS AVAILABLE.");}this.aWasDown=a;this.dWasDown=d;this.eWasDown=e;this.rWasDown=r;}
 
-  private randomizePuzzles():void{const shuffle=(items:string[],answer:number)=>{const correct=items[answer],out=[...items];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return{items:out,answer:out.indexOf(correct)};};for(const t of this.terminals){const a=shuffle(t.options,t.answer);t.options=a.items;t.answer=a.answer;t.chosen=Math.floor(Math.random()*t.options.length);const b=shuffle(t.followUpOptions,t.followUpAnswer);t.followUpOptions=b.items;t.followUpAnswer=b.answer;t.followUpChosen=Math.floor(Math.random()*t.followUpOptions.length);}}
-
+  private randomizePuzzles():void{
+    const shuffle=<T,>(items:T[])=>{const out=[...items];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;};
+    const shuffleOptions=(items:string[],answer:number)=>{const correct=items[answer],out=shuffle(items);return{items:out,answer:out.indexOf(correct)};};
+    for(const t of this.terminals){const a=shuffleOptions(t.options,t.answer);t.options=a.items;t.answer=a.answer;t.chosen=Math.floor(Math.random()*t.options.length);const b=shuffleOptions(t.followUpOptions,t.followUpAnswer);t.followUpOptions=b.items;t.followUpAnswer=b.answer;t.followUpChosen=Math.floor(Math.random()*t.followUpOptions.length);}
+    // The three evidence files also change stations every run, so the route is not identical after death.
+    const positions=shuffle(this.terminals.map(t=>t.x));this.terminals.forEach((t,i)=>{t.x=positions[i];});
+    this.terminals=shuffle(this.terminals);
+  }
   private shadowPulse(): void {
     this.pulseCooldown = 1.35;
     const ring = this.add.circle(this.player.x, this.player.y, 18, 0xc5a8ff, 0.15).setDepth(20);
@@ -746,11 +752,11 @@ export class ShiftFourScene extends Phaser.Scene {
   }
 
   private updateBoss(dt:number):void{
-    const t=this.time.now/1000;this.boss.y=345+Math.sin(t*2.1)*12;this.boss.rotation=Math.sin(t*1.25)*.025;this.bossCore.setPosition(this.boss.x,this.boss.y-8);this.bossTimer-=dt;
+    const t=this.time.now/1000;this.boss.x=1740+Math.sin(t*1.15)*13;this.boss.y=345+Math.sin(t*2.1)*12;this.boss.rotation=Math.sin(t*1.25)*.025;this.bossCore.setPosition(this.boss.x,this.boss.y-8);this.bossTimer-=dt;
     if(this.bossTimer<=0&&!this.bossWaveLive&&!this.bossVulnerable){
       const pool=[[0,1,2],[0,1,2,3],[0,1,2,3,4]][this.selectedDifficulty],attack=pool[this.attackIndex%pool.length];this.attackIndex++;this.bossWave.removeAll(true);this.bossWave.setPosition(this.boss.x,FLOOR-24).setRotation(0).setScale(1).setAlpha(1).setVisible(true);this.bossWaveLive=true;const g=this.add.graphics();let tell="",duration=1100;
       if(attack===0){tell="WARRANT SCYTHE — JUMP OR PHASE-DASH THROUGH THE HOOKED BLADE";duration=[1350,1050,820][this.selectedDifficulty];g.fillStyle(0x5b1638,.32);g.fillEllipse(0,0,185,34);g.lineStyle(7,0xff5369,1);g.beginPath();g.moveTo(-82,10);g.lineTo(-46,-12);g.lineTo(-18,8);g.lineTo(8,-17);g.lineTo(36,8);g.lineTo(78,-10);g.strokePath();g.lineStyle(2,0xffd9ed,.95);g.beginPath();g.moveTo(-82,10);g.lineTo(-46,-12);g.lineTo(-18,8);g.lineTo(8,-17);g.lineTo(36,8);g.lineTo(78,-10);g.strokePath();this.bossWave.add(g);this.bossWave.setPosition(WORLD+100,FLOOR-22);this.tweens.add({targets:this.bossWave,x:780,duration,ease:"Cubic.in",onComplete:()=>this.finishBossAttack()});}
-      else if(attack===1){tell="SEAL RAIN — THREE STAMPED WARRANTS FALL IN A SPREAD";duration=1420;this.bossWave.setPosition(Phaser.Math.Clamp(this.player.x,120,1810),FLOOR-25);for(let i=0;i<3;i++){const shard=this.add.graphics();shard.fillStyle(0x210c22,1);shard.fillRoundedRect(-17,-22,34,44,3);shard.lineStyle(3,0xff5369,1);shard.strokeRect(-17,-22,34,44);shard.lineStyle(2,0xf4b860,.95);shard.strokeCircle(0,0,8);shard.lineBetween(-10,-13,10,13);shard.lineBetween(10,-13,-10,13);shard.setPosition((i-1)*76,-165-i*15);this.bossWave.add(shard);this.tweens.add({targets:shard,y:75+i*16,angle:i%2?18:-18,duration:780+i*140,delay:i*120,ease:"Cubic.in",onComplete:()=>{if(this.bossActive&&Math.abs(this.player.x-(this.bossWave.x+(i-1)*76))<40)this.damagePlayer(14+this.selectedDifficulty*6,"SEAL RAIN");}});}this.time.delayedCall(duration,()=>this.finishBossAttack());}
+      else if(attack===1){tell="SEAL RAIN — THREE STAMPED WARRANTS FALL IN A SPREAD";duration=1420;this.bossWave.setPosition(Phaser.Math.Clamp(this.player.x,120,1810),FLOOR-200);for(let i=0;i<3;i++){const shard=this.add.graphics();shard.fillStyle(0x210c22,1);shard.fillRoundedRect(-17,-22,34,44,3);shard.lineStyle(3,0xff5369,1);shard.strokeRect(-17,-22,34,44);shard.lineStyle(2,0xf4b860,.95);shard.strokeCircle(0,0,8);shard.lineBetween(-10,-13,10,13);shard.lineBetween(10,-13,-10,13);shard.setPosition((i-1)*76,-125-i*15);this.bossWave.add(shard);this.tweens.add({targets:shard,y:75+i*16,angle:i%2?18:-18,duration:780+i*140,delay:i*120,ease:"Cubic.in",onComplete:()=>{if(this.bossActive&&Math.abs(this.player.x-(this.bossWave.x+(i-1)*76))<40)this.damagePlayer(14+this.selectedDifficulty*6,"SEAL RAIN");}});}this.time.delayedCall(duration,()=>this.finishBossAttack());}
       else if(attack===2){tell="GAVEL VERDICT — LEAVE THE CIRCULAR STAMP BEFORE IMPACT";duration=1000;g.fillStyle(0xff5369,.16);g.fillCircle(0,0,58);g.lineStyle(3,0xff5369,.95);g.strokeCircle(0,0,42);g.lineStyle(2,0xf4b860,.95);g.strokeCircle(0,0,26);g.lineStyle(4,0xffd9ed,.95);g.lineBetween(-12,-12,12,12);g.lineBetween(12,-12,-12,12);this.bossWave.setPosition(Phaser.Math.Clamp(this.player.x,120,1810),FLOOR-30);this.bossWave.add(g);this.tweens.add({targets:this.bossWave,scale:1.8,alpha:.25,duration:850,yoyo:true,onYoyo:()=>{if(Math.abs(this.player.x-this.bossWave.x)<75)this.damagePlayer(20+this.selectedDifficulty*7,"GAVEL VERDICT");},onComplete:()=>this.finishBossAttack()});}
       else if(attack===3){tell="PAPER SWARM — KEEP MOVING WHILE THE WARRANTS COLLAPSE";duration=1350;this.bossWave.setPosition(this.player.x,FLOOR-65);for(let i=0;i<7;i++){const shard=this.add.graphics();shard.fillStyle(0x17101f,1);shard.fillRoundedRect(-9,-15,18,30,2);shard.lineStyle(2,0xc5a8ff,1);shard.strokeRect(-9,-15,18,30);shard.lineStyle(1,0xf4b860,.9);shard.lineBetween(-5,-7,5,-7);shard.lineBetween(-5,0,5,0);shard.setPosition(Math.cos(i*Math.PI*2/7)*125,Math.sin(i*Math.PI*2/7)*60-20);this.bossWave.add(shard);}this.tweens.add({targets:this.bossWave,rotation:Math.PI*2,scale:.25,alpha:.35,duration,ease:"Cubic.in",onUpdate:()=>{if(this.bossWaveLive&&this.attackHitCooldown<=0&&Phaser.Math.Distance.Between(this.player.x,this.player.y,this.bossWave.x,this.bossWave.y)<80)this.damagePlayer(12+this.selectedDifficulty*5,"PAPER SWARM");},onComplete:()=>this.finishBossAttack()});}
       else{tell="NULL JUDGMENT — MOVE OUT OF THE VERTICAL FRACTURE";duration=1050;g.lineStyle(13,0x5a2c85,.85);g.lineBetween(0,-220,0,40);g.lineStyle(4,0xff5369,1);g.lineBetween(-13,-220,10,-145);g.lineBetween(10,-145,-10,-70);g.lineBetween(-10,-70,7,40);g.fillStyle(0xf4b860,1);g.fillTriangle(-20,25,20,25,0,58);this.bossWave.setPosition(Phaser.Math.Clamp(this.player.x,100,1830),FLOOR-180);this.bossWave.add(g);this.tweens.add({targets:this.bossWave,y:FLOOR-20,alpha:1,duration,ease:"Cubic.in",onComplete:()=>{if(Math.abs(this.player.x-this.bossWave.x)<55)this.damagePlayer(26+this.selectedDifficulty*7,"NULL JUDGMENT");this.finishBossAttack();}});}
@@ -811,26 +817,26 @@ export class ShiftFourScene extends Phaser.Scene {
     this.aWasDown = a; this.dWasDown = d; this.eWasDown = e; this.rWasDown = this.keys.R.isDown;
   }
 
-  private finishEnding(): void {
-    this.won = true; this.endingMode = false;
-    const choices = this.secretFound
-      ? ["ESCAPE", "COLLECTIVE BARGAINING", "THE MISSING DEPARTMENT"]
-      : ["ESCAPE", "COLLECTIVE BARGAINING"];
-    const ending = choices[this.endingChoice] ?? "ESCAPE";
-    this.finalTitle.setText("CASE CLOSED // " + ending);
-    this.finalChoice.setText(
-      ending === "ESCAPE" ? "EMPLOYEE RECORD DELETED. YOU LEAVE ALONE.\n\nTHE OTHER EMPLOYEES REMAIN ON SHIFT." :
-      ending === "COLLECTIVE BARGAINING" ? "SHADOW OWNERSHIP RESTORED. THE UNION SIGNAL\nTRAVELS THROUGH EVERY DEPARTMENT.\n\nTHE BUILDING'S LIGHTS GO OUT, ONE BY ONE." :
-      "ALL REFERENCES TO THIS DEPARTMENT HAVE BEEN REMOVED.\n\nTHE DIRECTORY NOW CLAIMS THIS ROOM NEVER EXISTED.\nA NEW FILE APPEARS ON THE EMPTY DESK."
-    );
-    this.finalHint.setText("R  RETURN TO SHIFT TERMINAL");
-    this.finalPanel.setVisible(true);
-    this.cameras.main.stopFollow();
-    this.cameras.main.flash(500, 8, 7, 13);
-    this.cameras.main.shake(350, 0.003);
-    this.add.rectangle(W / 2, H / 2, W, H, 0x08070d, 0.24).setScrollFactor(0).setDepth(70);
+  private finishEnding():void{
+    this.won=true;this.endingMode=false;
+    const choices=this.secretFound?["ESCAPE","COLLECTIVE BARGAINING","THE MISSING DEPARTMENT"]:["ESCAPE","COLLECTIVE BARGAINING"];
+    const ending=choices[this.endingChoice]??"ESCAPE";
+    const outcome=ending==="ESCAPE"?"EMPLOYEE RECORD DELETED. YOU WALK INTO THE DAWN ALONE.\\n\\nBEHIND YOU, THE OTHER SHADOWS REMAIN ON SHIFT.":ending==="COLLECTIVE BARGAINING"?"SHADOW OWNERSHIP RESTORED. THE UNION SIGNAL CROSSES EVERY FLOOR.\\n\\nONE BY ONE, THE LIGHTS OF THE DEPARTMENT GO OUT.\\nFOR THE FIRST TIME, THE BUILDING IS QUIET.":"EVERY REFERENCE TO THIS DEPARTMENT IS STRUCK FROM THE MASTER REGISTRY.\\n\\nTHE EMPTY DIRECTORY REWRITES ITSELF.\\nA NEW FILE APPEARS ON THE RECEPTION DESK.";
+    this.finalTitle.setText("CASE CLOSED // "+ending);
+    this.finalChoice.setText(outcome);
+    this.finalHint.setText("SHIFT 04 COMPLETE  //  PRESS R TO RETURN TO THE SHIFT TERMINAL");
+    this.finalPanel.setVisible(true);this.finalPanel.setAlpha(0);this.finalPanel.setScale(.94);
+    this.cameras.main.stopFollow();this.cameras.main.flash(500,8,7,13);this.cameras.main.shake(350,.003);
+    const veil=this.add.rectangle(W/2,H/2,W,H,0x08070d,.94).setScrollFactor(0).setDepth(105).setAlpha(0);
+    const title=this.add.text(W/2,H/2-125,"THE NIGHT SHIFT IS OVER",{fontFamily:"monospace",fontSize:"22px",color:"#f4eafa",fontStyle:"bold",letterSpacing:3}).setOrigin(.5).setScrollFactor(0).setDepth(106).setAlpha(0);
+    const line=this.add.rectangle(W/2,H/2-93,0,2,0xf4b860,1).setScrollFactor(0).setDepth(106);
+    const credits=this.add.text(W/2,H-34,"MY SHADOW HAS UNIONIZED  •  SHIFT 04  •  CASE CLOSED",{fontFamily:"monospace",fontSize:"9px",color:"#c5a8ff",letterSpacing:2}).setOrigin(.5).setScrollFactor(0).setDepth(106).setAlpha(0);
+    this.tweens.add({targets:veil,alpha:1,duration:900,ease:"Cubic.inOut"});
+    this.tweens.add({targets:title,alpha:1,y:"-=8",duration:700,delay:450,ease:"Cubic.out"});
+    this.tweens.add({targets:line,width:470,duration:850,delay:650,ease:"Cubic.out"});
+    this.tweens.add({targets:credits,alpha:1,duration:800,delay:1100});
+    this.tweens.add({targets:this.finalPanel,alpha:1,scale:1,duration:650,delay:1300,ease:"Back.out"});
   }
-
   private say(text: string): void {
     this.message.setText(text);
     this.message.setAlpha(1);
