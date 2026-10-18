@@ -23,6 +23,8 @@ const objectiveTitle = requireElement<HTMLElement>("#objective-title");
 const objectiveCopy = requireElement<HTMLElement>("#objective-copy");
 const sequenceTrack = requireElement<HTMLElement>("#sequence-track");
 const sequenceLabel = requireElement<HTMLElement>(".sequence-label");
+let memorySealTimer = 0;
+let activePreviewWindow = -1;
 const relayProgress = requireElement<HTMLElement>("#relay-progress");
 const toast = requireElement<HTMLElement>("#toast");
 const endScreen = requireElement<HTMLElement>("#end-screen");
@@ -923,6 +925,20 @@ function updateObjective(): void {
   const symbols: Record<Relay["kind"], string> = { triangle: "△", diamond: "◇", circle: "○" };
   const windowStart = Math.floor(nextRelay / 3) * 3;
   const windowEnd = Math.min(sequence.length, windowStart + 3);
+  if (gateOpen) {
+    window.clearTimeout(memorySealTimer);
+    sequenceTrack.classList.remove("memory-sealed");
+    activePreviewWindow = -1;
+  } else if (windowStart !== activePreviewWindow || nextRelay === 0) {
+    activePreviewWindow = windowStart;
+    window.clearTimeout(memorySealTimer);
+    sequenceTrack.classList.remove("memory-sealed");
+    memorySealTimer = window.setTimeout(() => {
+      if (!gateOpen && Math.floor(nextRelay / 3) * 3 === activePreviewWindow) {
+        sequenceTrack.classList.add("memory-sealed");
+      }
+    }, 4200);
+  }
   sequenceTrack.innerHTML = sequence.map((kind, index) => {
     const completed = index < nextRelay;
     const visible = index < windowEnd || completed || gateOpen;
@@ -930,7 +946,7 @@ function updateObjective(): void {
     const accessible = kind === "triangle" ? "triangle" : kind === "diamond" ? "diamond" : "circle";
     const glyph = completed ? "✓" : visible ? symbols[kind] : "·";
     const aria = visible ? `Beat ${index + 1}: ${accessible}` : `Beat ${index + 1}: encrypted`;
-    return `<span class="sequence-beat ${state}" aria-label="${aria}">${glyph}<i>${String(index + 1).padStart(2, "0")}</i></span>`;
+    return `<span class="sequence-beat ${state}" aria-label="${aria}"><span class="beat-symbol">${glyph}</span><i>${String(index + 1).padStart(2, "0")}</i></span>`;
   }).join("");
   sequenceTrack.classList.toggle("sequence-complete", gateOpen);
   if (gateOpen) {
