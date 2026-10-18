@@ -93,6 +93,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor("#08070d");
     this.cameras.main.setBounds(0, 0, WORLD, H);
     this.drawEnvironment();
+    this.drawExecutiveChamber();
     this.createTerminals();
     this.createSurveillance();
     this.createShadow();
@@ -273,6 +274,95 @@ export class ShiftFourScene extends Phaser.Scene {
     this.add.text(1650, 180, "NO SUCH DEPARTMENT FOUND", {
       fontFamily: "monospace", fontSize: "8px", color: "#65576d", letterSpacing: 2
     }).setOrigin(0.5).setDepth(1);
+  }
+
+  private drawExecutiveChamber(): void {
+    // Layered architectural pass: each zone has its own silhouette, lighting language,
+    // and floor treatment so the last shift reads as a designed level, not one repeated corridor.
+    const g = this.add.graphics().setDepth(-9);
+    // Zone transitions: reception -> archive -> restricted corridor -> tribunal.
+    g.fillStyle(0x17121f, 0.68); g.fillRect(0, 48, 390, 410);
+    g.fillStyle(0x0b0a13, 0.78); g.fillRect(390, 48, 700, 410);
+    g.fillStyle(0x15101c, 0.72); g.fillRect(1090, 48, 420, 410);
+    g.fillStyle(0x09070f, 0.96); g.fillRect(1510, 40, 410, 420);
+    // Large architectural ribs with beveled highlights and recessed shadow channels.
+    for (let x = 24; x < WORLD; x += 160) {
+      const width = x > 1500 ? 20 : 13;
+      g.fillStyle(0x030208, 0.92); g.fillRect(x, 42, width + 9, 420);
+      g.fillStyle(x > 1500 ? 0x33263d : 0x292332, 0.95); g.fillRect(x + 3, 48, width, 405);
+      g.fillStyle(0x76617f, x > 1500 ? 0.72 : 0.38); g.fillRect(x + 4, 48, 2, 405);
+      g.fillStyle(0x08070d, 0.95); g.fillRect(x + width, 48, 4, 405);
+      if (x > 1500) {
+        g.fillStyle(0xff5369, 0.75); g.fillRect(x + 5, 58, 4, 34);
+        g.fillStyle(0xff5369, 0.16); g.fillRect(x + 1, 92, width + 8, 74);
+      }
+    }
+    // Archive wall: indexed drawers and a broken sequence of file windows.
+    for (let x = 430; x < 1080; x += 108) {
+      for (let y = 120; y < 390; y += 82) {
+        g.fillStyle(0x05040a, 0.9); g.fillRoundedRect(x, y, 91, 67, 2);
+        g.fillStyle(0x201929, 1); g.fillRoundedRect(x + 3, y + 3, 85, 61, 2);
+        g.lineStyle(1, 0x584563, 0.82); g.strokeRect(x + 6, y + 6, 79, 55);
+        g.fillStyle(0x4a374f, 1); g.fillRect(x + 12, y + 14, 65, 2);
+        g.fillStyle(0x6b5475, 0.8); g.fillRect(x + 12, y + 23, 43 + ((x + y) % 4) * 5, 2);
+        g.fillStyle((x + y) % 3 === 0 ? 0xf4b860 : 0x806b89, 0.85); g.fillRect(x + 12, y + 34, 7, 13);
+        g.fillStyle(0x08070d, 1); g.fillRect(x + 25, y + 36, 50, 2);
+        g.fillStyle(0x08070d, 1); g.fillRect(x + 25, y + 42, 36, 2);
+      }
+    }
+    // The corridor narrows visually before the tribunal, pulling the player forward.
+    for (let i = 0; i < 6; i++) {
+      const x = 1110 + i * 62;
+      g.fillStyle(0x08060e, 0.95); g.fillRect(x, 95 + (i % 2) * 10, 38, 325);
+      g.fillStyle(0x302238, 1); g.fillRect(x + 4, 101 + (i % 2) * 10, 3, 313);
+      g.fillStyle(0xc5a8ff, 0.28); g.fillRect(x + 7, 101 + (i % 2) * 10, 1, 313);
+    }
+    // Tribunal wall: a monumental seal, warning fins, and a hard-lit dais behind the boss.
+    g.fillStyle(0x040309, 0.96); g.fillRoundedRect(1570, 78, 300, 340, 8);
+    g.lineStyle(4, 0x3b2a46, 1); g.strokeRoundedRect(1570, 78, 300, 340, 8);
+    g.lineStyle(2, 0x8a668e, 0.86); g.strokeRoundedRect(1581, 89, 278, 318, 5);
+    g.lineStyle(1, 0xff5369, 0.52); g.strokeRoundedRect(1592, 100, 256, 296, 3);
+    g.fillStyle(0xff5369, 0.08); g.fillEllipse(1720, 252, 220, 248);
+    g.lineStyle(3, 0x6d5279, 0.8); g.strokeCircle(1720, 250, 104);
+    g.lineStyle(1, 0xff5369, 0.78); g.strokeCircle(1720, 250, 86);
+    g.lineStyle(2, 0xc5a8ff, 0.7); g.strokeCircle(1720, 250, 67);
+    g.lineStyle(1, 0xf4b860, 0.7);
+    for (let i = 0; i < 12; i++) {
+      const a = i * Math.PI / 6;
+      g.lineBetween(1720 + Math.cos(a) * 91, 250 + Math.sin(a) * 91, 1720 + Math.cos(a) * 102, 250 + Math.sin(a) * 102);
+    }
+    g.fillStyle(0x0a0811, 1); g.fillRect(1600, 420, 240, 26);
+    g.fillStyle(0x4d3859, 1); g.fillRect(1600, 420, 240, 3);
+    g.fillStyle(0xff5369, 0.65); g.fillRect(1620, 427, 200, 2);
+    // Red side-lighting and amber floor rails frame the combat space without cluttering it.
+    for (let x of [1540, 1880]) {
+      g.fillStyle(0xff5369, 0.82); g.fillRect(x, 110, 5, 250);
+      g.fillStyle(0xff5369, 0.08); g.fillTriangle(x - 48, 360, x + 53, 360, x + 2, 130);
+    }
+    g.fillStyle(0xf4b860, 0.7); g.fillRect(1518, FLOOR + 8, 390, 2);
+    g.fillStyle(0xc5a8ff, 0.35); g.fillRect(1518, FLOOR + 13, 390, 1);
+    for (let x = 1530; x < 1900; x += 42) {
+      g.fillStyle(x % 3 === 0 ? 0xff5369 : 0x5d496a, 0.85);
+      g.fillRect(x, FLOOR + 19, 18, 2);
+    }
+    // Ceiling fixtures: distinct light pools mark each gameplay space.
+    for (const x of [160, 500, 830, 1190, 1515, 1720, 1880]) {
+      const tribunal = x > 1500;
+      g.fillStyle(0x030208, 1); g.fillRect(x - 27, 44, 54, 13);
+      g.fillStyle(tribunal ? 0xff5369 : 0xf4b860, 0.95); g.fillRect(x - 19, 54, 38, 3);
+      g.fillStyle(tribunal ? 0xff5369 : 0xf4b860, tribunal ? 0.065 : 0.035);
+      g.fillTriangle(x - 58, 62, x + 58, 62, x, tribunal ? 340 : 270);
+    }
+    // Depth-only signage sits on the architecture, not over the player or puzzle UI.
+    this.add.text(760, 72, "ARCHIVE  //  UNRESOLVED PERSONNEL", {
+      fontFamily: "monospace", fontSize: "8px", color: "#796482", letterSpacing: 2
+    }).setOrigin(0.5).setDepth(-7);
+    this.add.text(1320, 72, "RESTRICTED TRANSIT", {
+      fontFamily: "monospace", fontSize: "8px", color: "#8c718f", letterSpacing: 2
+    }).setOrigin(0.5).setDepth(-7);
+    this.add.text(1720, 117, "FINAL REVIEW", {
+      fontFamily: "monospace", fontSize: "9px", color: "#ff8297", letterSpacing: 4
+    }).setOrigin(0.5).setDepth(-7).setAlpha(0.9);
   }
 
   private createTerminals(): void {
