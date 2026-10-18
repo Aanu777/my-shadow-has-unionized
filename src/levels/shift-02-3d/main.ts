@@ -80,6 +80,14 @@ for (const z of [8, 1, -6, -13, -20]) {
   scene.add(lamp);
   practicalLights.push(lamp);
 }
+const foundryPalette = {
+  amber: new THREE.Color("#e59a55"),
+  amberPowered: new THREE.Color("#83ffd0"),
+  violet: new THREE.Color("#7965cb"),
+  violetPowered: new THREE.Color("#5fc8a8"),
+  practical: new THREE.Color("#e7a76c"),
+  practicalPowered: new THREE.Color("#8fffd0")
+};
 
 const materials = {
   floor: new THREE.MeshStandardMaterial({ color: "#252333", roughness: 0.34, metalness: 0.42 }),
@@ -941,10 +949,6 @@ function animate(): void {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
-  practicalLights.forEach((lamp, i) => {
-    const pulse = 0.92 + Math.sin(t * 1.35 + i * 1.7) * 0.045 + Math.sin(t * 7.1 + i) * 0.018;
-    lamp.intensity = 10 * pulse;
-  });
   amberLight.intensity = 22 + Math.sin(t * 1.7) * 1.6;
   fillLight.intensity = 16 + Math.sin(t * 0.55 + 2) * 2;
   const dust = scene.getObjectByName("atmospheric-dust");
@@ -995,11 +999,13 @@ function animate(): void {
   // Solving the puzzle changes the whole room from tired amber to powered mint.
   foundryPowerBlend = THREE.MathUtils.damp(foundryPowerBlend, gateOpen ? 1 : 0, 1.8, delta);
   const powerUp = foundryPowerBlend;
-  amberLight.color.lerpColors(new THREE.Color("#e59a55"), new THREE.Color("#83ffd0"), powerUp * 0.82);
-  fillLight.color.lerpColors(new THREE.Color("#7965cb"), new THREE.Color("#5fc8a8"), powerUp * 0.72);
-  practicalLights.forEach((lamp) => {
-    lamp.color.lerpColors(new THREE.Color("#e7a76c"), new THREE.Color("#8fffd0"), powerUp * 0.88);
-    lamp.intensity = THREE.MathUtils.damp(lamp.intensity, THREE.MathUtils.lerp(10, 7.5, powerUp), 2.5, delta);
+  amberLight.color.lerpColors(foundryPalette.amber, foundryPalette.amberPowered, powerUp * 0.82);
+  fillLight.color.lerpColors(foundryPalette.violet, foundryPalette.violetPowered, powerUp * 0.72);
+  practicalLights.forEach((lamp, i) => {
+    lamp.color.lerpColors(foundryPalette.practical, foundryPalette.practicalPowered, powerUp * 0.88);
+    const pulse = 0.92 + Math.sin(t * 1.35 + i * 1.7) * 0.045 + Math.sin(t * 7.1 + i) * 0.018;
+    const targetIntensity = THREE.MathUtils.lerp(10, 7.5, powerUp) * pulse;
+    lamp.intensity = THREE.MathUtils.damp(lamp.intensity, targetIntensity, 2.5, delta);
   });
   exitSignLight.intensity = exitOpeningStartedAt !== null
     ? 8 + Math.sin(t * 18) * (1 - exitOpeningProgress) * 2.2
