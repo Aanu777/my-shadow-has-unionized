@@ -76,6 +76,7 @@ export class ShiftFourScene extends Phaser.Scene {
   private difficultyChoice!: Phaser.GameObjects.Text;
   private difficultyDescription!: Phaser.GameObjects.Text;
   private attackHitCooldown = 0;
+  private strikeCooldown = 0;
   private attackIndex = 0;
   private bossAttackName = "";
   private boss!: Phaser.GameObjects.Container;
@@ -109,7 +110,7 @@ export class ShiftFourScene extends Phaser.Scene {
     ];
     this.randomizePuzzles();
     this.activeTerminal = -1; this.eWasDown = false; this.aWasDown = false; this.dWasDown = false; this.rWasDown = false; this.enterWasDown = false;
-    this.won = false; this.dead = false; this.stage = 0; this.panelOpen = false; this.shadowClaimed = false; this.secretFound = false; this.endingMode = false; this.endingChoice = 0; this.playerHealth=100; this.selectedDifficulty=1; this.difficultySelectOpen=false; this.attackHitCooldown=0; this.attackIndex=0;
+    this.won = false; this.dead = false; this.stage = 0; this.panelOpen = false; this.shadowClaimed = false; this.secretFound = false; this.endingMode = false; this.endingChoice = 0; this.playerHealth=100; this.selectedDifficulty=1; this.difficultySelectOpen=false; this.attackHitCooldown=0; this.strikeCooldown=0; this.attackIndex=0;
     this.cameras.main.setBackgroundColor("#08070d");
     this.cameras.main.setBounds(0, 0, WORLD, H);
     this.add.image(WORLD / 2, H / 2, "tribunal-background").setDisplaySize(WORLD, H).setDepth(-10);
@@ -127,7 +128,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.playEntrance();
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
-      this.keys = this.input.keyboard.addKeys("A,D,E,R,ENTER,F,Q") as Record<string, Phaser.Input.Keyboard.Key>;
+      this.keys = this.input.keyboard.addKeys("A,D,E,R,ENTER,F,Q,G") as Record<string, Phaser.Input.Keyboard.Key>;
       this.input.keyboard.on("keydown", (event: KeyboardEvent) => {
         if (event.code === "Space" || event.code.startsWith("Arrow")) event.preventDefault();
       });
@@ -149,7 +150,7 @@ export class ShiftFourScene extends Phaser.Scene {
     }
     if (this.introActive) return;
     const dt = Math.min(delta / 1000, 0.033);
-    this.attackHitCooldown=Math.max(0,this.attackHitCooldown-dt);
+    this.attackHitCooldown=Math.max(0,this.attackHitCooldown-dt); this.strikeCooldown=Math.max(0,this.strikeCooldown-dt);
     if(this.difficultySelectOpen){this.updateDifficultyPanel();return;}
     this.dashCooldown = Math.max(0, this.dashCooldown - dt); this.pulseCooldown = Math.max(0, this.pulseCooldown - dt); this.dashInvulnerable = Math.max(0, this.dashInvulnerable - dt);
     // Modal panels own the controls; freeze movement so A/D only changes the assignment.
@@ -161,6 +162,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.playerVx = Phaser.Math.Linear(this.playerVx, target, Math.min(1, dt * (target === 0 ? 14 : 19)));
     if (Phaser.Input.Keyboard.JustDown(this.keys.Q) && this.dashCooldown <= 0 && !this.panelOpen && !this.endingMode) { this.playerVx = (this.player.scaleX < 0 ? -1 : 1) * 610; this.dashCooldown = 0.9; this.dashInvulnerable = 0.28; this.player.setAlpha(0.35); this.tweens.add({ targets: this.player, alpha: 1, duration: 260 }); this.cameras.main.shake(80, 0.0015); }
     if (Phaser.Input.Keyboard.JustDown(this.keys.F) && this.pulseCooldown <= 0 && !this.panelOpen && !this.endingMode) this.shadowPulse();
+    if (Phaser.Input.Keyboard.JustDown(this.keys.G) && this.strikeCooldown <= 0 && !this.panelOpen && !this.endingMode) this.unionStrike();
     const jump = Phaser.Input.Keyboard.JustDown(this.cursors.space) || Phaser.Input.Keyboard.JustDown(this.cursors.up);
     if (jump && this.grounded) { this.playerVy = -445; this.grounded = false; }
     this.playerVy += 1050 * dt;
@@ -477,7 +479,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.playerHealthBar=this.add.rectangle(W-202,77,176,8,0x78e6bb,1).setOrigin(0,.5).setScrollFactor(0).setDepth(43);
     this.add.rectangle(W-114,77,184,15,0x08070d,.96).setStrokeStyle(1,0x665274,1).setScrollFactor(0).setDepth(42);
     this.playerHealthLabel=this.add.text(W-24,65,"EMPLOYEE INTEGRITY  100%",{fontFamily:"monospace",fontSize:"8px",color:"#a9f5d5"}).setOrigin(1,0).setScrollFactor(0).setDepth(43);
-    this.add.text(W - 24, 42, "A/D MOVE   SPACE JUMP   Q DASH   F SHADOW PULSE   E INTERACT", {
+    this.add.text(W - 24, 42, "A/D MOVE   SPACE JUMP   Q DASH   F PULSE   G UNION STRIKE   E INTERACT", {
       fontFamily: "monospace", fontSize: "9px", color: "#8d829c"
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(40);
     this.message = this.add.text(W / 2, H - 26, "", {
@@ -641,7 +643,7 @@ export class ShiftFourScene extends Phaser.Scene {
     // The encounter is built around a real vector sprite asset, not a pile of primitive shapes.
     this.boss = this.add.container(1735, 345).setDepth(15).setVisible(false);
     this.boss.add(this.add.image(0, 18, "auditor-boss").setDisplaySize(294, 392));
-    this.bossCore = this.add.circle(1735, 345, 16, 0xff5369, 1).setDepth(17).setVisible(false);
+    this.bossCore = this.add.circle(1735, 362, 16, 0xff5369, 1).setDepth(17).setVisible(false);
     this.bossCore.setStrokeStyle(3, 0xffd9ed, 0.9);
     this.tweens.add({ targets: this.bossCore, scale: { from: 0.86, to: 1.2 }, alpha: { from: 0.72, to: 1 }, duration: 560, yoyo: true, repeat: -1 });
     this.bossBarFrame = this.add.rectangle(W / 2, 83, 282, 20, 0x08070d, 0.96).setScrollFactor(0).setDepth(95).setVisible(false);
@@ -694,6 +696,21 @@ export class ShiftFourScene extends Phaser.Scene {
   }
   private updateDifficultyPanel():void{const a=this.keys.A.isDown,d=this.keys.D.isDown,e=this.keys.E.isDown,r=this.keys.R.isDown;if(a&&!this.aWasDown){this.selectedDifficulty=(this.selectedDifficulty+2)%3;this.renderDifficultyChoice();}if(d&&!this.dWasDown){this.selectedDifficulty=(this.selectedDifficulty+1)%3;this.renderDifficultyChoice();}if(e&&!this.eWasDown){this.difficultySelectOpen=false;this.difficultyPanel.setVisible(false);this.startBoss();}if(r&&!this.rWasDown){this.difficultySelectOpen=false;this.difficultyPanel.setVisible(false);this.say("REVIEW DEFERRED. AUTHORIZATION REMAINS AVAILABLE.");}this.aWasDown=a;this.dWasDown=d;this.eWasDown=e;this.rWasDown=r;}
 
+  private unionStrike():void{
+    this.strikeCooldown=2.25;
+    const facing=this.player.scaleX<0?-1:1;
+    const slash=this.add.circle(this.player.x+facing*48,this.player.y-8,28,0xc5a8ff,.12).setStrokeStyle(5,0xf4b860,.95).setDepth(22);
+    this.tweens.add({targets:slash,scale:2.15,alpha:0,duration:260,ease:"Cubic.out",onComplete:()=>slash.destroy()});
+    this.playerVx=facing*160;
+    if(!this.bossActive){this.say("UNION STRIKE // THE SHADOW PUSHES BACK.");return;}
+    if(!this.bossVulnerable||Math.abs(this.player.x-this.boss.x)>118){this.say("UNION STRIKE MISSED. GET CLOSE WHILE THE CHEST SEAL IS VIOLET.");return;}
+    this.bossVulnerable=false;this.bossHealth=Math.max(0,this.bossHealth-2);this.bossBar.setSize(264*(this.bossHealth/this.bossMaxHealth),8);
+    this.boss.setAlpha(.18);this.boss.rotation=facing*.12;this.cameras.main.shake(250,.005);this.cameras.main.flash(150,197,168,255);
+    this.tweens.add({targets:this.boss,alpha:1,rotation:0,x:this.boss.x-facing*22,duration:260,ease:"Back.out"});
+    if(this.bossHealth<=0){this.defeatBoss();return;}
+    this.bossNameText.setText("THE AUDITOR  //  "+this.bossHealth+" / "+this.bossMaxHealth+" SEALS REMAIN");this.say("UNION STRIKE LANDED. TWO AUTHORITY SEALS SHATTERED.");
+  }
+
   private randomizePuzzles():void{
     const shuffle=<T,>(items:T[])=>{const out=[...items];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;};
     const shuffleOptions=(items:string[],answer:number)=>{const correct=items[answer],out=shuffle(items);return{items:out,answer:out.indexOf(correct)};};
@@ -737,11 +754,11 @@ export class ShiftFourScene extends Phaser.Scene {
     this.bossWaveLive = false;
     this.bossMaxHealth=[3,5,7][this.selectedDifficulty];this.bossHealth=this.bossMaxHealth;this.playerHealth=100;this.playerHealthBar.setSize(176,8).setFillStyle(0x78e6bb,1);this.playerHealthLabel.setText("EMPLOYEE INTEGRITY  100%").setColor("#a9f5d5");this.attackIndex=0;
     this.boss.setVisible(true).setAlpha(0);
-    this.bossCore.setVisible(true).setPosition(this.boss.x, this.boss.y - 8).setFillStyle(0xff5369, 1);
+    this.bossCore.setVisible(true).setPosition(this.boss.x, this.boss.y + 17).setFillStyle(0xff5369, 1);
     this.bossBarFrame.setVisible(true);
     this.bossBar.setVisible(true).setSize(264, 8);
     this.bossNameText.setVisible(true).setText(["THE AUDITOR // INTERN REVIEW","THE AUDITOR // FORMAL AUDIT","THE AUDITOR // EXECUTIVE TRIBUNAL"][this.selectedDifficulty]);
-    this.bossHintText.setVisible(true);
+    this.bossHintText.setVisible(true).setText("F PULSE: RANGED HIT  •  G UNION STRIKE: TWO SEALS UP CLOSE");
     this.bossPrompt.setAlpha(0);
     this.bossTrigger.setAlpha(0.12);
     this.boss.x = 1740;
@@ -752,12 +769,12 @@ export class ShiftFourScene extends Phaser.Scene {
     this.cameras.main.setScroll(WORLD - W, 0);
     this.cameras.main.shake(350, 0.005);
     this.tweens.add({ targets: this.boss, alpha: 1, y: 334, duration: 800, ease: "Back.out" });
-    this.bossTimer = 1.9;
+    this.bossTimer = [1.65, 1.25, 0.9][this.selectedDifficulty];
     this.say("FINAL REVIEW INITIATED. READ THE WAVE, DASH THROUGH IT, THEN BREAK THE VIOLET CORE.");
   }
 
   private updateBoss(dt:number):void{
-    const t=this.time.now/1000;this.boss.x=1740+Math.sin(t*1.15)*13;this.boss.y=345+Math.sin(t*2.1)*12;this.boss.rotation=Math.sin(t*1.25)*.025;this.bossCore.setPosition(this.boss.x,this.boss.y-8);this.bossTimer-=dt;
+    const t=this.time.now/1000;this.boss.x=1740+Math.sin(t*1.15)*13;this.boss.y=345+Math.sin(t*2.1)*12;this.boss.rotation=Math.sin(t*1.25)*.025;this.bossCore.setPosition(this.boss.x,this.boss.y+17);this.bossTimer-=dt;
     if(this.bossTimer<=0&&!this.bossWaveLive&&!this.bossVulnerable){
       const pool=[[0,1,2],[0,1,2,3],[0,1,2,3,4]][this.selectedDifficulty],attack=pool[this.attackIndex%pool.length];this.attackIndex++;this.bossWave.removeAll(true);this.bossWave.setPosition(this.boss.x,FLOOR-24).setRotation(0).setScale(1).setAlpha(1).setVisible(true);this.bossWaveLive=true;const g=this.add.graphics();let tell="",duration=1100;
       if(attack===0){tell="WARRANT SCYTHE — JUMP OR PHASE-DASH THROUGH THE HOOKED BLADE";duration=[1350,1050,820][this.selectedDifficulty];g.fillStyle(0x5b1638,.32);g.fillEllipse(0,0,185,34);g.lineStyle(7,0xff5369,1);g.beginPath();g.moveTo(-82,10);g.lineTo(-46,-12);g.lineTo(-18,8);g.lineTo(8,-17);g.lineTo(36,8);g.lineTo(78,-10);g.strokePath();g.lineStyle(2,0xffd9ed,.95);g.beginPath();g.moveTo(-82,10);g.lineTo(-46,-12);g.lineTo(-18,8);g.lineTo(8,-17);g.lineTo(36,8);g.lineTo(78,-10);g.strokePath();this.bossWave.add(g);this.bossWave.setPosition(WORLD+100,FLOOR-22);this.tweens.add({targets:this.bossWave,x:780,duration,ease:"Cubic.in",onComplete:()=>this.finishBossAttack()});}
