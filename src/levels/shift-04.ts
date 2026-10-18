@@ -686,7 +686,12 @@ export class ShiftFourScene extends Phaser.Scene {
     const title=this.add.text(0,-128,"CHOOSE YOUR AUDIT LEVEL",{fontFamily:"monospace",fontSize:"17px",color:"#f4eafa",fontStyle:"bold",letterSpacing:2}).setOrigin(.5);this.difficultyChoice=this.add.text(0,-60,"",{fontFamily:"monospace",fontSize:"17px",color:"#ffb3c1",fontStyle:"bold",align:"center",lineSpacing:16}).setOrigin(.5);this.difficultyDescription=this.add.text(0,45,"",{fontFamily:"monospace",fontSize:"11px",color:"#c9b8d2",align:"center",lineSpacing:8,wordWrap:{width:520}}).setOrigin(.5);const footer=this.add.text(0,133,"A / D SELECT     E CONFIRM     R RETURN",{fontFamily:"monospace",fontSize:"10px",color:"#f4b860",letterSpacing:1}).setOrigin(.5);this.difficultyPanel.add([title,this.difficultyChoice,this.difficultyDescription,footer]);
   }
   private openDifficultyPanel():void{if(this.bossActive||this.bossHealth<=0)return;this.difficultySelectOpen=true;this.difficultyPanel.setVisible(true);this.playerVx=0;this.renderDifficultyChoice();}
-  private renderDifficultyChoice():void{const c=[{n:"01 / INTERN REVIEW",color:"#78e6bb",hp:3,d:"EASY · 3 seals · slower attacks · generous core window."},{n:"02 / FORMAL AUDIT",color:"#f4b860",hp:5,d:"NORMAL · 5 seals · mixed attacks · tighter timing."},{n:"03 / EXECUTIVE TRIBUNAL",color:"#ff5369",hp:7,d:"HARD · 7 seals · chained attacks · short vulnerability windows and heavier damage."}][this.selectedDifficulty];this.difficultyChoice.setColor(c.color).setText("◀   "+c.n+"   ▶\n"+"▰ ".repeat(c.hp)+"▱ ".repeat(7-c.hp));this.difficultyDescription.setText(c.d+"\n\nPLAYER INTEGRITY RESETS TO 100% FOR THE REVIEW.");}
+  private renderDifficultyChoice():void{
+    const names=["INTERN REVIEW","FORMAL AUDIT","EXECUTIVE TRIBUNAL"],hp=[3,5,7],colors=["#78e6bb","#f4b860","#ff5369"];
+    this.difficultyChoice.setColor(colors[this.selectedDifficulty]).setText(names.map((name,i)=>(i===this.selectedDifficulty?"▶ ":"  ")+name+"   ["+"▰ ".repeat(hp[i])+"▱ ".repeat(7-hp[i])+"]  "+hp[i]+" SEALS").join("\n"));
+    const descriptions=["EASY · slower attacks, lower damage, and generous core windows.","NORMAL · mixed attacks, moderate damage, and tighter timing.","HARD · chained attack patterns, heavy damage, and short vulnerability windows."];
+    this.difficultyDescription.setText(descriptions[this.selectedDifficulty]+"\n\nPLAYER INTEGRITY RESETS TO 100% FOR THE REVIEW.");
+  }
   private updateDifficultyPanel():void{const a=this.keys.A.isDown,d=this.keys.D.isDown,e=this.keys.E.isDown,r=this.keys.R.isDown;if(a&&!this.aWasDown){this.selectedDifficulty=(this.selectedDifficulty+2)%3;this.renderDifficultyChoice();}if(d&&!this.dWasDown){this.selectedDifficulty=(this.selectedDifficulty+1)%3;this.renderDifficultyChoice();}if(e&&!this.eWasDown){this.difficultySelectOpen=false;this.difficultyPanel.setVisible(false);this.startBoss();}if(r&&!this.rWasDown){this.difficultySelectOpen=false;this.difficultyPanel.setVisible(false);this.say("REVIEW DEFERRED. AUTHORIZATION REMAINS AVAILABLE.");}this.aWasDown=a;this.dWasDown=d;this.eWasDown=e;this.rWasDown=r;}
 
   private randomizePuzzles():void{
@@ -827,7 +832,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.finalHint.setText("SHIFT 04 COMPLETE  //  PRESS R TO RETURN TO THE SHIFT TERMINAL");
     this.finalPanel.setVisible(true);this.finalPanel.setAlpha(0);this.finalPanel.setScale(.94);
     this.cameras.main.stopFollow();this.cameras.main.flash(500,8,7,13);this.cameras.main.shake(350,.003);
-    const veil=this.add.rectangle(W/2,H/2,W,H,0x08070d,.94).setScrollFactor(0).setDepth(105).setAlpha(0);
+    const veil=this.add.rectangle(W/2,H/2,W,H,0x08070d,.94).setScrollFactor(0).setDepth(70).setAlpha(0);
     const title=this.add.text(W/2,H/2-125,"THE NIGHT SHIFT IS OVER",{fontFamily:"monospace",fontSize:"22px",color:"#f4eafa",fontStyle:"bold",letterSpacing:3}).setOrigin(.5).setScrollFactor(0).setDepth(106).setAlpha(0);
     const line=this.add.rectangle(W/2,H/2-93,0,2,0xf4b860,1).setScrollFactor(0).setDepth(106);
     const credits=this.add.text(W/2,H-34,"MY SHADOW HAS UNIONIZED  •  SHIFT 04  •  CASE CLOSED",{fontFamily:"monospace",fontSize:"9px",color:"#c5a8ff",letterSpacing:2}).setOrigin(.5).setScrollFactor(0).setDepth(106).setAlpha(0);
