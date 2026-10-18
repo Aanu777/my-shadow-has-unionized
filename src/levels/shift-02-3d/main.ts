@@ -32,6 +32,78 @@ const replayButton = requireElement<HTMLButtonElement>("#replay-button");
 const transitScreen = requireElement<HTMLElement>("#transit-screen");
 const transitStatus = requireElement<HTMLElement>("#transit-status");
 
+type RiddleFragment = { title: string; question: string; answer: string; hint: string };
+const riddleFragments: RiddleFragment[] = [
+  {
+    title: "FRAGMENT 01 // CARRIAGE",
+    question: "I cross the gap after a machine accepts your touch. I have no hands, yet I carry the foundry's intent. What am I?",
+    answer: "signal",
+    hint: "After a successful relay, watch the travelling light. It may tell you more than the console does."
+  },
+  {
+    title: "FRAGMENT 02 // RETENTION",
+    question: "I can hold a pattern, but I am not a machine. Leave me unattended and details fade. What am I?",
+    answer: "memory",
+    hint: "The archive is temporary by design. Study each short phrase before the symbols fade."
+  },
+  {
+    title: "FRAGMENT 03 // FAILURE",
+    question: "I am made of steps, not stone. One wrong move can make you begin again. What am I?",
+    answer: "sequence",
+    hint: "The symbols are identities, not permanent stations. Look for the shape the system asks for—not a fixed pedestal."
+  }
+];
+let solvedRiddles = 0;
+let riddleOverlayOpen = false;
+const riddleOverlay = document.createElement("section");
+riddleOverlay.className = "riddle-overlay";
+riddleOverlay.setAttribute("aria-label", "Foundry archive riddle terminal");
+riddleOverlay.innerHTML = `
+  <div class="riddle-panel">
+    <div class="riddle-topline"><span>FOUNDRY ARCHIVE</span><span id="riddle-count">FRAGMENTS 00 / 03</span></div>
+    <p class="riddle-kicker">SEALED MAINTENANCE RECORD</p>
+    <h2 id="riddle-title">FRAGMENT 01 // CARRIAGE</h2>
+    <p id="riddle-question" class="riddle-question"></p>
+    <form id="riddle-form" autocomplete="off">
+      <label for="riddle-answer">YOUR ANSWER</label>
+      <div class="riddle-answer-row">
+        <input id="riddle-answer" name="answer" type="text" maxlength="40" placeholder="Enter your answer..." />
+        <button type="submit">SUBMIT ↗</button>
+      </div>
+    </form>
+    <p id="riddle-feedback" class="riddle-feedback" aria-live="polite"></p>
+    <div id="riddle-fragments" class="riddle-fragments"></div>
+    <div class="riddle-footer"><span>HINTS ARE EARNED, NOT GIVEN</span><button id="riddle-close" type="button">RETURN TO SHIFT</button></div>
+  </div>`;
+document.body.appendChild(riddleOverlay);
+const riddleStyle = document.createElement("style");
+riddleStyle.textContent = `
+.riddle-overlay{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(5,4,12,.82);backdrop-filter:blur(12px);color:#f1eee8;font-family:'DM Mono',monospace}
+.riddle-overlay.open{display:flex}
+.riddle-panel{width:min(680px,100%);max-height:min(88vh,760px);overflow:auto;padding:clamp(22px,4vw,42px);border:1px solid rgba(230,166,106,.38);background:radial-gradient(ellipse at 85% 0%,rgba(94,65,131,.22),transparent 48%),linear-gradient(145deg,rgba(20,17,31,.98),rgba(8,8,17,.98));box-shadow:0 24px 100px rgba(0,0,0,.55),inset 0 0 45px rgba(137,105,190,.04)}
+.riddle-topline,.riddle-footer{display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:9px;letter-spacing:.13em;color:#a79ab8}
+.riddle-topline span:last-child{color:#8fffd0}.riddle-kicker{margin:34px 0 12px;color:#e6a66a;font-size:9px;letter-spacing:.17em}
+.riddle-panel h2{font:600 clamp(27px,5vw,42px)/1 'Space Grotesk',sans-serif;letter-spacing:-.04em;margin:0 0 24px}
+.riddle-question{font:400 16px/1.8 'Space Grotesk',sans-serif;color:#d0c8d9;max-width:560px;min-height:84px}
+#riddle-form{margin-top:26px}#riddle-form label{display:block;margin-bottom:10px;font-size:9px;letter-spacing:.14em;color:#9c91ac}
+.riddle-answer-row{display:flex;gap:9px}.riddle-answer-row input{min-width:0;flex:1;background:#0a0913;border:1px solid rgba(210,197,226,.22);padding:14px 13px;color:#f4eee8;font:12px 'DM Mono',monospace;outline:none}.riddle-answer-row input:focus{border-color:#8fffd0;box-shadow:0 0 0 2px rgba(143,255,208,.08)}
+.riddle-answer-row button,.riddle-footer button{font:10px 'DM Mono',monospace;letter-spacing:.08em;padding:13px 15px}
+.riddle-feedback{min-height:18px;color:#e6a66a;font-size:10px;line-height:1.6}.riddle-feedback.success{color:#8fffd0}
+.riddle-fragments{display:grid;gap:9px;margin:16px 0 25px}.riddle-fragment{padding:12px 14px;border-left:2px solid #8fffd0;background:rgba(143,255,208,.055);font-size:10px;line-height:1.7;color:#c9c3d3}.riddle-fragment b{display:block;margin-bottom:4px;color:#8fffd0;font-size:8px;letter-spacing:.12em}
+.riddle-footer{padding-top:18px;border-top:1px solid rgba(210,197,226,.12)}.riddle-footer button{background:transparent;color:#d9c3a8;border:1px solid rgba(230,166,106,.3);white-space:nowrap}
+@media(max-width:520px){.riddle-overlay{padding:12px}.riddle-panel{padding:22px 18px}.riddle-answer-row{flex-direction:column}.riddle-answer-row button{width:100%}.riddle-footer{align-items:flex-start;flex-direction:column}.riddle-question{font-size:14px}}
+`;
+document.head.appendChild(riddleStyle);
+const riddleTitle = riddleOverlay.querySelector<HTMLElement>("#riddle-title")!;
+const riddleQuestion = riddleOverlay.querySelector<HTMLElement>("#riddle-question")!;
+const riddleCount = riddleOverlay.querySelector<HTMLElement>("#riddle-count")!;
+const riddleFeedback = riddleOverlay.querySelector<HTMLElement>("#riddle-feedback")!;
+const riddleForm = riddleOverlay.querySelector<HTMLFormElement>("#riddle-form")!;
+const riddleAnswer = riddleOverlay.querySelector<HTMLInputElement>("#riddle-answer")!;
+const riddleFragmentsEl = riddleOverlay.querySelector<HTMLElement>("#riddle-fragments")!;
+const riddleClose = riddleOverlay.querySelector<HTMLButtonElement>("#riddle-close")!;
+
+
 type Relay = { group: THREE.Group; kind: "triangle" | "circle" | "diamond"; active: boolean; position: THREE.Vector3 };
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#100d1b");
@@ -350,16 +422,16 @@ function buildEnvironment(): void {
     clueContext.strokeRect(10, 10, 620, 230);
     clueContext.fillStyle = "#e7a76c";
     clueContext.font = "bold 25px monospace";
-    clueContext.fillText("MAINTENANCE NOTE // 04", 28, 48);
+    clueContext.fillText("ARCHIVE // ACCESS LOCKED", 28, 48);
     clueContext.fillStyle = "#b9b5ca";
     clueContext.font = "21px monospace";
-    clueContext.fillText("Signals travel in short bursts.", 28, 98);
-    clueContext.fillText("Watch where each packet goes.", 28, 136);
-    clueContext.fillText("The archive only holds so much.", 28, 174);
+    clueContext.fillText("THREE FRAGMENTS MISSING", 28, 98);
+    clueContext.fillText("PROVE YOU UNDERSTAND THE SYSTEM", 28, 136);
+    clueContext.fillText("INTERACT TO BEGIN DECRYPTION", 28, 174);
     clueContext.fillStyle = "#8fffd0";
-    clueContext.fillRect(28, 202, 72, 5);
-    clueContext.fillRect(108, 202, 30, 5);
-    clueContext.fillRect(146, 202, 48, 5);
+    clueContext.fillRect(28, 202, 34, 5);
+    clueContext.fillRect(68, 202, 34, 5);
+    clueContext.fillRect(108, 202, 34, 5);
   }
   const clueTexture = new THREE.CanvasTexture(clueCanvas);
   clueTexture.colorSpace = THREE.SRGBColorSpace;
@@ -1089,6 +1161,63 @@ function notify(message: string): void {
   window.clearTimeout(toastTimer.id);
   toastTimer.id = window.setTimeout(() => toast.classList.remove("visible"), 1900);
 }
+function renderRiddleArchive(): void {
+  riddleCount.textContent = `FRAGMENTS ${String(solvedRiddles).padStart(2, "0")} / 03`;
+  riddleFragmentsEl.innerHTML = riddleFragments.slice(0, solvedRiddles).map((fragment, index) =>
+    `<div class="riddle-fragment"><b>DECRYPTED FRAGMENT 0${index + 1}</b>${fragment.hint}</div>`
+  ).join("");
+  if (solvedRiddles >= riddleFragments.length) {
+    riddleTitle.textContent = "ARCHIVE // PARTIAL RECOVERY";
+    riddleQuestion.textContent = "All three fragments recovered. The archive offers guidance, not a solution. Return to the relay array and interpret what you learned.";
+    riddleForm.hidden = true;
+    riddleFeedback.textContent = "ARCHIVE ACCESS GRANTED";
+    riddleFeedback.classList.add("success");
+  } else {
+    riddleTitle.textContent = riddleFragments[solvedRiddles].title;
+    riddleQuestion.textContent = riddleFragments[solvedRiddles].question;
+    riddleForm.hidden = false;
+    riddleAnswer.value = "";
+    riddleFeedback.textContent = solvedRiddles > 0 ? "PREVIOUS FRAGMENTS RETAINED BELOW." : "ENTER THE WORD THAT ANSWERS THE RIDDLE.";
+    riddleFeedback.classList.remove("success");
+  }
+}
+function openRiddleArchive(): void {
+  riddleOverlayOpen = true;
+  riddleOverlay.classList.add("open");
+  document.exitPointerLock?.();
+  renderRiddleArchive();
+  window.setTimeout(() => { if (!riddleForm.hidden) riddleAnswer.focus(); }, 0);
+}
+function closeRiddleArchive(): void {
+  riddleOverlayOpen = false;
+  riddleOverlay.classList.remove("open");
+  keys.clear();
+  intro.classList.remove("dismissed");
+  startButton.textContent = "RESUME SHIFT ↗";
+}
+riddleForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (solvedRiddles >= riddleFragments.length) return;
+  const answer = riddleAnswer.value.trim().toLowerCase().replace(/[^a-z]/g, "");
+  if (answer === riddleFragments[solvedRiddles].answer) {
+    solvedRiddles += 1;
+    playSfx("relay");
+    playSignalTone(520 + solvedRiddles * 90, 860 + solvedRiddles * 90, 0.28, "sine", 0.03);
+    renderRiddleArchive();
+    riddleFeedback.textContent = solvedRiddles === riddleFragments.length
+      ? "ARCHIVE ACCESS GRANTED"
+      : "FRAGMENT DECRYPTED. A NEW TRACE HAS BEEN RECOVERED.";
+    riddleFeedback.classList.add("success");
+  } else {
+    playSfx("denied");
+    riddleFeedback.textContent = "ACCESS DENIED. RECONSIDER THE WORDING.";
+    riddleFeedback.classList.remove("success");
+  }
+});
+riddleClose.addEventListener("click", closeRiddleArchive);
+riddleOverlay.addEventListener("click", (event) => {
+  if (event.target === riddleOverlay) closeRiddleArchive();
+});
 function updateObjective(): void {
   relayProgress.innerHTML = `SIGNAL <strong>${nextRelay} / ${sequence.length}</strong>`;
   sequenceLabel.innerHTML = `MEMORY LOCK <span>8 BEATS</span>`;
@@ -1123,8 +1252,10 @@ function updateObjective(): void {
     objectiveTitle.textContent = "The exit is unlocked";
     objectiveCopy.textContent = "Head to the green EXIT gate mounted in the right-hand wall near the back and press E at the bulkhead.";
   } else {
-    objectiveTitle.textContent = nextRelay === 0 ? "Decode the maintenance rhythm" : nextRelay < sequence.length ? "Hold the pattern in memory" : "Signal accepted";
-    objectiveCopy.textContent = "Memorize each three-symbol window, then enter it from memory. Later beats are encrypted. One wrong signal resets all eight beats.";
+    objectiveTitle.textContent = nextRelay === 0 ? (solvedRiddles < riddleFragments.length ? "Recover the archive" : "Decode the maintenance rhythm") : nextRelay < sequence.length ? "Hold the pattern in memory" : "Signal accepted";
+    objectiveCopy.textContent = nextRelay === 0 && solvedRiddles < riddleFragments.length
+      ? "Find the sealed wall archive and solve its riddles. Each correct answer earns a fragment—not the relay solution."
+      : "Memorize each three-symbol window, then enter it from memory. Later beats are encrypted. One wrong signal resets all eight beats.";
   }
 }
 function startGame(): void {
@@ -1152,6 +1283,10 @@ document.addEventListener("mousemove", (event: MouseEvent) => {
   pitch = THREE.MathUtils.clamp(pitch, -1.18, 1.18);
 });
 document.addEventListener("keydown", (event: KeyboardEvent) => {
+  if (riddleOverlayOpen) {
+    if (event.code === "Escape") closeRiddleArchive();
+    return;
+  }
   if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
   keys.add(event.code);
   if (event.code === "KeyE" && !event.repeat && started && !ended) interact();
@@ -1187,7 +1322,7 @@ function moveWithCollision(dx: number, dz: number): void {
   if (!collidesAt(camera.position.x, nextZ)) camera.position.z = nextZ;
 }
 
-function nearestTarget(): { relay?: Relay; gate: boolean; easterEgg?: boolean; distance: number } {
+function nearestTarget(): { relay?: Relay; gate: boolean; easterEgg?: boolean; riddleTerminal?: boolean; distance: number } {
   // Interaction is first-person and gaze-based: nearby objects behind the player
   // must never activate just because the camera is standing close to them.
   const lookDirection = camera.getWorldDirection(new THREE.Vector3()).normalize();
@@ -1203,6 +1338,14 @@ function nearestTarget(): { relay?: Relay; gate: boolean; easterEgg?: boolean; d
       distance = d;
       nearest = relay;
     }
+  }
+
+  const archivePosition = new THREE.Vector3(-7.42, 2.15, -2.9);
+  const toArchive = archivePosition.clone().sub(camera.position);
+  const archiveDistance = toArchive.length();
+  const archiveFacing = toArchive.normalize().dot(lookDirection);
+  if (archiveDistance <= 2.8 && archiveFacing > 0.78 && archiveDistance < distance) {
+    return { gate: false, riddleTerminal: true, distance: archiveDistance };
   }
 
   const secretPortPosition = new THREE.Vector3(-7.42, 1.48, -20.45);
@@ -1225,6 +1368,10 @@ function nearestTarget(): { relay?: Relay; gate: boolean; easterEgg?: boolean; d
 function interact(): void {
   const target = nearestTarget();
   if (target.distance > 2.65) { playSfx("denied"); notify("NOT IN RANGE."); return; }
+  if (target.riddleTerminal) {
+    openRiddleArchive();
+    return;
+  }
   if (target.easterEgg) {
     easterEggFound = true;
     const screen = scene.getObjectByName("secret-port-screen") as THREE.Mesh | undefined;
@@ -1487,8 +1634,8 @@ function animate(): void {
     camera.position.y = playerEyeY + cameraBob;
     camera.rotation.z = THREE.MathUtils.damp(camera.rotation.z, -velocity.x * 0.009, 4.5, delta);
     const target = nearestTarget();
-    if (target.distance <= 2.65) {
-      interaction.textContent = target.easterEgg ? "[ E ] INSPECT SERVICE PORT" : target.gate ? (gateOpen ? "[ E ] OPEN THE BULKHEAD" : "BULKHEAD LOCKED · RESTORE SIGNAL") : target.relay?.active ? "[ E ] SEND NEXT SIGNAL BEAT" : "[ E ] ACTIVATE RELAY";
+    if (target.distance <= 2.8) {
+      interaction.textContent = target.riddleTerminal ? "[ E ] DECRYPT ARCHIVE RIDDLES" : target.easterEgg ? "[ E ] INSPECT SERVICE PORT" : target.gate ? (gateOpen ? "[ E ] OPEN THE BULKHEAD" : "BULKHEAD LOCKED · RESTORE SIGNAL") : target.relay?.active ? "[ E ] SEND NEXT SIGNAL BEAT" : "[ E ] ACTIVATE RELAY";
       root.classList.add("target-acquired");
     } else {
       interaction.textContent = "EXPLORE THE FOUNDRY";
