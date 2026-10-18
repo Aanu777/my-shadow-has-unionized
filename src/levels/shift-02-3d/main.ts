@@ -176,6 +176,39 @@ let exitDoorCore: THREE.Group | undefined;
 let exitOpeningStartedAt: number | null = null;
 let exitOpeningProgress = 0;
 
+// A luminous signal packet travels between machinery nodes after each valid beat.
+const transferMaterial = new THREE.MeshBasicMaterial({ color: "#a6ffe0", toneMapped: false });
+const transferOrb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.14, 1), transferMaterial);
+transferOrb.visible = false;
+scene.add(transferOrb);
+const transferLight = new THREE.PointLight("#78ffd0", 0, 7, 1.8);
+scene.add(transferLight);
+const transferFrom = new THREE.Vector3();
+const transferTo = new THREE.Vector3();
+let transferStartedAt: number | null = null;
+let transferDuration = 0.72;
+
+function startSignalTransfer(from: Relay, nextBeat: number): void {
+  transferFrom.copy(from.position).add(new THREE.Vector3(0, 1.42, 0));
+  if (nextBeat < sequence.length) {
+    const candidates = relays.filter((item) => item.kind === sequence[nextBeat]);
+    const target = candidates.reduce<Relay | null>((best, item) => {
+      if (!best) return item;
+      return item.position.distanceTo(from.position) < best.position.distanceTo(from.position) ? item : best;
+    }, null);
+    if (target) transferTo.copy(target.position).add(new THREE.Vector3(0, 1.42, 0));
+    else transferTo.set(5.05, 2.2, -18.2);
+  } else {
+    transferTo.set(5.05, 2.2, -18.2);
+  }
+  transferStartedAt = clock.elapsedTime;
+  transferDuration = nextBeat >= sequence.length - 1 ? 1.12 : 0.72;
+  transferOrb.visible = true;
+  transferOrb.position.copy(transferFrom);
+  transferLight.position.copy(transferFrom);
+  transferLight.intensity = 18;
+}
+
 function buildEnvironment(): void {
   // Continuous floor with a procedural brushed-metal / panel texture.
   const floorCanvas = document.createElement("canvas");
@@ -641,6 +674,30 @@ const move = new THREE.Vector3();
 const rayOrigin = new THREE.Vector3();
 const velocity = new THREE.Vector3();
 const toastTimer = { id: 0 };
+let audioContext: AudioContext | null = null;
+function playSignalTone(startFrequency: number, endFrequency: number, duration: number, type: OscillatorType = "sine"): void {
+  try {
+    const AudioContextType = window.AudioContext;
+    if (!AudioContextType) return;
+    audioContext ??= new AudioContextType();
+    if (audioContext.state === "suspended") void audioContext.resume();
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const now = audioContext.currentTime;
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(startFrequency, now);
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, endFrequency), now + duration);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.075, now + Math.min(0.035, duration * 0.25));
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.02);
+  } catch {
+    // Audio is optional; the level remains playable if browser audio is blocked.
+  }
+}
 
 // Lightweight first-person character physics. The camera is the player's eye,
 // while the horizontal body is approximated by a cylinder/capsule footprint.
@@ -651,6 +708,9 @@ const GRAVITY = 22;
 const JUMP_SPEED = 8.2;
 const WALK_ACCELERATION = 25;
 const GROUND_FRICTION = 12;
+let playerEyeY = PLAYER_EYE_HEIGHT;
+let cameraBob = 0;
+let sprintBlend = 0;
 let verticalVelocity = 0;
 let grounded = true;
 let coyoteTime = 0.1;
@@ -802,6 +862,7 @@ function interact(): void {
   if (!relay) return;
   // Relays may be selected more than once: this is a six-beat signal, not a one-touch checklist.
   if (relay.kind !== sequence[nextRelay]) {
+    playSignalTone(220, 105, 0.32, "triangle");
     nextRelay = 0;
     for (const item of relays) {
       item.active = false;
@@ -816,6 +877,8 @@ function interact(): void {
     return;
   }
   relay.active = true;
+  playSignalTone(420 + nextRelay * 72, 720 + nextRelay * 90, 0.24, "sine");
+  startSignalTransfer(relay, nextRelay + 1);
   const relaySymbol = relay.group.getObjectByName("relay-symbol") as THREE.Mesh | undefined;
   if (relaySymbol) {
     const pulseMaterial = new THREE.MeshStandardMaterial({ color: "#fff0d6", emissive: "#8fffd0", emissiveIntensity: 4.4, metalness: 0.18, roughness: 0.2 });
@@ -833,6 +896,7 @@ function interact(): void {
     // Start a staged mechanical sequence. The actual door motion is driven by
     // elapsed time in animate(), not an instant position jump.
     exitOpeningStartedAt = clock.elapsedTime;
+    playSignalTone(260, 880, 1.05, "sawtooth");
     notify("POWER RESTORED. BULKHEAD CYCLE INITIATED.");
   }
   updateObjective();
@@ -924,9 +988,34 @@ function animate(): void {
       leaf.rotation.z = (i - 2.5) * 0.018 + side * leafProgress * 0.12;
     });
   }
+  // Solving the puzzle changes the whole room from tired amber to powered mint.
+  const powerUp = gateOpen ? 1 : 0;
+  amberLight.color.lerpColors(new THREE.Color("#e59a55"), new THREE.Color("#83ffd0"), powerUp * 0.82);
+  fillLight.color.lerpColors(new THREE.Color("#7965cb"), new THREE.Color("#5fc8a8"), powerUp * 0.72);
+  practicalLights.forEach((lamp) => {
+    lamp.color.lerpColors(new THREE.Color("#e7a76c"), new THREE.Color("#8fffd0"), powerUp * 0.88);
+    lamp.intensity = THREE.MathUtils.damp(lamp.intensity, powerUp ? 7.5 : 10, 2.5, delta);
+  });
   exitSignLight.intensity = exitOpeningStartedAt !== null
     ? 8 + Math.sin(t * 18) * (1 - exitOpeningProgress) * 2.2
     : 5.5 + Math.sin(t * 2.2) * 1.0;
+
+  // A bright packet physically travels through the signal route and into the door.
+  if (transferStartedAt !== null) {
+    const progress = THREE.MathUtils.clamp((t - transferStartedAt) / transferDuration, 0, 1);
+    const eased = progress * progress * (3 - 2 * progress);
+    transferOrb.position.lerpVectors(transferFrom, transferTo, eased);
+    transferOrb.rotation.x += delta * 4.2;
+    transferOrb.rotation.y += delta * 5.4;
+    transferOrb.scale.setScalar(0.78 + Math.sin(progress * Math.PI) * 0.6);
+    transferLight.position.copy(transferOrb.position);
+    transferLight.intensity = 18 * (1 - progress * 0.72);
+    if (progress >= 1) {
+      transferStartedAt = null;
+      transferOrb.visible = false;
+      transferLight.intensity = 0;
+    }
+  }
 
   for (const relay of relays) {
     const symbol = relay.group.getObjectByName("relay-symbol");
@@ -954,32 +1043,24 @@ function animate(): void {
     if (keys.has("KeyA") || keys.has("ArrowLeft")) move.sub(right);
 
     const hasInput = move.lengthSq() > 0;
-    if (hasInput) {
-      move.normalize();
-      const sprinting = keys.has("ShiftLeft") || keys.has("ShiftRight");
-      const maxSpeed = sprinting ? 7.1 : 4.65;
-      const accel = grounded ? WALK_ACCELERATION : WALK_ACCELERATION * 0.32;
-      velocity.x += move.x * accel * delta;
-      velocity.z += move.z * accel * delta;
-      const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
-      if (horizontalSpeed > maxSpeed) {
-        const scale = maxSpeed / horizontalSpeed;
-        velocity.x *= scale;
-        velocity.z *= scale;
-      }
-    } else if (grounded) {
-      const friction = Math.max(0, 1 - GROUND_FRICTION * delta);
-      velocity.x *= friction;
-      velocity.z *= friction;
-      if (Math.abs(velocity.x) < 0.025) velocity.x = 0;
-      if (Math.abs(velocity.z) < 0.025) velocity.z = 0;
-    }
+    if (hasInput) move.normalize();
+    const sprinting = (keys.has("ShiftLeft") || keys.has("ShiftRight")) && hasInput;
+    const targetSpeed = sprinting ? 6.75 : 4.45;
+    const targetX = move.x * targetSpeed;
+    const targetZ = move.z * targetSpeed;
+    // Exponential damping creates controlled acceleration and a natural stop.
+    const response = grounded ? (hasInput ? 10.5 : 8.2) : 2.3;
+    velocity.x = THREE.MathUtils.damp(velocity.x, targetX, response, delta);
+    velocity.z = THREE.MathUtils.damp(velocity.z, targetZ, response, delta);
+    sprintBlend = THREE.MathUtils.damp(sprintBlend, sprinting ? 1 : 0, 5.5, delta);
+    camera.fov = THREE.MathUtils.damp(camera.fov, sprinting ? 80 : 76, 4.5, delta);
+    camera.updateProjectionMatrix();
 
     moveWithCollision(velocity.x * delta, velocity.z * delta);
 
-    // Gravity, jump arc, and a stable eye-height landing plane.
+    // Keep physical eye height separate from bob to prevent accumulated drift.
     verticalVelocity -= GRAVITY * delta;
-    let eyeY = camera.position.y + verticalVelocity * delta;
+    let eyeY = playerEyeY + verticalVelocity * delta;
     if (eyeY <= PLAYER_EYE_HEIGHT) {
       eyeY = PLAYER_EYE_HEIGHT;
       verticalVelocity = 0;
@@ -989,10 +1070,14 @@ function animate(): void {
       grounded = false;
       coyoteTime = Math.max(0, coyoteTime - delta);
     }
-    camera.position.y = eyeY;
-    if (grounded && hasInput) {
-      camera.position.y += Math.sin(t * 10.5) * Math.min(0.025, Math.hypot(velocity.x, velocity.z) * 0.004);
-    }
+    playerEyeY = eyeY;
+    const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
+    const bobTarget = grounded && horizontalSpeed > 0.18
+      ? Math.sin(t * (sprinting ? 13.2 : 9.8)) * Math.min(sprinting ? 0.045 : 0.025, horizontalSpeed * 0.006)
+      : 0;
+    cameraBob = THREE.MathUtils.damp(cameraBob, bobTarget, 13, delta);
+    camera.position.y = playerEyeY + cameraBob;
+    camera.rotation.z = THREE.MathUtils.damp(camera.rotation.z, -velocity.x * 0.009, 4.5, delta);
     const target = nearestTarget();
     if (target.distance <= 2.65) {
       interaction.textContent = target.gate ? (gateOpen ? "[ E ] OPEN THE BULKHEAD" : "BULKHEAD LOCKED · RESTORE SIGNAL") : target.relay?.active ? "[ E ] SEND NEXT SIGNAL BEAT" : "[ E ] ACTIVATE RELAY";
