@@ -104,6 +104,7 @@ export class ShiftThreeScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (this.won) {
+      if (Phaser.Input.Keyboard.JustDown(this.keys.ENTER)) window.location.href = "./index.html?shift=4";
       if (Phaser.Input.Keyboard.JustDown(this.keys.R)) window.location.href = "./index.html";
       return;
     }
@@ -694,7 +695,7 @@ export class ShiftThreeScene extends Phaser.Scene {
       "You recovered the shadow's termination paperwork.\nHR has appealed the appeal.\n\nThe department has no record of this department.",
       { fontFamily: "monospace", fontSize: "13px", color: "#e8d9f8", align: "center", lineSpacing: 8 }
     ).setOrigin(0.5).setScrollFactor(0).setDepth(61);
-    this.add.text(W / 2, 385, "PRESS R TO RETURN TO THE SHIFT TERMINAL", {
+    this.add.text(W / 2, 385, "ENTER: DESCEND TO SHIFT 04     //     R: RETURN TO TERMINAL", {
       fontFamily: "monospace", fontSize: "10px", color: "#c5a8ff"
     }).setOrigin(0.5).setScrollFactor(0).setDepth(61);
   }
