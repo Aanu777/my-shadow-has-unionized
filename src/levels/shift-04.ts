@@ -712,12 +712,20 @@ export class ShiftFourScene extends Phaser.Scene {
   }
 
   private randomizePuzzles():void{
+    // Every restart generates a new evidence case, then shuffles answer order and station layout.
+    const route=this.terminals[0];
+    if(Math.random()<.5){route.answer=0;route.hint="EVIDENCE A: the 09:14 service ticket carries one amber mark. The security feed shows the drone leaving the conduit with one amber band.";route.followUpOptions=["09:14 / CORRIDOR A / SINGLE AMBER","09:14 / CORRIDOR B / DOUBLE AMBER","09:41 / EXECUTIVE / RED SEAL","17:14 / UNLISTED / NO MARK"];route.followUpAnswer=0;route.followUpHint="EVIDENCE B: the time, route code, and maintenance mark must all agree. The single-amber route is the one recorded in the feed.";}
+    else{route.answer=1;route.hint="EVIDENCE A: the 09:14 service ticket carries two amber marks. The security feed shows the drone leaving the conduit with two amber bands.";route.followUpOptions=["09:14 / CORRIDOR B / DOUBLE AMBER","09:41 / EXECUTIVE / RED SEAL","09:14 / CORRIDOR A / SINGLE AMBER","17:14 / UNLISTED / NO MARK"];route.followUpAnswer=0;route.followUpHint="EVIDENCE B: the time, route code, and maintenance mark must all agree. One mismatch invalidates the whole record.";}
+    const directory=this.terminals[1];
+    if(Math.random()<.5){directory.answer=0;directory.hint="EVIDENCE A: paper dust and steel shelf rails pass behind the wall. No powered conduit, fibre pulse, or pressure vent is present.";directory.followUpOptions=["SHELF RAIL / PAPER DUST","FIBRE TRUNK / OPTICAL PULSE","VENT DUCT / PRESSURE CYCLE","PAIRED COPPER / 60 HZ HUM"];directory.followUpAnswer=0;directory.followUpHint="EVIDENCE B: classify the corridor by the physical trace it leaves. This record matches a storage archive, not an active service.";}
+    else{directory.answer=1;directory.hint="EVIDENCE A: a steady low-frequency hum and paired copper runs pass behind the wall. There is no door handle, fibre light, or pressure vent.";directory.followUpOptions=["PAIRED COPPER / 60 HZ HUM","FIBRE TRUNK / OPTICAL PULSE","VENT DUCT / PRESSURE CYCLE","EMPTY CONDUIT / NO SIGNAL"];directory.followUpAnswer=0;directory.followUpHint="EVIDENCE B: classify the corridor by the physical service it carries. Airflow, optical data, and an electrical feed leave different signatures.";}
+    const ownership=this.terminals[2];
+    if(Math.random()<.5){ownership.answer=2;ownership.hint="EVIDENCE A: the oldest charter predates the company seal. Its margin says an employee remains whole even when the light is removed.";ownership.followUpOptions=["UNION CHARTER","ASSET LEDGER","EXECUTIVE ORDER","PURCHASE RECEIPT"];ownership.followUpAnswer=0;ownership.followUpHint="EVIDENCE B: the source must predate the equipment policy and define employee status, not merely list company-owned objects.";}
+    else{ownership.answer=1;ownership.hint="EVIDENCE A: the master ledger has no owner field for this shadow. The purchase register also contains no transfer or acquisition record.";ownership.followUpOptions=["ASSET LEDGER","UNION CHARTER","EXECUTIVE ORDER","PURCHASE RECEIPT"];ownership.followUpAnswer=0;ownership.followUpHint="EVIDENCE B: use the document that records ownership assignments. No entry means the asset cannot be claimed by the company.";}
     const shuffle=<T,>(items:T[])=>{const out=[...items];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;};
     const shuffleOptions=(items:string[],answer:number)=>{const correct=items[answer],out=shuffle(items);return{items:out,answer:out.indexOf(correct)};};
-    for(const t of this.terminals){const a=shuffleOptions(t.options,t.answer);t.options=a.items;t.answer=a.answer;t.chosen=Math.floor(Math.random()*t.options.length);const b=shuffleOptions(t.followUpOptions,t.followUpAnswer);t.followUpOptions=b.items;t.followUpAnswer=b.answer;t.followUpChosen=Math.floor(Math.random()*t.followUpOptions.length);}
-    // The three evidence files also change stations every run, so the route is not identical after death.
-    const positions=shuffle(this.terminals.map(t=>t.x));this.terminals.forEach((t,i)=>{t.x=positions[i];});
-    this.terminals=shuffle(this.terminals);
+    for(const t of this.terminals){const q=shuffleOptions(t.options,t.answer);t.options=q.items;t.answer=q.answer;t.chosen=Math.floor(Math.random()*t.options.length);const f=shuffleOptions(t.followUpOptions,t.followUpAnswer);t.followUpOptions=f.items;t.followUpAnswer=f.answer;t.followUpChosen=Math.floor(Math.random()*t.followUpOptions.length);}
+    const positions=shuffle(this.terminals.map(t=>t.x));this.terminals.forEach((t,i)=>{t.x=positions[i];});this.terminals=shuffle(this.terminals);
   }
   private shadowPulse(): void {
     this.pulseCooldown = 1.35;
