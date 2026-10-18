@@ -110,7 +110,7 @@ export class ShiftFourScene extends Phaser.Scene {
     ];
     this.randomizePuzzles();
     this.activeTerminal = -1; this.eWasDown = false; this.aWasDown = false; this.dWasDown = false; this.rWasDown = false; this.enterWasDown = false;
-    this.won = false; this.dead = false; this.stage = 0; this.panelOpen = false; this.shadowClaimed = false; this.secretFound = false; this.endingMode = false; this.endingChoice = 0; this.playerHealth=100; this.selectedDifficulty=1; this.difficultySelectOpen=false; this.attackHitCooldown=0; this.strikeCooldown=0; this.attackIndex=0;
+    this.won = false; this.dead = false; this.stage = 0; this.panelOpen = false; this.shadowClaimed = false; this.secretFound = false; this.endingMode = false; this.endingChoice = 0; this.playerHealth=100; this.selectedDifficulty=1; this.difficultySelectOpen=false; this.attackHitCooldown=0; this.strikeCooldown=0; this.attackIndex=0; this.bossActive=false; this.bossVulnerable=false; this.bossWaveLive=false; this.bossHealth=3; this.bossMaxHealth=3; this.bossTimer=1.6; this.bossAttackName=""; this.dashCooldown=0; this.pulseCooldown=0; this.dashInvulnerable=0; this.introActive=true;
     this.cameras.main.setBackgroundColor("#08070d");
     this.cameras.main.setBounds(0, 0, WORLD, H);
     this.add.image(WORLD / 2, H / 2, "tribunal-background").setDisplaySize(WORLD, H).setDepth(-10);
