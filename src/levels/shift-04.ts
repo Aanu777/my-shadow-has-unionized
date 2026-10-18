@@ -63,6 +63,7 @@ export class ShiftFourScene extends Phaser.Scene {
   private boss!: Phaser.GameObjects.Container;
   private bossCore!: Phaser.GameObjects.Arc;
   private bossBar!: Phaser.GameObjects.Rectangle;
+  private bossBarFrame!: Phaser.GameObjects.Rectangle;
   private bossWave!: Phaser.GameObjects.Rectangle;
   private bossTimer = 1.6;
   private portal!: Phaser.GameObjects.Container;
@@ -504,7 +505,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.bossCore = this.add.circle(1735, 345, 16, 0xff5369, 1).setDepth(17).setVisible(false);
     this.bossCore.setStrokeStyle(3, 0xffd9ed, 0.9);
     this.tweens.add({ targets: this.bossCore, scale: { from: 0.86, to: 1.2 }, alpha: { from: 0.72, to: 1 }, duration: 560, yoyo: true, repeat: -1 });
-    this.add.rectangle(W / 2, 83, 282, 20, 0x08070d, 0.96).setScrollFactor(0).setDepth(94).setVisible(false).setName("boss-bar-frame");
+    this.bossBarFrame = this.add.rectangle(W / 2, 83, 282, 20, 0x08070d, 0.96).setScrollFactor(0).setDepth(95).setVisible(false);
     this.bossBar = this.add.rectangle(W / 2 - 132, 83, 264, 8, 0xff5369, 1).setOrigin(0, 0.5).setScrollFactor(0).setDepth(96).setVisible(false);
     this.bossNameText = this.add.text(W / 2, 52, "THE AUDITOR  //  AUTHORITY SEALS", {
       fontFamily: "monospace", fontSize: "11px", color: "#f4eafa", letterSpacing: 2, fontStyle: "bold"
@@ -580,6 +581,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.bossHealth = 3;
     this.boss.setVisible(true).setAlpha(0);
     this.bossCore.setVisible(true).setPosition(this.boss.x, this.boss.y - 8).setFillStyle(0xff5369, 1);
+    this.bossBarFrame.setVisible(true);
     this.bossBar.setVisible(true).setSize(264, 8);
     this.bossNameText.setVisible(true).setText("THE AUDITOR  //  AUTHORITY SEALS");
     this.bossHintText.setVisible(true);
@@ -593,7 +595,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.cameras.main.setScroll(WORLD - W, 0);
     this.cameras.main.shake(350, 0.005);
     this.tweens.add({ targets: this.boss, alpha: 1, y: 334, duration: 800, ease: "Back.out" });
-    this.bossTimer = 1.2;
+    this.bossTimer = 1.9;
     this.say("FINAL REVIEW INITIATED. READ THE WAVE, DASH THROUGH IT, THEN BREAK THE VIOLET CORE.");
   }
 
@@ -602,14 +604,14 @@ export class ShiftFourScene extends Phaser.Scene {
     this.bossCore.setPosition(this.boss.x, this.boss.y - 8);
     this.bossTimer -= dt;
     if (this.bossTimer <= 0 && !this.bossWaveLive && !this.bossVulnerable) {
-      this.bossTimer = Math.max(1.35, 2.05 - (3 - this.bossHealth) * 0.18);
+      this.bossTimer = Math.max(1.7, 2.35 - (3 - this.bossHealth) * 0.16);
       this.bossVulnerable = false;
       this.bossWaveLive = true;
-      this.bossWave.setPosition(this.boss.x - 112, FLOOR - 20).setVisible(true).setAlpha(0.12);
+      this.bossWave.setPosition(WORLD - 30, FLOOR - 20).setVisible(true).setAlpha(0.12);
       this.bossWave.setScale(0.82);
       this.cameras.main.shake(100, 0.002);
       this.tweens.add({
-        targets: this.bossWave, x: 1010, alpha: 0.95, scaleX: 1.18, duration: 760, ease: "Cubic.in",
+        targets: this.bossWave, x: 980, alpha: 0.95, scaleX: 1.18, duration: 1380, ease: "Cubic.in",
         onStart: () => this.bossHintText.setText("WARRANT WAVE INBOUND — Q DASH THROUGH THE RED STRIKE"),
         onComplete: () => {
           this.bossWave.setVisible(false);
@@ -656,6 +658,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.bossCore.setVisible(false);
     this.bossWave.setVisible(false);
     this.bossBar.setVisible(false);
+    this.bossBarFrame.setVisible(false);
     this.bossNameText.setVisible(false);
     this.bossHintText.setVisible(false);
     this.portal.setVisible(true).setAlpha(0);
