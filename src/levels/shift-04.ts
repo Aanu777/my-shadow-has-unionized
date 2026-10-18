@@ -88,6 +88,9 @@ export class ShiftFourScene extends Phaser.Scene {
   private portal!: Phaser.GameObjects.Container;
   private bossTrigger!: Phaser.GameObjects.Container;
   private bossPrompt!: Phaser.GameObjects.Text;
+  private summonButton!: Phaser.GameObjects.Container;
+  private summonButtonPlate!: Phaser.GameObjects.Rectangle;
+  private summonButtonText!: Phaser.GameObjects.Text;
   private bossNameText!: Phaser.GameObjects.Text;
   private bossHintText!: Phaser.GameObjects.Text;
   private dashInvulnerable = 0;
@@ -192,8 +195,10 @@ export class ShiftFourScene extends Phaser.Scene {
       this.bossTrigger.setAlpha(ready ? 1 : 0.38);
       if (ready) this.bossTrigger.setScale(1 + Math.sin(this.time.now * 0.004) * 0.025);
       this.bossPrompt.setText("FINAL REVIEW\n[ E ] CHOOSE DIFFICULTY");
-      this.bossPrompt.setAlpha(ready && Math.abs(this.player.x - this.bossTrigger.x) < 155 ? 1 : 0.35);
-      if (this.bossActive) { this.bossTrigger.setAlpha(0.12); this.bossPrompt.setAlpha(0); }
+      const inRange = Math.abs(this.player.x - this.bossTrigger.x) < 155;
+      this.bossPrompt.setAlpha(ready && inRange ? 1 : 0.18);
+      this.summonButton.setVisible(ready && inRange);
+      if (this.bossActive) { this.bossTrigger.setAlpha(0.12); this.bossPrompt.setAlpha(0); this.summonButton.setVisible(false); }
     }
 
     const e = this.keys.E.isDown;
@@ -641,7 +646,7 @@ export class ShiftFourScene extends Phaser.Scene {
 
   private createBoss(): void {
     // The encounter is built around a real vector sprite asset, not a pile of primitive shapes.
-    this.boss = this.add.container(1735, 345).setDepth(15).setVisible(false);
+    this.boss = this.add.container(1735, 345).setDepth(8).setVisible(false);
     this.boss.add(this.add.image(0, 18, "auditor-boss").setDisplaySize(294, 392));
     this.bossCore = this.add.circle(1735, 362, 16, 0xff5369, 1).setDepth(17).setVisible(false);
     this.bossCore.setStrokeStyle(3, 0xffd9ed, 0.9);
@@ -681,6 +686,15 @@ export class ShiftFourScene extends Phaser.Scene {
       backgroundColor: "#100b15", padding: { x: 9, y: 7 }
     }).setOrigin(0.5).setDepth(13).setAlpha(0.35);
     this.add.text(1628, FLOOR - 4, "EXECUTIVE AUTHORIZATION", {fontFamily:"monospace",fontSize:"7px",color:"#9c819f",letterSpacing:1}).setOrigin(.5).setDepth(13);
+    this.summonButton=this.add.container(W/2,H-40).setScrollFactor(0).setDepth(100).setVisible(false);
+    this.summonButtonPlate=this.add.rectangle(0,0,294,38,0x180b16,.98).setStrokeStyle(2,0xff5369,1);
+    this.summonButtonText=this.add.text(0,0,"SUMMON THE AUDITOR",{fontFamily:"monospace",fontSize:"12px",fontStyle:"bold",color:"#ffeaf0",letterSpacing:2}).setOrigin(.5);
+    const buttonGlow=this.add.rectangle(0,-17,90,2,0xf4b860,1);
+    this.summonButton.add([this.summonButtonPlate,buttonGlow,this.summonButtonText]);
+    this.summonButton.setSize(294,38).setInteractive({useHandCursor:true});
+    this.summonButton.on("pointerover",()=>{if(this.summonButton.visible){this.summonButtonPlate.setFillStyle(0x3a1024,1);this.summonButtonText.setColor("#ffffff");}});
+    this.summonButton.on("pointerout",()=>{this.summonButtonPlate.setFillStyle(0x180b16,.98);this.summonButtonText.setColor("#ffeaf0");});
+    this.summonButton.on("pointerdown",()=>{if(this.stage>=3&&!this.bossActive&&this.bossHealth>0&&Math.abs(this.player.x-this.bossTrigger.x)<155){this.openDifficultyPanel();}});
   }
 
   private createDifficultyPanel():void{
@@ -758,10 +772,13 @@ export class ShiftFourScene extends Phaser.Scene {
     if (this.bossActive || this.bossHealth <= 0) return;
     if (this.stage < 3) { this.say("EXECUTIVE AUTHORIZATION DENIED. RESOLVE ALL THREE ASSIGNMENTS FIRST."); return; }
     this.bossActive = true;
+    this.summonButton.setVisible(false);
+    this.player.setDepth(20);
+    this.boss.setDepth(8);
     this.bossVulnerable = false;
     this.bossWaveLive = false;
     this.bossMaxHealth=[3,5,7][this.selectedDifficulty];this.bossHealth=this.bossMaxHealth;this.playerHealth=100;this.playerHealthBar.setSize(176,8).setFillStyle(0x78e6bb,1);this.playerHealthLabel.setText("EMPLOYEE INTEGRITY  100%").setColor("#a9f5d5");this.attackIndex=0;
-    this.boss.setVisible(true).setAlpha(0);
+    this.boss.setVisible(true).setAlpha(0).setDepth(8);
     this.bossCore.setVisible(true).setPosition(this.boss.x, this.boss.y + 17).setFillStyle(0xff5369, 1);
     this.bossBarFrame.setVisible(true);
     this.bossBar.setVisible(true).setSize(264, 8);
@@ -796,7 +813,7 @@ export class ShiftFourScene extends Phaser.Scene {
   }
   private finishBossAttack():void{if(!this.bossActive)return;this.bossWaveLive=false;this.bossWave.setVisible(false);this.bossVulnerable=true;this.bossCore.setFillStyle(0xc5a8ff,1);this.bossCore.setStrokeStyle(3,0xffffff,1);this.bossHintText.setText("CORE EXPOSED — CLOSE IN AND PRESS F");const ms=[1800,1250,820][this.selectedDifficulty];this.time.delayedCall(ms,()=>{if(this.bossActive){this.bossVulnerable=false;this.bossCore.setFillStyle(0xff5369,1);this.bossCore.setStrokeStyle(3,0xffd9ed,.9);this.bossTimer=[1.5,1.05,.68][this.selectedDifficulty];this.bossHintText.setText("NEXT ATTACK: "+this.bossAttackName);}});}
   private damagePlayer(amount:number,attack:string):void{if(!this.bossActive||this.attackHitCooldown>0||this.dashInvulnerable>0)return;this.playerHealth=Math.max(0,this.playerHealth-amount);this.attackHitCooldown=.72;this.player.setAlpha(.35);this.tweens.add({targets:this.player,alpha:1,duration:220,yoyo:true,repeat:1});this.cameras.main.shake(180,.003+this.selectedDifficulty*.001);this.cameras.main.flash(100,255,65,105);this.playerVx=this.player.x<this.boss.x?-250:250;this.playerVy=-155;this.grounded=false;this.say(attack+" HIT // -"+amount+" INTEGRITY");if(this.playerHealth<=0)this.triggerPlayerDeath();}
-  private triggerPlayerDeath():void{if(this.dead||this.won)return;this.dead=true;this.bossActive=false;this.bossVulnerable=false;this.bossWaveLive=false;this.bossWave.setVisible(false);this.boss.setVisible(false);this.bossCore.setVisible(false);this.cameras.main.stopFollow();const shade=this.add.rectangle(W/2,H/2,W,H,0x030208,.92).setScrollFactor(0).setDepth(120);const title=this.add.text(W/2,H/2-65,"EMPLOYEE TERMINATED",{fontFamily:"monospace",fontSize:"27px",color:"#ff5369",fontStyle:"bold",letterSpacing:3}).setOrigin(.5).setScrollFactor(0).setDepth(121);this.add.text(W/2,H/2-5,"THE AUDIT REJECTED YOUR APPEAL.\nALL ASSIGNMENTS WILL BE REISSUED.",{fontFamily:"monospace",fontSize:"12px",color:"#e8d9f8",align:"center",lineSpacing:9}).setOrigin(.5).setScrollFactor(0).setDepth(121);const retry=this.add.text(W/2,H/2+75,"PRESS R TO RESTART SHIFT 04",{fontFamily:"monospace",fontSize:"12px",color:"#f4b860",letterSpacing:2}).setOrigin(.5).setScrollFactor(0).setDepth(121);this.tweens.add({targets:[title,retry],alpha:{from:.35,to:1},duration:620,yoyo:true,repeat:-1});}
+  private triggerPlayerDeath():void{if(this.dead||this.won)return;this.dead=true;this.summonButton.setVisible(false);this.bossActive=false;this.bossVulnerable=false;this.bossWaveLive=false;this.bossWave.setVisible(false);this.boss.setVisible(false);this.bossCore.setVisible(false);this.cameras.main.stopFollow();const shade=this.add.rectangle(W/2,H/2,W,H,0x030208,.92).setScrollFactor(0).setDepth(120);const title=this.add.text(W/2,H/2-65,"EMPLOYEE TERMINATED",{fontFamily:"monospace",fontSize:"27px",color:"#ff5369",fontStyle:"bold",letterSpacing:3}).setOrigin(.5).setScrollFactor(0).setDepth(121);this.add.text(W/2,H/2-5,"THE AUDIT REJECTED YOUR APPEAL.\nALL ASSIGNMENTS WILL BE REISSUED.",{fontFamily:"monospace",fontSize:"12px",color:"#e8d9f8",align:"center",lineSpacing:9}).setOrigin(.5).setScrollFactor(0).setDepth(121);const retry=this.add.text(W/2,H/2+75,"PRESS R TO RESTART SHIFT 04",{fontFamily:"monospace",fontSize:"12px",color:"#f4b860",letterSpacing:2}).setOrigin(.5).setScrollFactor(0).setDepth(121);this.tweens.add({targets:[title,retry],alpha:{from:.35,to:1},duration:620,yoyo:true,repeat:-1});}
 
   private defeatBoss(): void {
     this.bossActive = false;
