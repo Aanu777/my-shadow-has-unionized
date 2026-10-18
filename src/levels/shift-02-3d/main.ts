@@ -187,6 +187,7 @@ const transferFrom = new THREE.Vector3();
 const transferTo = new THREE.Vector3();
 let transferStartedAt: number | null = null;
 let transferDuration = 0.72;
+let foundryPowerBlend = 0;
 
 function startSignalTransfer(from: Relay, nextBeat: number): void {
   transferFrom.copy(from.position).add(new THREE.Vector3(0, 1.42, 0));
@@ -863,6 +864,9 @@ function interact(): void {
   // Relays may be selected more than once: this is a six-beat signal, not a one-touch checklist.
   if (relay.kind !== sequence[nextRelay]) {
     playSignalTone(220, 105, 0.32, "triangle");
+    transferStartedAt = null;
+    transferOrb.visible = false;
+    transferLight.intensity = 0;
     nextRelay = 0;
     for (const item of relays) {
       item.active = false;
@@ -989,12 +993,13 @@ function animate(): void {
     });
   }
   // Solving the puzzle changes the whole room from tired amber to powered mint.
-  const powerUp = gateOpen ? 1 : 0;
+  foundryPowerBlend = THREE.MathUtils.damp(foundryPowerBlend, gateOpen ? 1 : 0, 1.8, delta);
+  const powerUp = foundryPowerBlend;
   amberLight.color.lerpColors(new THREE.Color("#e59a55"), new THREE.Color("#83ffd0"), powerUp * 0.82);
   fillLight.color.lerpColors(new THREE.Color("#7965cb"), new THREE.Color("#5fc8a8"), powerUp * 0.72);
   practicalLights.forEach((lamp) => {
     lamp.color.lerpColors(new THREE.Color("#e7a76c"), new THREE.Color("#8fffd0"), powerUp * 0.88);
-    lamp.intensity = THREE.MathUtils.damp(lamp.intensity, powerUp ? 7.5 : 10, 2.5, delta);
+    lamp.intensity = THREE.MathUtils.damp(lamp.intensity, THREE.MathUtils.lerp(10, 7.5, powerUp), 2.5, delta);
   });
   exitSignLight.intensity = exitOpeningStartedAt !== null
     ? 8 + Math.sin(t * 18) * (1 - exitOpeningProgress) * 2.2
