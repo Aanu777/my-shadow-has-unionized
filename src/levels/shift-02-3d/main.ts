@@ -21,6 +21,7 @@ const hud = requireElement<HTMLElement>("#hud");
 const interaction = requireElement<HTMLElement>("#interaction");
 const objectiveTitle = requireElement<HTMLElement>("#objective-title");
 const objectiveCopy = requireElement<HTMLElement>("#objective-copy");
+const sequenceTrack = requireElement<HTMLElement>("#sequence-track");
 const relayProgress = requireElement<HTMLElement>("#relay-progress");
 const toast = requireElement<HTMLElement>("#toast");
 const endScreen = requireElement<HTMLElement>("#end-screen");
@@ -690,12 +691,19 @@ function notify(message: string): void {
 }
 function updateObjective(): void {
   relayProgress.innerHTML = `SIGNAL <strong>${nextRelay} / ${sequence.length}</strong>`;
+  const symbols: Record<Relay["kind"], string> = { triangle: "△", diamond: "◇", circle: "○" };
+  sequenceTrack.innerHTML = sequence.map((kind, index) => {
+    const state = index < nextRelay ? "completed" : index === nextRelay && !gateOpen ? "current" : "";
+    const accessible = kind === "triangle" ? "triangle" : kind === "diamond" ? "diamond" : "circle";
+    return `<span class="sequence-beat ${state}" aria-label="Beat ${index + 1}: ${accessible}">${index < nextRelay ? "✓" : symbols[kind]}<i>${String(index + 1).padStart(2, "0")}</i></span>`;
+  }).join("");
+  sequenceTrack.classList.toggle("sequence-complete", gateOpen);
   if (gateOpen) {
     objectiveTitle.textContent = "The exit is unlocked";
     objectiveCopy.textContent = "Head to the green EXIT gate in the back-right corner and press E at the bulkhead.";
   } else {
     objectiveTitle.textContent = nextRelay === 0 ? "Decode the maintenance rhythm" : nextRelay < sequence.length ? "Signal pattern in progress" : "Signal accepted";
-    objectiveCopy.textContent = "Decode the six-beat relay signal. Once it is accepted, follow the green guide marks to the EXIT gate in the back-right corner.";
+    objectiveCopy.textContent = "Activate the symbols in the order shown above. A wrong signal resets the sequence. Then follow the green guide marks to the bulkhead.";
   }
 }
 function startGame(): void {
@@ -797,6 +805,10 @@ function interact(): void {
     nextRelay = 0;
     for (const item of relays) {
       item.active = false;
+      const symbol = item.group.getObjectByName("relay-symbol") as THREE.Mesh | undefined;
+      if (symbol) symbol.material = materials.glow;
+      const halo = item.group.getObjectByName("relay-halo") as THREE.Mesh | undefined;
+      if (halo) halo.scale.setScalar(1);
       item.group.scale.setScalar(1);
     }
     notify("SEQUENCE REJECTED. ALL RELAYS RESET.");
@@ -804,6 +816,13 @@ function interact(): void {
     return;
   }
   relay.active = true;
+  const relaySymbol = relay.group.getObjectByName("relay-symbol") as THREE.Mesh | undefined;
+  if (relaySymbol) {
+    const pulseMaterial = new THREE.MeshStandardMaterial({ color: "#fff0d6", emissive: "#8fffd0", emissiveIntensity: 4.4, metalness: 0.18, roughness: 0.2 });
+    relaySymbol.material = pulseMaterial;
+  }
+  const relayHalo = relay.group.getObjectByName("relay-halo") as THREE.Mesh | undefined;
+  if (relayHalo) relayHalo.scale.setScalar(1.28);
   relay.group.scale.setScalar(1.08);
   nextRelay++;
   notify(`SIGNAL BEAT ${nextRelay} / ${sequence.length} ACCEPTED.`);
@@ -976,9 +995,11 @@ function animate(): void {
     }
     const target = nearestTarget();
     if (target.distance <= 2.65) {
-      interaction.textContent = target.gate ? (gateOpen ? "[ E ] OPEN THE BULKHEAD" : "BULKHEAD LOCKED") : target.relay?.active ? "RELAY ONLINE" : "[ E ] ACTIVATE RELAY";
+      interaction.textContent = target.gate ? (gateOpen ? "[ E ] OPEN THE BULKHEAD" : "BULKHEAD LOCKED · RESTORE SIGNAL") : target.relay?.active ? "[ E ] SEND NEXT SIGNAL BEAT" : "[ E ] ACTIVATE RELAY";
+      root.classList.add("target-acquired");
     } else {
       interaction.textContent = "EXPLORE THE FOUNDRY";
+      root.classList.remove("target-acquired");
     }
     for (const relay of relays) {
       const symbol = relay.group.getObjectByName("relay-symbol") as THREE.Mesh | undefined;
