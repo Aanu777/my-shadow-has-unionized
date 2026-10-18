@@ -779,7 +779,7 @@ function loadFactoryAsset(file: string, placements: Array<[number, number, numbe
     () => console.warn("Optional CC0 factory model unavailable:", file)
   );
 }
-// Keep just two far-end machinery silhouettes; omit cranes and extra window/pipe props.
+// Use a restrained trio of real factory-kit GLB machines as recognizable set dressing; omit cranes and clutter.
 loadFactoryAsset("machine.glb", [[-5.8, -15.3, 0.05, 0], [5.8, -15.3, 0.05, Math.PI], [5.8, -10.5, 0.05, Math.PI]]);
 
 // Additive architectural detail uses curved profiles, rings, cable runs and
