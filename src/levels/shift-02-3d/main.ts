@@ -254,8 +254,82 @@ function buildEnvironment(): void {
   floor.receiveShadow = true;
   scene.add(floor);
 
+  // Entry-wall feature: a physical maintenance station built into the first
+  // wall bay. Its illuminated status glass and service hardware are 3D scene
+  // objects (not a floating UI card); keep it above the player spawn sightline.
+  const entryStation = new THREE.Group();
+  entryStation.name = "entry-maintenance-station";
+  entryStation.position.set(0, 2.72, 12.78);
+  scene.add(entryStation);
+
+  box(entryStation, 0, 0, 0, 3.9, 1.75, 0.22, materials.dark);
+  box(entryStation, 0, 0.02, -0.135, 3.55, 1.42, 0.055, materials.ceramic);
+  box(entryStation, 0, 0.02, -0.17, 3.34, 1.2, 0.035, materials.glass);
+  // Status glass is rendered as a textured, legible industrial interface.
+  const entryScreenCanvas = document.createElement("canvas");
+  entryScreenCanvas.width = 768;
+  entryScreenCanvas.height = 320;
+  const entryScreenContext = entryScreenCanvas.getContext("2d");
+  if (entryScreenContext) {
+    entryScreenContext.fillStyle = "#08111b";
+    entryScreenContext.fillRect(0, 0, 768, 320);
+    entryScreenContext.fillStyle = "#8fffd0";
+    entryScreenContext.font = "bold 34px monospace";
+    entryScreenContext.fillText("FOUNDRY // ENTRY CONTROL", 28, 54);
+    entryScreenContext.fillStyle = "#a8a4bd";
+    entryScreenContext.font = "22px monospace";
+    entryScreenContext.fillText("SHIFT STATUS", 28, 104);
+    entryScreenContext.fillText("SIGNAL BUS: STANDBY", 28, 153);
+    entryScreenContext.fillText("RELAY ARRAY: SEALED", 28, 194);
+    entryScreenContext.fillText("PERSONNEL: UNVERIFIED", 28, 235);
+    entryScreenContext.fillStyle = "#e7a76c";
+    entryScreenContext.fillRect(28, 263, 450, 8);
+    entryScreenContext.fillStyle = "#8fffd0";
+    entryScreenContext.fillRect(28, 263, 142, 8);
+    entryScreenContext.strokeStyle = "#8fffd0";
+    entryScreenContext.lineWidth = 3;
+    entryScreenContext.strokeRect(12, 12, 744, 296);
+  }
+  const entryScreenTexture = new THREE.CanvasTexture(entryScreenCanvas);
+  entryScreenTexture.colorSpace = THREE.SRGBColorSpace;
+  const entryScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.18, 1.08),
+    new THREE.MeshBasicMaterial({ map: entryScreenTexture, toneMapped: false })
+  );
+  entryScreen.position.set(0, 0.02, -0.196);
+  entryStation.add(entryScreen);
+
+  // Real 3D physical controls beneath the screen: rotary selectors, toggle bars,
+  // and service ports, framed by copper rails and small status lamps.
+  box(entryStation, 0, -0.59, -0.23, 3.32, 0.12, 0.12, materials.copper);
+  for (const x of [-1.42, -0.94, 0.94, 1.42]) {
+    const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.09, 16), materials.dark);
+    dial.rotation.x = Math.PI / 2;
+    dial.position.set(x, -0.43, -0.25);
+    entryStation.add(dial);
+    const dialFace = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.095, 16), materials.copper);
+    dialFace.rotation.x = Math.PI / 2;
+    dialFace.position.set(x, -0.43, -0.305);
+    entryStation.add(dialFace);
+  }
+  for (let i = 0; i < 5; i++) {
+    box(entryStation, -0.42 + i * 0.21, -0.43, -0.28, 0.075, 0.18, 0.045, i === 0 ? materials.glow : materials.violet);
+  }
+  for (const x of [-1.75, 1.75]) {
+    box(entryStation, x, 0, -0.16, 0.055, 1.55, 0.09, materials.copper);
+    for (const y of [-0.56, 0.56]) {
+      const fastener = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.035, 10), materials.glow);
+      fastener.rotation.x = Math.PI / 2;
+      fastener.position.set(x, y, -0.225);
+      entryStation.add(fastener);
+    }
+  }
+  const entryStatusLight = new THREE.PointLight("#8fffd0", 2.5, 5, 2);
+  entryStatusLight.position.set(0, 0.25, -0.45);
+  entryStation.add(entryStatusLight);
+
   // Side walls are layered panel systems, not monolithic corridor cubes.
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1) {
     for (let panelIndex = 0, z = 13; z >= -23; z -= 3, panelIndex++) {
       // Leave a real opening in the right bulkhead wall for the exit door.
       if (side === 1 && (z === -17 || z === -20)) continue;
