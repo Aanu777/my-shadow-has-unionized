@@ -63,6 +63,9 @@ class GameScene extends Phaser.Scene {
   private interactionPrompt!: Phaser.GameObjects.Container;
   private interactionPromptText!: Phaser.GameObjects.Text;
   private objectiveProgress!: Phaser.GameObjects.Text;
+  private audioContext: AudioContext | null = null;
+  private nextFootstepAt = 0;
+  private wasGrounded = false;
 
   constructor() { super("GameScene"); }
   preload(): void { preloadShift01Background(this); this.load.svg("shift02-space", "/shift-02-space.svg", { width: W, height: H }); }
@@ -85,6 +88,8 @@ class GameScene extends Phaser.Scene {
     this.level = Number(this.registry.get("shiftLevel") ?? 1);
     // Scene.restart reuses this scene instance: reset every run/shift flag here.
     this.transitioning = false;
+    this.nextFootstepAt = 0;
+    this.wasGrounded = false;
     this.won = false;
     this.dead = false;
     this.checkpointReached = false;
@@ -246,6 +251,7 @@ class GameScene extends Phaser.Scene {
     else this.coyoteTime = Math.max(0, this.coyoteTime - dt);
     if (this.jumpBuffer > 0 && (this.grounded || this.coyoteTime > 0)) {
       this.playerVy = -455; this.grounded = false; this.coyoteTime = 0; this.jumpBuffer = 0;
+      if (this.level === 1) this.playSfx("jump");
     }
     this.playerVy += 1050 * dt;
 
@@ -290,6 +296,12 @@ class GameScene extends Phaser.Scene {
     this.player.setPosition(nextX, nextY);
     this.player.setScale(this.playerVx < 0 ? -1 : 1, 1);
     const moving = this.grounded && Math.abs(this.playerVx) > 8;
+    if (this.level === 1 && moving && this.time.now >= this.nextFootstepAt) {
+      this.playSfx("step");
+      this.nextFootstepAt = this.time.now + 270;
+    }
+    if (this.level === 1 && this.grounded && !this.wasGrounded && oldY < this.floorY - 24) this.playSfx("land");
+    this.wasGrounded = this.grounded;
     const walkCycle = this.time.now * 0.016;
     const bob = moving ? Math.abs(Math.sin(walkCycle)) * 2.2 : Math.sin(this.time.now * 0.003) * 0.45;
     this.playerArt.setY(bob);
@@ -784,6 +796,7 @@ class GameScene extends Phaser.Scene {
     const px = this.player.x;
     if (!this.hasCoffee && Phaser.Math.Distance.Between(px, this.player.y, this.coffee.x, this.coffee.y) < 55) {
       this.hasCoffee = true; this.coffee.setVisible(false); this.demandSatisfied = true;
+      if (this.level === 1) this.playSfx("coffee");
       this.demandText.setText(this.level === 1 ? "UNION DEMAND: COFFEE BREAK APPROVED ✓" : "FUSE RECOVERED ✓  //  ALIGN LANTERN LEFT");
       this.say(this.level === 1 ? "SHADOW: 'Acceptable. I will consider doing my job.'" : "FUSE SECURED. THE LANTERN MUST BE MOVED LEFT.");
       this.refreshShadow(); return;
@@ -791,20 +804,26 @@ class GameScene extends Phaser.Scene {
     if (Phaser.Math.Distance.Between(px, this.player.y, this.lanternX, 438) < 72) {
       const direction = px < this.lanternX ? 1 : -1;
       this.lanternX = Phaser.Math.Clamp(this.lanternX + direction * 45, this.lanternMin, this.lanternMax);
-      this.lantern.setX(this.lanternX); this.say("LANTERN REPOSITIONED. SHADOW ROUTE UPDATED."); this.refreshShadow(); return;
+      this.lantern.setX(this.lanternX);
+      if (this.level === 1) this.playSfx("lantern");
+      this.tweens.add({ targets: this.lantern, y: 432, duration: 90, yoyo: true, ease: "Sine.out" });
+      this.say("LANTERN REPOSITIONED. SHADOW ROUTE UPDATED."); this.refreshShadow(); return;
     }
     if (Phaser.Math.Distance.Between(px, this.player.y, this.switchObject.x, this.switchObject.y) < 65) {
       if (!this.demandSatisfied) {
+        if (this.level === 1) this.playSfx("deny");
         this.say(this.level === 1 ? "GET THE SHADOW ITS COFFEE FIRST." : "RECOVER THE FUSE FIRST.");
         return;
       }
       const aligned = this.level === 1 ? this.lanternX >= 350 : this.lanternX <= 245;
       if (!aligned) {
+        if (this.level === 1) this.playSfx("deny");
         this.say(this.level === 1 ? "LANTERN MISALIGNED. MOVE IT RIGHT." : "LANTERN MISALIGNED. MOVE IT LEFT INTO THE GREEN ZONE.");
         return;
       }
       if (!this.switchOn) {
         this.switchOn = true;
+        if (this.level === 1) this.playSfx("switch");
         const switchArt = this.switchObject.getAt(0) as Phaser.GameObjects.Graphics;
         switchArt.clear();
         const color = this.level === 2 ? 0xf4b860 : 0xf39a45;
@@ -1087,11 +1106,49 @@ class GameScene extends Phaser.Scene {
     });
   }
 
+  private playSfx(kind: "step" | "jump" | "land" | "coffee" | "lantern" | "deny" | "switch" | "gate" | "rip"): void {
+    // Tiny synthesized effects keep Shift 01 self-contained: no downloads, audio files, or external services.
+    try {
+      const AudioContextCtor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextCtor) return;
+      if (!this.audioContext) this.audioContext = new AudioContextCtor();
+      const ctx = this.audioContext;
+      if (ctx.state === "suspended") void ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+      const tone = (frequency: number, duration: number, type: OscillatorType, volume: number, endFrequency = frequency, delay = 0) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(Math.max(30, frequency), now + delay);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(30, endFrequency), now + delay + duration);
+        gain.gain.setValueAtTime(0.0001, now + delay);
+        gain.gain.exponentialRampToValueAtTime(volume, now + delay + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + duration);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now + delay); osc.stop(now + delay + duration + 0.025);
+      };
+      switch (kind) {
+        case "step": tone(105, 0.055, "triangle", 0.035, 68); break;
+        case "jump": tone(180, 0.16, "triangle", 0.075, 340); break;
+        case "land": tone(92, 0.12, "sine", 0.09, 48); tone(58, 0.09, "triangle", 0.035, 42, 0.015); break;
+        case "coffee": tone(440, 0.13, "sine", 0.07, 620); tone(660, 0.22, "sine", 0.06, 880, 0.11); break;
+        case "lantern": tone(520, 0.09, "sine", 0.05, 390); tone(780, 0.16, "triangle", 0.035, 1040, 0.06); break;
+        case "deny": tone(165, 0.19, "square", 0.035, 105); break;
+        case "switch": tone(220, 0.2, "triangle", 0.07, 440); tone(440, 0.28, "sine", 0.07, 880, 0.12); break;
+        case "gate": tone(120, 0.45, "sawtooth", 0.035, 52); tone(360, 0.35, "sine", 0.045, 680, 0.12); break;
+        case "rip": tone(520, 0.48, "sawtooth", 0.04, 72); tone(160, 0.7, "triangle", 0.06, 42, 0.08); tone(740, 0.22, "sine", 0.04, 220, 0.2); break;
+      }
+    } catch {
+      // Audio is an enhancement only; blocked browser audio must never break gameplay.
+    }
+  }
+
   private isAtExit(): boolean { return Phaser.Math.Distance.Between(this.player.x,this.player.y,this.gate.x,this.gate.y)<78; }
   private handleExitEnter(): void { if(this.level===1){this.transitionToShiftTwo();return;}this.won=true;this.showWin(); }
   private transitionToShiftTwo(): void {
     if (this.transitioning) return;
     this.transitioning = true;
+    this.playSfx("gate");
 
     // Freeze the room and push the camera toward the activated exit before the
     // world tears open. The tear is screen-space, so it stays clean while the
@@ -1099,6 +1156,7 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.stopFollow();
     this.cameras.main.shake(240, 0.0035);
     this.cameras.main.flash(180, 244, 184, 107, false);
+    this.time.delayedCall(390, () => this.playSfx("rip"));
     this.tweens.add({
       targets: this.cameras.main,
       zoom: 1.12,
@@ -1191,19 +1249,19 @@ class GameScene extends Phaser.Scene {
       targets: cover, alpha: 0.78, duration: 360, ease: "Cubic.in"
     });
     this.tweens.add({
-      targets: rip, alpha: 1, scaleX: 1.45, duration: 690, delay: 180,
+      targets: rip, alpha: 1, scaleX: 1.45, duration: 820, delay: 180,
       ease: "Cubic.inOut"
     });
     this.tweens.add({
       targets: [title, sub], alpha: 1, y: "-=5",
-      duration: 380, delay: 590, ease: "Cubic.out"
+      duration: 460, delay: 690, ease: "Cubic.out"
     });
     this.tweens.add({
-      targets: [title, sub], alpha: 0, duration: 180, delay: 1330,
+      targets: [title, sub], alpha: 0, duration: 260, delay: 1650,
       ease: "Cubic.in"
     });
     this.tweens.add({
-      targets: cover, alpha: 1, duration: 340, delay: 1420, ease: "Cubic.in",
+      targets: cover, alpha: 1, duration: 420, delay: 1780, ease: "Cubic.in",
       onComplete: () => { window.location.href = "./shift-02-3d.html"; }
     });
   }
