@@ -490,6 +490,102 @@ function buildEnvironment(): void {
 }
 buildEnvironment();
 
+// Purposeful set dressing: live telemetry displays and slow ceiling rotors give
+// the foundry scale, motion, and evidence of an automated facility at work.
+const maintenanceFans: THREE.Group[] = [];
+function buildMaintenanceSetDressing(): void {
+  const screenPalette = ["#8fffd0", "#d9a7ff", "#ffc58c", "#8bd9ff"];
+  for (const side of [-1, 1]) {
+    for (const [index, z] of [8, 1, -9, -15].entries()) {
+      const housing = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.02, 1.55), materials.dark);
+      housing.position.set(side * 7.38, 2.82, z);
+      housing.castShadow = true;
+      scene.add(housing);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 256;
+      const context = canvas.getContext("2d");
+      const accent = screenPalette[(index + (side === 1 ? 0 : 1)) % screenPalette.length];
+      if (context) {
+        context.fillStyle = "#08111b";
+        context.fillRect(0, 0, 512, 256);
+        context.fillStyle = accent;
+        context.globalAlpha = 0.9;
+        context.fillRect(22, 22, 72, 5);
+        context.font = "bold 24px monospace";
+        context.fillText(["CORE TEMP", "PRESSURE", "OXYGEN", "RELAY BUS"][(index + (side === 1 ? 0 : 2)) % 4], 22, 58);
+        context.globalAlpha = 0.48;
+        for (let row = 0; row < 4; row++) {
+          context.fillStyle = accent;
+          context.fillRect(22, 82 + row * 31, 145 + ((index * 53 + row * 37) % 210), 7);
+          context.fillStyle = "#334052";
+          context.fillRect(190, 82 + row * 31, 285, 7);
+        }
+        context.globalAlpha = 0.95;
+        context.strokeStyle = accent;
+        context.lineWidth = 3;
+        context.beginPath();
+        for (let x = 0; x < 430; x += 10) {
+          const y = 204 + Math.sin((x + index * 31 + side * 13) * 0.035) * 18 + Math.sin(x * 0.12) * 5;
+          if (x === 0) context.moveTo(22 + x, y);
+          else context.lineTo(22 + x, y);
+        }
+        context.stroke();
+        context.globalAlpha = 1;
+        context.fillStyle = "#e9f6ff";
+        context.font = "18px monospace";
+        context.fillText("SYS // " + String(index + 14).padStart(2, "0") + "  ONLINE", 22, 242);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const displayMaterial = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false });
+      const display = new THREE.Mesh(new THREE.PlaneGeometry(1.18, 0.59), displayMaterial);
+      display.position.set(side * 7.285, 2.82, z);
+      display.rotation.y = side === 1 ? -Math.PI / 2 : Math.PI / 2;
+      scene.add(display);
+
+      for (let i = 0; i < 3; i++) {
+        const status = new THREE.Mesh(
+          new THREE.SphereGeometry(0.035, 8, 8),
+          new THREE.MeshBasicMaterial({ color: i === 0 ? accent : i === 1 ? "#ffbf78" : "#4c6178" })
+        );
+        status.position.set(side * 7.27, 2.28, z - 0.3 + i * 0.3);
+        scene.add(status);
+      }
+    }
+  }
+
+  for (const z of [7, -2, -11, -20]) {
+    const fan = new THREE.Group();
+    fan.name = "maintenance-fan";
+    fan.position.set(0, 4.12, z);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.66, 0.065, 8, 28), materials.copper);
+    rim.rotation.x = Math.PI / 2;
+    fan.add(rim);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.23, 0.18, 12), materials.dark);
+    hub.position.y = 0.06;
+    fan.add(hub);
+    const hubLight = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 10, 10),
+      new THREE.MeshBasicMaterial({ color: "#ffc58c" })
+    );
+    hubLight.position.y = 0.17;
+    fan.add(hubLight);
+    for (let bladeIndex = 0; bladeIndex < 4; bladeIndex++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.055, 0.96), materials.ceramic);
+      blade.position.y = 0.035;
+      blade.rotation.y = bladeIndex * Math.PI / 2;
+      blade.position.x = Math.sin(blade.rotation.y) * 0.22;
+      blade.position.z = Math.cos(blade.rotation.y) * 0.22;
+      fan.add(blade);
+    }
+    scene.add(fan);
+    maintenanceFans.push(fan);
+  }
+}
+buildMaintenanceSetDressing();
+
 // A readable exit landmark: a high-contrast EXIT sign, illuminated door jambs,
 // and floor chevrons create a clear visual route to the bulkhead from the relay room.
 const exitMint = new THREE.MeshStandardMaterial({
