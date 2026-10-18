@@ -14,6 +14,12 @@ type RegistryTerminal = {
   chosen: number;
   solved: boolean;
   hint: string;
+  followUpPrompt: string;
+  followUpOptions: string[];
+  followUpAnswer: number;
+  followUpChosen: number;
+  followUpHint: string;
+  phase: number;
 };
 
 export class ShiftFourScene extends Phaser.Scene {
@@ -84,9 +90,9 @@ export class ShiftFourScene extends Phaser.Scene {
   create(): void {
     this.playerVx = 0; this.playerVy = 0; this.grounded = false;
     this.terminals = [
-      { x: 335, title: "EMPLOYEE REGISTRY", prompt: "RECONCILE THE DRONE ROUTE WITH THE SHIFT LOG", options: ["CORRIDOR A", "CORRIDOR B", "EXECUTIVE OFFICE", "UNLISTED FLOOR"], answer: 1, chosen: 0, solved: false, hint: "Evidence: the 09:14 service ticket is stamped with two amber marks. The security feed shows the drone leaving the corridor whose conduit has two amber bands." },
-      { x: 790, title: "DEPARTMENT DIRECTORY", prompt: "ASSIGN A FUNCTION TO THE UNLISTED CORRIDOR", options: ["ARCHIVE STORAGE", "POWER CONTROL", "EXIT ACCESS", "EMPLOYEE INTAKE"], answer: 1, chosen: 0, solved: false, hint: "Evidence: the corridor has no door handle, but a low-frequency hum and paired copper lines run behind its wall. Match the infrastructure to the department that would need it." },
-      { x: 1245, title: "SHADOW ASSIGNMENT", prompt: "DETERMINE THE LEGAL OWNER OF A SHADOW", options: ["COMPANY PROPERTY", "UNASSIGNED ASSET", "SELF-OWNED", "EXECUTIVE PROPERTY"], answer: 2, chosen: 0, solved: false, hint: "Evidence: the oldest charter predates the company seal. Its margin note says the employee remains whole even when the light is removed." }
+      { x: 335, title: "EMPLOYEE REGISTRY", prompt: "RECONCILE THE DRONE ROUTE WITH THE SHIFT LOG", options: ["CORRIDOR A", "CORRIDOR B", "EXECUTIVE OFFICE", "UNLISTED FLOOR"], answer: 1, chosen: 0, solved: false, phase: 0, hint: "EVIDENCE A: the 09:14 service ticket has two amber marks. The security feed shows the drone leaving the corridor whose conduit has two amber bands.", followUpPrompt: "MATCH THE ONLY LOG ENTRY THAT FITS THE ROUTE CHANGE", followUpOptions: ["09:14 / CORRIDOR B / DOUBLE AMBER", "09:41 / EXECUTIVE / RED SEAL", "09:14 / CORRIDOR A / SINGLE AMBER", "17:14 / UNLISTED / NO MARK"], followUpAnswer: 0, followUpChosen: 0, followUpHint: "EVIDENCE B: the entry must agree on time, route code, and maintenance mark. One mismatch invalidates the whole record." },
+      { x: 790, title: "DEPARTMENT DIRECTORY", prompt: "ASSIGN A FUNCTION TO THE UNLISTED CORRIDOR", options: ["ARCHIVE STORAGE", "POWER CONTROL", "EXIT ACCESS", "EMPLOYEE INTAKE"], answer: 1, chosen: 0, solved: false, phase: 0, hint: "EVIDENCE A: a steady low-frequency hum and paired copper runs pass behind the wall. There is no door handle, fibre light, or pressure vent.", followUpPrompt: "IDENTIFY THE INFRASTRUCTURE SIGNATURE", followUpOptions: ["PAIRED COPPER / 60 HZ HUM", "FIBRE TRUNK / OPTICAL PULSE", "VENT DUCT / PRESSURE CYCLE", "EMPTY CONDUIT / NO SIGNAL"], followUpAnswer: 0, followUpChosen: 0, followUpHint: "EVIDENCE B: classify the corridor by the physical service it carries. Airflow, optical data, and an electrical feed leave different signatures." },
+      { x: 1245, title: "SHADOW ASSIGNMENT", prompt: "DETERMINE THE LEGAL OWNER OF A SHADOW", options: ["COMPANY PROPERTY", "UNASSIGNED ASSET", "SELF-OWNED", "EXECUTIVE PROPERTY"], answer: 2, chosen: 0, solved: false, phase: 0, hint: "EVIDENCE A: the oldest charter predates the company seal. Its margin says an employee remains whole even when the light is removed.", followUpPrompt: "CITE THE DOCUMENT WITH LEGAL PRECEDENCE", followUpOptions: ["UNION CHARTER", "ASSET LEDGER", "EXECUTIVE ORDER", "PURCHASE RECEIPT"], followUpAnswer: 0, followUpChosen: 0, followUpHint: "EVIDENCE B: the source must predate the equipment policy and define employee status, not merely list company-owned objects." }
     ];
     this.activeTerminal = -1; this.eWasDown = false; this.aWasDown = false; this.dWasDown = false; this.rWasDown = false; this.enterWasDown = false;
     this.won = false; this.dead = false; this.stage = 0; this.panelOpen = false; this.shadowClaimed = false; this.secretFound = false; this.endingMode = false; this.endingChoice = 0;
@@ -525,10 +531,13 @@ export class ShiftFourScene extends Phaser.Scene {
   private panelOpenView(): void {
     const t = this.terminals[this.activeTerminal];
     this.interactionPanel.setVisible(true);
-    this.panelTitle.setText(t.title);
-    this.panelPrompt.setText(t.prompt);
-    this.panelChoice.setText("◀   " + t.options[t.chosen] + "   ▶");
-    this.panelHint.setText("EVIDENCE DOSSIER // " + t.hint + "\nA/D CHANGE RECORD    E FILE CHANGE    R CLOSE");
+    this.panelTitle.setText(t.title + "  //  ASSIGNMENT " + (t.phase + 1) + "/2");
+    this.panelPrompt.setText(t.phase === 0 ? t.prompt : t.followUpPrompt);
+    const options = t.phase === 0 ? t.options : t.followUpOptions;
+    const chosen = t.phase === 0 ? t.chosen : t.followUpChosen;
+    this.panelChoice.setText("◀   " + options[chosen] + "   ▶");
+    const clue = t.phase === 0 ? t.hint : t.followUpHint;
+    this.panelHint.setText("EVIDENCE DOSSIER // " + clue + "\nA/D CHANGE RECORD    E SUBMIT    R CLOSE");
   }
 
   private updateInteractionPanel(): void {
@@ -536,23 +545,43 @@ export class ShiftFourScene extends Phaser.Scene {
     const a = this.keys.A.isDown;
     const d = this.keys.D.isDown;
     const e = this.keys.E.isDown;
-    if (a && !this.aWasDown) { t.chosen = (t.chosen + t.options.length - 1) % t.options.length; this.panelChoice.setText("◀   " + t.options[t.chosen] + "   ▶"); }
-    if (d && !this.dWasDown) { t.chosen = (t.chosen + 1) % t.options.length; this.panelChoice.setText("◀   " + t.options[t.chosen] + "   ▶"); }
+    const options = t.phase === 0 ? t.options : t.followUpOptions;
+    let chosen = t.phase === 0 ? t.chosen : t.followUpChosen;
+    if (a && !this.aWasDown) chosen = (chosen + options.length - 1) % options.length;
+    if (d && !this.dWasDown) chosen = (chosen + 1) % options.length;
+    if (t.phase === 0) t.chosen = chosen; else t.followUpChosen = chosen;
+    this.panelChoice.setText("◀   " + options[chosen] + "   ▶");
+
     if (e && !this.eWasDown) {
-      if (t.chosen === t.answer) {
-        t.solved = true; this.panelOpen = false; this.interactionPanel.setVisible(false);
+      const correct = chosen === (t.phase === 0 ? t.answer : t.followUpAnswer);
+      if (!correct) {
+        const clue = t.phase === 0 ? t.hint : t.followUpHint;
+        this.panelHint.setText("CONTRADICTION FLAGGED. THE RECORD DOES NOT RECONCILE.\n" + clue + "\nA/D CHANGE RECORD    E SUBMIT    R CLOSE");
+        this.cameras.main.shake(120, 0.0022);
+        this.cameras.main.flash(90, 255, 83, 105);
+      } else if (t.phase === 0) {
+        t.phase = 1;
+        this.panelTitle.setText(t.title + "  //  ASSIGNMENT 2/2");
+        this.panelPrompt.setText(t.followUpPrompt);
+        this.panelChoice.setText("◀   " + t.followUpOptions[t.followUpChosen] + "   ▶");
+        this.panelHint.setText("CROSS-CHECK THE SUPPORTING LEDGER.\n" + t.followUpHint + "\nA/D CHANGE RECORD    E SUBMIT    R CLOSE");
+        this.cameras.main.flash(100, 114, 216, 187);
+        this.say("PRIMARY CLASSIFICATION ACCEPTED. NOW RECONCILE THE SUPPORTING EVIDENCE.");
+      } else {
+        t.solved = true;
+        this.panelOpen = false;
+        this.interactionPanel.setVisible(false);
         this.stage = this.terminals.filter(item => item.solved).length;
         this.updateProgress();
         this.cameras.main.flash(180, 114, 216, 187);
-        this.cameras.main.shake(120, 0.0015);
-        this.say(t.title + " // CHANGE ACCEPTED. THE BUILDING MUST OBEY THE RECORD.");
-      } else {
-        this.panelHint.setText("CONTRADICTION FLAGGED. REVIEW THE EVIDENCE, THEN REVISE THE ASSIGNMENT.\n" + t.hint + "\nA/D CHANGE RECORD    E FILE CHANGE    R CLOSE");
-        this.cameras.main.shake(100, 0.002);
+        this.cameras.main.shake(140, 0.0015);
+        this.say(t.title + " // BOTH RECORDS RECONCILED. CHANGE ACCEPTED.");
       }
     }
     if (this.keys.R.isDown && !this.rWasDown) { this.panelOpen = false; this.interactionPanel.setVisible(false); }
-    this.aWasDown = a; this.dWasDown = d; this.eWasDown = e;
+    this.aWasDown = a;
+    this.dWasDown = d;
+    this.eWasDown = e;
     this.rWasDown = this.keys.R.isDown;
   }
 
