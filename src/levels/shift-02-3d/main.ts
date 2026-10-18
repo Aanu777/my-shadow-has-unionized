@@ -259,7 +259,8 @@ function buildEnvironment(): void {
   // objects (not a floating UI card); keep it above the player spawn sightline.
   const entryStation = new THREE.Group();
   entryStation.name = "entry-maintenance-station";
-  entryStation.position.set(0, 2.72, 12.78);
+  entryStation.position.set(-7.48, 2.72, 7.2);
+  entryStation.rotation.y = -Math.PI / 2;
   scene.add(entryStation);
 
   box(entryStation, 0, 0, 0, 3.9, 1.75, 0.22, materials.dark);
