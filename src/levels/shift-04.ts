@@ -134,6 +134,9 @@ export class ShiftFourScene extends Phaser.Scene {
     if (this.introActive) return;
     const dt = Math.min(delta / 1000, 0.033);
     this.dashCooldown = Math.max(0, this.dashCooldown - dt); this.pulseCooldown = Math.max(0, this.pulseCooldown - dt); this.dashInvulnerable = Math.max(0, this.dashInvulnerable - dt);
+    // Modal panels own the controls; freeze movement so A/D only changes the assignment.
+    if (this.panelOpen) { this.updateInteractionPanel(); return; }
+    if (this.endingMode) { this.updateEndingPanel(); return; }
     const left = this.cursors.left.isDown || this.keys.A.isDown;
     const right = this.cursors.right.isDown || this.keys.D.isDown;
     const target = left === right ? 0 : left ? -230 : 230;
@@ -170,14 +173,6 @@ export class ShiftFourScene extends Phaser.Scene {
       if (this.bossActive) { this.bossTrigger.setAlpha(0.12); this.bossPrompt.setAlpha(0); }
     }
 
-    if (this.panelOpen) {
-      this.updateInteractionPanel();
-      return;
-    }
-    if (this.endingMode) {
-      this.updateEndingPanel();
-      return;
-    }
     const e = this.keys.E.isDown;
     if (e && !this.eWasDown) this.interact();
     this.eWasDown = e;
