@@ -144,7 +144,7 @@ export class ShiftFourScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (this.won) {
-      if (Phaser.Input.Keyboard.JustDown(this.keys.R)) window.location.href = "./index.html";
+      if (Phaser.Input.Keyboard.JustDown(this.keys.R) || Phaser.Input.Keyboard.JustDown(this.keys.ENTER)) window.location.href = "./index.html";
       return;
     }
     if (this.dead) {
