@@ -1072,8 +1072,10 @@ function animate(): void {
     }
     playerEyeY = eyeY;
     const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
+    const bobFrequency = THREE.MathUtils.lerp(9.8, 13.2, sprintBlend);
+    const bobAmplitude = THREE.MathUtils.lerp(0.025, 0.045, sprintBlend);
     const bobTarget = grounded && horizontalSpeed > 0.18
-      ? Math.sin(t * (sprinting ? 13.2 : 9.8)) * Math.min(sprinting ? 0.045 : 0.025, horizontalSpeed * 0.006)
+      ? Math.sin(t * bobFrequency) * Math.min(bobAmplitude, horizontalSpeed * 0.006)
       : 0;
     cameraBob = THREE.MathUtils.damp(cameraBob, bobTarget, 13, delta);
     camera.position.y = playerEyeY + cameraBob;
