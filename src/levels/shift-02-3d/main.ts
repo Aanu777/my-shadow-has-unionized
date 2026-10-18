@@ -329,6 +329,50 @@ function buildEnvironment(): void {
   entryStatusLight.position.set(0, 0.25, -0.45);
   entryStation.add(entryStatusLight);
 
+  // Environmental clue plate near the entry: it nudges players toward observing
+  // the signal flow without printing the relay order or giving away the solution.
+  const cluePlate = new THREE.Group();
+  cluePlate.name = "signal-maintenance-clue";
+  cluePlate.position.set(-7.48, 2.15, -2.9);
+  cluePlate.rotation.y = -Math.PI / 2;
+  scene.add(cluePlate);
+  box(cluePlate, 0, 0, 0, 2.7, 1.18, 0.16, materials.dark);
+  box(cluePlate, 0, 0, -0.095, 2.5, 0.98, 0.045, materials.copper);
+  const clueCanvas = document.createElement("canvas");
+  clueCanvas.width = 640;
+  clueCanvas.height = 250;
+  const clueContext = clueCanvas.getContext("2d");
+  if (clueContext) {
+    clueContext.fillStyle = "#10101b";
+    clueContext.fillRect(0, 0, 640, 250);
+    clueContext.strokeStyle = "#71618f";
+    clueContext.lineWidth = 3;
+    clueContext.strokeRect(10, 10, 620, 230);
+    clueContext.fillStyle = "#e7a76c";
+    clueContext.font = "bold 25px monospace";
+    clueContext.fillText("MAINTENANCE NOTE // 04", 28, 48);
+    clueContext.fillStyle = "#b9b5ca";
+    clueContext.font = "21px monospace";
+    clueContext.fillText("Signals travel in short bursts.", 28, 98);
+    clueContext.fillText("Watch where each packet goes.", 28, 136);
+    clueContext.fillText("The archive only holds so much.", 28, 174);
+    clueContext.fillStyle = "#8fffd0";
+    clueContext.fillRect(28, 202, 72, 5);
+    clueContext.fillRect(108, 202, 30, 5);
+    clueContext.fillRect(146, 202, 48, 5);
+  }
+  const clueTexture = new THREE.CanvasTexture(clueCanvas);
+  clueTexture.colorSpace = THREE.SRGBColorSpace;
+  const clueScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.34, 0.91),
+    new THREE.MeshBasicMaterial({ map: clueTexture, toneMapped: false })
+  );
+  clueScreen.position.set(0, 0, -0.124);
+  cluePlate.add(clueScreen);
+  const clueLamp = new THREE.PointLight("#e7a76c", 1.1, 3.2, 2);
+  clueLamp.position.set(0, 0.62, -0.24);
+  cluePlate.add(clueLamp);
+
   // Side walls are layered panel systems, not monolithic corridor cubes.
   for (const side of [-1, 1]) {
     for (let panelIndex = 0, z = 13; z >= -23; z -= 3, panelIndex++) {
