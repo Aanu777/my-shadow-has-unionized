@@ -92,3 +92,20 @@ button:hover::after{transform:translateX(110%)}
 @keyframes transit-scan{from{background-position:0 0}to{background-position:0 16px}}
 @keyframes transit-title-in{from{opacity:0;transform:translateY(14px);filter:blur(8px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
 @media(prefers-reduced-motion:reduce){.transit-screen::before,.transit-noise,.transit-active .transit-progress span,.transit-active .transit-title{animation-duration:.01ms!important}}
+
+
+/* Shift 02 professional objective telemetry */
+.sequence-label{display:flex;justify-content:space-between;align-items:center;margin-top:8px;color:#a79bb5;font-size:8px;letter-spacing:.13em}
+.sequence-label span{color:#7e738c;font-size:7px}
+.sequence-track{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-top:2px}
+.sequence-beat{position:relative;display:flex;align-items:center;justify-content:center;min-height:35px;border:1px solid rgba(210,197,226,.16);background:rgba(8,7,15,.52);color:#bcb1ce;font-size:17px;transition:background .2s,border-color .2s,color .2s,transform .2s}
+.sequence-beat i{position:absolute;right:4px;bottom:3px;font-size:6px;font-style:normal;letter-spacing:.05em;color:#746b80}
+.sequence-beat.current{border-color:rgba(230,166,106,.75);color:#ffd5a6;background:rgba(153,91,45,.17);box-shadow:inset 0 0 14px rgba(230,166,106,.07)}
+.sequence-beat.completed{border-color:rgba(117,255,196,.4);color:#9effcf;background:rgba(43,130,95,.15)}
+.sequence-beat.completed i{color:#6aa98c}
+.sequence-track.sequence-complete .sequence-beat{border-color:rgba(117,255,196,.42);color:#9effcf}
+#shift-3d-app.target-acquired .crosshair{transform:translate(-50%,-50%) scale(1.24);filter:drop-shadow(0 0 7px rgba(158,255,207,.8))}
+#shift-3d-app.target-acquired .crosshair i,#shift-3d-app.target-acquired .crosshair b{background:#9effcf}
+.interaction{transition:color .18s,border-color .18s,background .18s}
+#shift-3d-app.target-acquired .interaction{color:#a4ffd2;border-color:rgba(117,255,196,.38);background:linear-gradient(90deg,transparent,rgba(8,28,22,.72),transparent)}
+@media(max-width:700px){.sequence-beat{min-height:30px;font-size:15px}.sequence-label{margin-top:6px}}
