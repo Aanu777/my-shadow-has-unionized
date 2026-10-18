@@ -1128,6 +1128,9 @@ function animate(): void {
   if (distantPlanet) distantPlanet.rotation.y += delta * 0.035;
   const planetRim = scene.getObjectByName("planet-rim");
   if (planetRim) planetRim.rotation.z += delta * 0.025;
+  maintenanceFans.forEach((fan, index) => {
+    fan.rotation.y += delta * (index % 2 === 0 ? 1.25 : -0.92);
+  });
   const exitSign = scene.getObjectByName("exit-sign");
   if (exitSign) {
     const pulse = 0.88 + (Math.sin(t * 2.6) + 1) * 0.12;
