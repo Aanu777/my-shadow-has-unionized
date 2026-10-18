@@ -187,7 +187,7 @@ class GameScene extends Phaser.Scene {
       fontFamily: "monospace", fontSize: "10px", color: "#ffdfa0", fontStyle: "bold", letterSpacing: 1
     }).setOrigin(0.5);
     this.interactionPrompt.add([promptPlate, this.interactionPromptText]);
-    this.objectiveProgress = this.add.text(28, 101, "", {
+    this.objectiveProgress = this.add.text(28, 121, "", {
       fontFamily: "monospace", fontSize: "9px", color: "#9f8caf", letterSpacing: 1
     }).setDepth(8).setScrollFactor(0);
 
