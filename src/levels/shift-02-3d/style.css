@@ -109,3 +109,14 @@ button:hover::after{transform:translateX(110%)}
 .interaction{transition:color .18s,border-color .18s,background .18s}
 #shift-3d-app.target-acquired .interaction{color:#a4ffd2;border-color:rgba(117,255,196,.38);background:linear-gradient(90deg,transparent,rgba(8,28,22,.72),transparent)}
 @media(max-width:700px){.sequence-beat{min-height:30px;font-size:15px}.sequence-label{margin-top:6px}}
+
+
+/* Shift 02 feel pass: restrained telemetry motion, readable focus, clear power-state change. */
+.sequence-beat.current{animation:relay-beat-breathe 1.8s ease-in-out infinite}
+.sequence-track.sequence-complete .sequence-beat{background:rgba(43,130,95,.12);box-shadow:inset 0 0 12px rgba(117,255,196,.045)}
+#shift-3d-app.target-acquired .interaction{text-shadow:0 0 18px rgba(117,255,196,.32),0 1px 12px #000}
+.hud.active .objective{animation:objective-arrive .42s cubic-bezier(.2,.8,.2,1) both}
+#game-view canvas{outline:none}
+@keyframes relay-beat-breathe{0%,100%{box-shadow:inset 0 0 14px rgba(230,166,106,.06)}50%{box-shadow:inset 0 0 22px rgba(230,166,106,.19)}}
+@keyframes objective-arrive{from{opacity:0;transform:translate(-8px,-50%)}to{opacity:1;transform:translate(0,-50%)}}
+@media(prefers-reduced-motion:reduce){.sequence-beat.current,.hud.active .objective{animation:none!important}}
