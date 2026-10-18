@@ -54,6 +54,17 @@ export class ShiftFourScene extends Phaser.Scene {
   private finalTitle!: Phaser.GameObjects.Text;
   private finalChoice!: Phaser.GameObjects.Text;
   private finalHint!: Phaser.GameObjects.Text;
+  private introActive = true;
+  private dashCooldown = 0;
+  private pulseCooldown = 0;
+  private bossActive = false;
+  private bossHealth = 3;
+  private boss!: Phaser.GameObjects.Container;
+  private bossCore!: Phaser.GameObjects.Arc;
+  private bossBar!: Phaser.GameObjects.Rectangle;
+  private bossWave!: Phaser.GameObjects.Rectangle;
+  private bossTimer = 1.6;
+  private portal!: Phaser.GameObjects.Container;
 
   constructor() { super("ShiftFourScene"); }
 
@@ -76,9 +87,11 @@ export class ShiftFourScene extends Phaser.Scene {
     this.createHud();
     this.createInteractionPanel();
     this.createFinalPanel();
+    this.createBoss();
+    this.playEntrance();
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
-      this.keys = this.input.keyboard.addKeys("A,D,E,R,ENTER") as Record<string, Phaser.Input.Keyboard.Key>;
+      this.keys = this.input.keyboard.addKeys("A,D,E,R,ENTER,F,Q") as Record<string, Phaser.Input.Keyboard.Key>;
       this.input.keyboard.on("keydown", (event: KeyboardEvent) => {
         if (event.code === "Space" || event.code.startsWith("Arrow")) event.preventDefault();
       });
@@ -98,11 +111,15 @@ export class ShiftFourScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.scene.restart();
       return;
     }
+    if (this.introActive) return;
     const dt = Math.min(delta / 1000, 0.033);
+    this.dashCooldown = Math.max(0, this.dashCooldown - dt); this.pulseCooldown = Math.max(0, this.pulseCooldown - dt);
     const left = this.cursors.left.isDown || this.keys.A.isDown;
     const right = this.cursors.right.isDown || this.keys.D.isDown;
     const target = left === right ? 0 : left ? -230 : 230;
     this.playerVx = Phaser.Math.Linear(this.playerVx, target, Math.min(1, dt * (target === 0 ? 14 : 19)));
+    if (Phaser.Input.Keyboard.JustDown(this.keys.Q) && this.dashCooldown <= 0 && !this.panelOpen && !this.endingMode) { this.playerVx = (this.player.scaleX < 0 ? -1 : 1) * 560; this.dashCooldown = 1.05; this.player.setAlpha(0.5); this.tweens.add({ targets: this.player, alpha: 1, duration: 230 }); this.cameras.main.shake(80, 0.0015); }
+    if (Phaser.Input.Keyboard.JustDown(this.keys.F) && this.pulseCooldown <= 0 && !this.panelOpen && !this.endingMode) this.shadowPulse();
     const jump = Phaser.Input.Keyboard.JustDown(this.cursors.space) || Phaser.Input.Keyboard.JustDown(this.cursors.up);
     if (jump && this.grounded) { this.playerVy = -445; this.grounded = false; }
     this.playerVy += 1050 * dt;
@@ -124,6 +141,7 @@ export class ShiftFourScene extends Phaser.Scene {
       this.cameras.main.shake(100, 0.0015);
     }
     if (this.stage >= 3 && !this.shadowClaimed) this.beginShadowClaim();
+    if (this.bossActive) this.updateBoss(dt);
 
     if (this.panelOpen) {
       this.updateInteractionPanel();
@@ -140,7 +158,7 @@ export class ShiftFourScene extends Phaser.Scene {
     if (r && !this.rWasDown) this.scene.restart();
     this.rWasDown = r;
     const enter = this.keys.ENTER.isDown;
-    if (enter && !this.enterWasDown && this.stage >= 3 && Math.abs(this.player.x - 1640) < 110) this.openFinalPanel();
+    if (enter && !this.enterWasDown && this.stage >= 3 && Math.abs(this.player.x - 1640) < 110) this.startBoss();
     this.enterWasDown = enter;
     this.shadow.x = this.player.x - 32;
     this.shadow.y = this.player.y + 3;
@@ -325,7 +343,7 @@ export class ShiftFourScene extends Phaser.Scene {
     this.objective = this.add.text(24, 42, "OBJECTIVE: FIND YOUR FILE AND CORRECT THE REGISTRY", {
       fontFamily: "monospace", fontSize: "10px", color: "#e8d9f8"
     }).setScrollFactor(0).setDepth(40);
-    this.add.text(W - 24, 42, "A/D MOVE   SPACE JUMP   E INTERACT   R RESTART", {
+    this.add.text(W - 24, 42, "A/D MOVE   SPACE JUMP   Q DASH   F SHADOW PULSE   E INTERACT", {
       fontFamily: "monospace", fontSize: "9px", color: "#8d829c"
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(40);
     this.message = this.add.text(W / 2, H - 26, "", {
@@ -367,6 +385,8 @@ export class ShiftFourScene extends Phaser.Scene {
   }
 
   private interact(): void {
+    if(this.bossActive){this.say("THE AUDITOR IS LOCKING ON. DODGE THE RED WAVE, THEN USE F NEAR THE CORE.");return;}
+    if(this.bossHealth<=0&&Math.abs(this.player.x-this.portal.x)<85){this.openFinalPanel();return;}
     const nearby = this.terminals.findIndex(t => Math.abs(t.x - this.player.x) < 66);
     if (nearby >= 0) {
       if (this.terminals[nearby].solved) { this.say("RECORD VERIFIED. THE DEPARTMENT HAS NO RECORD OF THIS DEPARTMENT."); return; }
@@ -440,6 +460,51 @@ export class ShiftFourScene extends Phaser.Scene {
     this.shadow.setPosition(this.player.x + 100, this.player.y + 4);
     this.tweens.add({ targets: this.shadow, x: this.player.x + 35, duration: 950, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.say("SHADOW ASSIGNMENT REVOKED. YOUR SHADOW IS BEING RECLAIMED BY THE DEPARTMENT.");
+  }
+
+
+  private playEntrance(): void {
+    this.cameras.main.setZoom(1.16);
+    const bars = this.add.graphics().setScrollFactor(0).setDepth(100);
+    bars.fillStyle(0x030208, 1); bars.fillRect(0, 0, W, 82); bars.fillRect(0, H - 76, W, 76);
+    const black = this.add.rectangle(W/2,H/2,W,H,0x030208,1).setScrollFactor(0).setDepth(101);
+    const title = this.add.text(W/2,H/2-15,"THE DEPARTMENT\nTHAT DOESN'T EXIST",{fontFamily:"monospace",fontSize:"29px",color:"#f4eafa",fontStyle:"bold",align:"center",letterSpacing:2,lineSpacing:8}).setOrigin(.5).setScrollFactor(0).setDepth(102).setAlpha(0);
+    const stamp = this.add.text(W/2,H/2+70,"UNLISTED FLOOR // ACCESS GRANTED",{fontFamily:"monospace",fontSize:"10px",color:"#f4b860",letterSpacing:3}).setOrigin(.5).setScrollFactor(0).setDepth(102).setAlpha(0);
+    this.time.delayedCall(250,()=>{this.cameras.main.shake(320,.003);this.tweens.add({targets:black,alpha:0,duration:900,ease:"Cubic.inOut"});this.tweens.add({targets:title,alpha:1,scale:1.07,duration:650,ease:"Back.out",yoyo:true,hold:500,onComplete:()=>title.destroy()});this.tweens.add({targets:stamp,alpha:1,duration:260,delay:500,yoyo:true,hold:650,onComplete:()=>stamp.destroy()});});
+    this.time.delayedCall(2350,()=>{this.tweens.add({targets:bars,alpha:0,duration:500,onComplete:()=>bars.destroy()});this.tweens.add({targets:black,alpha:0,duration:300,onComplete:()=>black.destroy()});this.tweens.add({targets:this.cameras.main,zoom:1,duration:650,ease:"Cubic.out"});this.introActive=false;this.say("FIND THE THREE RECORDS. THE AUDITOR HAS ALREADY OPENED YOUR CASE.");});
+  }
+
+  private createBoss(): void {
+    this.boss=this.add.container(1735,350).setDepth(15).setVisible(false);
+    const g=this.add.graphics();g.fillStyle(0x05040a,.9);g.fillEllipse(0,112,165,22);g.fillStyle(0x100c18,1);g.fillTriangle(-48,-55,48,-55,76,100);g.fillStyle(0x39243e,1);g.fillTriangle(-36,-50,36,-50,56,84);g.fillStyle(0x08070d,1);g.fillRect(-32,-108,64,58);g.fillStyle(0x26152b,1);g.fillRect(-25,-100,50,43);g.lineStyle(2,0xff5369,1);g.strokeRect(-25,-100,50,43);g.fillStyle(0xff5369,1);g.fillRect(-18,-82,36,4);g.fillStyle(0xf4b860,1);g.fillRect(-6,-68,12,3);g.fillStyle(0x090811,1);g.fillRect(-58,-34,14,108);g.fillRect(44,-34,14,108);g.fillStyle(0x80658b,1);g.fillRect(-54,-30,3,95);g.fillRect(48,-30,3,95);this.boss.add(g);
+    this.bossCore=this.add.circle(1735,282,13,0xff5369,1).setDepth(16).setVisible(false);this.tweens.add({targets:this.bossCore,scale:{from:.8,to:1.35},alpha:{from:.6,to:1},duration:420,yoyo:true,repeat:-1});
+    this.bossBar=this.add.rectangle(W/2,85,270,10,0xff5369,1).setOrigin(.5).setScrollFactor(0).setDepth(96).setVisible(false);
+    this.add.rectangle(W/2,85,278,16,0x17101d,.95).setScrollFactor(0).setDepth(95);
+    this.bossWave=this.add.rectangle(1450,FLOOR-18,190,25,0xff5369,.85).setDepth(14).setVisible(false);
+    this.portal=this.add.container(1870,FLOOR-48).setDepth(10).setVisible(false);const p=this.add.graphics();p.lineStyle(5,0xc5a8ff,.95);p.strokeEllipse(0,0,46,84);p.lineStyle(2,0xf4b860,.9);p.strokeEllipse(0,0,30,64);p.fillStyle(0xc5a8ff,.14);p.fillEllipse(0,0,34,68);this.portal.add(p);this.tweens.add({targets:this.portal,alpha:{from:.55,to:1},scale:{from:.95,to:1.05},duration:650,yoyo:true,repeat:-1});
+  }
+
+  private shadowPulse(): void {
+    this.pulseCooldown=4.5;const ring=this.add.circle(this.player.x,this.player.y,18,0xc5a8ff,.15).setDepth(20);ring.setStrokeStyle(3,0xc5a8ff,1);this.tweens.add({targets:ring,scale:7,alpha:0,duration:420,onComplete:()=>ring.destroy()});
+    if(this.bossActive&&Math.abs(this.player.x-this.boss.x)<260){this.bossHealth--;this.bossBar.width=270*Math.max(0,this.bossHealth/3);this.boss.setAlpha(.25);this.time.delayedCall(130,()=>{if(this.bossActive)this.boss.setAlpha(1)});this.cameras.main.shake(180,.003);this.cameras.main.flash(120,197,168,255);if(this.bossHealth<=0)this.defeatBoss();else this.say("AUDITOR SEAL BROKEN. "+this.bossHealth+" REMAIN.");}
+    else {this.surveillanceBeam.setAlpha(.01);this.time.delayedCall(1100,()=>{if(this.stage>=2&&!this.bossActive)this.surveillanceBeam.setAlpha(.12)});this.say("SHADOW PULSE // SECURITY INTERRUPTED.");}
+  }
+
+  private startBoss(): void {
+    if(this.bossActive)return;if(this.stage<3){this.say("AUDIT INCOMPLETE. RESTORE ALL THREE RECORDS FIRST.");return;}
+    this.bossActive=true;this.bossHealth=3;this.boss.setVisible(true).setAlpha(0);this.bossCore.setVisible(true);this.bossBar.setVisible(true).setSize(270,10);this.boss.x=1735;this.bossWave.setVisible(false);
+    this.cameras.main.stopFollow();this.cameras.main.pan(1500,H/2,850,"Cubic.inOut");this.cameras.main.zoomTo(1.08,650);this.cameras.main.shake(260,.004);
+    this.tweens.add({targets:this.boss,alpha:1,y:335,duration:850,ease:"Back.out"});this.bossTimer=1.4;this.say("FINAL REVIEW. DODGE THE RED AUDIT WAVE WITH Q. STRIKE THE CORE WITH F.");
+  }
+
+  private updateBoss(dt:number):void {
+    this.boss.x=1735+Math.sin(this.time.now*.0012)*22;this.bossCore.setPosition(this.boss.x,this.boss.y-68);this.bossTimer-=dt;
+    if(this.bossTimer<=0){this.bossTimer=1.8-(3-this.bossHealth)*.2;this.bossWave.setPosition(this.player.x< this.boss.x?this.player.x-100:this.player.x+100,FLOOR-17).setVisible(true).setAlpha(.12);this.tweens.add({targets:this.bossWave,alpha:.95,duration:220,yoyo:true,hold:120,onComplete:()=>this.bossWave.setVisible(false)});this.cameras.main.shake(80,.0015);}
+    if(this.bossWave.visible&&Math.abs(this.player.x-this.bossWave.x)<this.bossWave.width/2&&this.player.y>FLOOR-45){this.playerVx=this.player.x<this.boss.x?-260:260;this.playerVy=-130;this.cameras.main.shake(100,.002);}
+  }
+
+  private defeatBoss():void {
+    this.bossActive=false;this.boss.setVisible(false);this.bossCore.setVisible(false);this.bossWave.setVisible(false);this.bossBar.setVisible(false);this.portal.setVisible(true).setAlpha(0);this.tweens.add({targets:this.portal,alpha:1,scale:1.12,duration:650,ease:"Back.out"});this.cameras.main.pan(this.player.x,H/2,650,"Cubic.inOut");this.cameras.main.zoomTo(1,650);this.cameras.main.startFollow(this.player,true,.1,.08);this.objective.setText("OBJECTIVE: ENTER THE PORTAL AND CHOOSE THE DEPARTMENT'S FATE");this.say("AUDITOR AUTHORITY REVOKED. ENTER THE GLOWING PORTAL TO DECIDE WHAT HAPPENS NEXT.");
   }
 
   private openFinalPanel(): void {
