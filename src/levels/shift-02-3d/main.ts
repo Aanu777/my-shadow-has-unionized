@@ -1062,7 +1062,7 @@ function nearestTarget(): { relay?: Relay; gate: boolean; easterEgg?: boolean; d
     }
   }
 
-  const secretPortPosition = new THREE.Vector3(-6.78, 1.48, -20.45);
+  const secretPortPosition = new THREE.Vector3(-7.42, 1.48, -20.45);
   const toSecretPort = secretPortPosition.clone().sub(camera.position);
   const secretPortDistance = toSecretPort.length();
   const secretPortFacing = toSecretPort.normalize().dot(lookDirection);
