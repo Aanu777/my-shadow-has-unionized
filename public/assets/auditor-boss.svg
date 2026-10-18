@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="560" viewBox="0 0 420 560">
+<defs>
+ <linearGradient id="robe" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#43334e"/><stop offset=".38" stop-color="#17121f"/><stop offset=".72" stop-color="#08070d"/><stop offset="1" stop-color="#2b1b32"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#b9a6c8"/><stop offset=".25" stop-color="#665371"/><stop offset=".55" stop-color="#292131"/><stop offset="1" stop-color="#100d17"/></linearGradient>
+ <linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb6a9"/><stop offset=".35" stop-color="#ff5369"/><stop offset="1" stop-color="#8e173d"/></linearGradient>
+ <radialGradient id="core"><stop stop-color="#fff2da"/><stop offset=".2" stop-color="#d9baff"/><stop offset=".52" stop-color="#a16cff"/><stop offset="1" stop-color="#5d2a94" stop-opacity="0"/></radialGradient>
+ <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="soft"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<ellipse cx="210" cy="526" rx="142" ry="19" fill="#c5a8ff" opacity=".12" filter="url(#soft)"/>
+<ellipse cx="210" cy="531" rx="110" ry="11" fill="#030208" opacity=".9"/>
+<!-- floating warrant halo -->
+<g fill="none" stroke-linecap="round">
+ <path d="M112 118 A111 111 0 0 1 308 118" stroke="#a68bb8" stroke-width="5" opacity=".8"/>
+ <path d="M126 105 A95 95 0 0 1 294 105" stroke="#ff5369" stroke-width="2" stroke-dasharray="3 12" filter="url(#glow)"/>
+ <path d="M105 85 L105 60 L128 60 M315 85 L315 60 L292 60" stroke="#bda4cc" stroke-width="3"/>
+</g>
+<g fill="#f4b860"><circle cx="106" cy="60" r="4"/><circle cx="314" cy="60" r="4"/></g>
+<!-- suspended cable tendons -->
+<g fill="none" stroke="#62516d" stroke-width="5"><path d="M146 148 C112 184 132 213 104 246"/><path d="M276 145 C314 179 291 213 322 246"/><path d="M169 130 C157 174 177 190 158 220"/><path d="M252 130 C269 168 248 195 266 218"/></g>
+<g fill="none" stroke="#ff5369" stroke-width="2" opacity=".9"><path d="M104 246 l-8 15 11 10 -6 13"/><path d="M322 246 l8 15 -11 10 6 13"/></g>
+<!-- shoulders / layered robe -->
+<path d="M151 164 L103 177 L63 225 L89 260 L125 242 L111 332 L82 455 L121 486 L210 508 L299 486 L338 455 L309 332 L295 242 L331 260 L357 225 L317 177 L269 164 Z" fill="#05040a" stroke="#695674" stroke-width="4"/>
+<path d="M151 164 L111 191 L132 244 L116 341 L102 443 L137 473 L210 489 L283 473 L318 443 L304 341 L288 244 L309 191 L269 164 L244 190 L176 190 Z" fill="url(#robe)" stroke="#403247" stroke-width="3"/>
+<path d="M150 188 L173 205 L151 326 L141 454 L178 481 L151 480 L120 452 L143 325 Z" fill="#59435f" opacity=".58"/>
+<path d="M270 188 L247 205 L269 326 L279 454 L242 481 L269 480 L300 452 L277 325 Z" fill="#6b526f" opacity=".45"/>
+<!-- robe panel seams -->
+<g fill="none" stroke="#8a6e91" stroke-width="2" opacity=".8"><path d="M166 218 L148 389 L163 461"/><path d="M254 218 L272 389 L257 461"/><path d="M210 208 L210 470"/></g>
+<path d="M184 190 L210 222 L236 190 L252 330 L210 369 L168 330 Z" fill="#120d19" stroke="#8d6e9a" stroke-width="3"/>
+<!-- collar armor -->
+<path d="M151 158 L177 132 L210 150 L243 132 L269 158 L247 212 L210 228 L173 212 Z" fill="url(#metal)" stroke="#c3a7d0" stroke-width="3"/>
+<path d="M177 145 L210 164 L243 145 L230 192 L210 207 L190 192 Z" fill="#0a0810" stroke="#786183" stroke-width="2"/>
+<!-- faceless mask -->
+<path d="M169 74 L251 74 L268 104 L255 151 L231 176 L189 176 L165 151 L152 104 Z" fill="url(#metal)" stroke="#cbb5d7" stroke-width="4"/>
+<path d="M172 88 L248 88 L254 112 L238 145 L210 160 L182 145 L166 112 Z" fill="#0a0810" stroke="#56415f" stroke-width="2"/>
+<!-- face slit -->
+<path d="M175 111 L245 111 L229 125 L191 125 Z" fill="url(#red)" filter="url(#glow)"/>
+<path d="M190 137 L210 145 L230 137" fill="none" stroke="#a18aaa" stroke-width="3"/>
+<path d="M185 91 L198 102 M235 91 L222 102" stroke="#d2bedb" stroke-width="3"/>
+<!-- crown spikes -->
+<path d="M163 91 L143 56 L174 72 L187 39 L207 70 L233 36 L244 73 L279 55 L256 98 Z" fill="#211728" stroke="#8d7199" stroke-width="3"/>
+<path d="M176 68 L187 47 L199 74 M234 72 L243 48 L252 72" fill="none" stroke="#ff5369" stroke-width="2"/>
+<!-- chest seal -->
+<circle cx="210" cy="278" r="66" fill="#9c56ff" opacity=".18" filter="url(#soft)"/>
+<circle cx="210" cy="278" r="49" fill="#08070d" stroke="#a68bb8" stroke-width="5"/>
+<circle cx="210" cy="278" r="39" fill="none" stroke="#ff5369" stroke-width="2" stroke-dasharray="4 7"/>
+<circle cx="210" cy="278" r="31" fill="url(#core)" filter="url(#glow)"/>
+<path d="M210 245 L220 266 L242 278 L220 290 L210 312 L200 290 L178 278 L200 266 Z" fill="#e9d6ff" stroke="#fff0d8" stroke-width="2"/>
+<circle cx="210" cy="278" r="8" fill="#fff7e9"/>
+<!-- armature hands -->
+<path d="M110 205 L76 251 L83 330 L103 343 L122 328 L119 253 L146 229 Z" fill="url(#metal)" stroke="#6f5979" stroke-width="3"/>
+<path d="M310 205 L344 251 L337 330 L317 343 L298 328 L301 253 L274 229 Z" fill="url(#metal)" stroke="#6f5979" stroke-width="3"/>
+<path d="M83 326 L71 349 L83 366 L95 350 L103 368 L115 349 L103 337 Z" fill="#211729" stroke="#b19abd" stroke-width="2"/>
+<path d="M337 326 L349 349 L337 366 L325 350 L317 368 L305 349 L317 337 Z" fill="#211729" stroke="#b19abd" stroke-width="2"/>
+<!-- floating paper warrants -->
+<g stroke="#9b83a6" stroke-width="2" fill="#1a1422">
+ <path d="M34 293 L72 284 L82 327 L44 336 Z"/><path d="M346 296 L385 287 L392 328 L355 339 Z"/>
+</g>
+<g stroke="#f4b860" stroke-width="2" opacity=".8"><path d="M45 299 L67 294 M48 307 L72 301 M51 315 L70 310"/><path d="M356 302 L379 296 M359 310 L382 305 M361 318 L380 313"/></g>
+<!-- stamped authority marks -->
+<g fill="#ff5369" opacity=".85"><rect x="130" y="385" width="13" height="3"/><rect x="277" y="385" width="13" height="3"/><circle cx="140" cy="406" r="3"/><circle cx="280" cy="406" r="3"/></g>
+<path d="M126 468 L159 481 L178 490 M294 468 L261 481 L242 490" fill="none" stroke="#a98bb6" stroke-width="3"/>
+<text x="210" y="542" text-anchor="middle" fill="#c5a8ff" font-family="monospace" font-size="10" letter-spacing="4">FINAL AUTHORITY</text>
+</svg>
