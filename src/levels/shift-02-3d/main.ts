@@ -253,7 +253,7 @@ function buildEnvironment(): void {
 
   // Side walls are layered panel systems, not monolithic corridor cubes.
   for (const side of [-1, 1]) {
-    for (let z = 13; z >= -23; z -= 3) {
+    for (let panelIndex = 0, z = 13; z >= -23; z -= 3, panelIndex++) {
       const panel = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4.55, 2.72), materials.wall);
       panel.position.set(side * 7.82, 2.38, z);
       panel.rotation.y = side * -0.035;
@@ -263,9 +263,25 @@ function buildEnvironment(): void {
       const inset = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.45, 1.72), materials.dark);
       inset.position.set(side * 7.69, 2.45, z);
       scene.add(inset);
-      const insetGlow = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.055, 1.2), materials.glow);
+      const insetGlow = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.055, 1.2),
+        panelIndex % 4 === 2 ? materials.violet : materials.glow
+      );
       insetGlow.position.set(side * 7.66, 3.72, z);
       scene.add(insetGlow);
+
+      // Periodic recessed service grilles break up the corridor's repeated wall
+      // rhythm and imply real ventilation / maintenance infrastructure.
+      if (panelIndex % 3 === 1) {
+        const ventPlate = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.52, 0.92), materials.dark);
+        ventPlate.position.set(side * 7.61, 1.8, z - 0.22);
+        scene.add(ventPlate);
+        for (let slat = 0; slat < 5; slat++) {
+          const ventSlat = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.72), materials.ceramic);
+          ventSlat.position.set(side * 7.57, 1.62 + slat * 0.09, z - 0.22);
+          scene.add(ventSlat);
+        }
+      }
       const footing = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 2.65, 12), materials.ceramic);
       footing.rotation.x = Math.PI / 2;
       footing.position.set(side * 7.43, 0.24, z);
