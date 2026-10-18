@@ -257,6 +257,8 @@ function buildEnvironment(): void {
   // Side walls are layered panel systems, not monolithic corridor cubes.
   for (const side of [-1, 1]) {
     for (let panelIndex = 0, z = 13; z >= -23; z -= 3, panelIndex++) {
+      // Leave a real opening in the right bulkhead wall for the exit door.
+      if (side === 1 && (z === -17 || z === -20)) continue;
       const panel = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4.55, 2.72), materials.wall);
       panel.position.set(side * 7.82, 2.38, z);
       panel.rotation.y = side * -0.035;
@@ -293,6 +295,8 @@ function buildEnvironment(): void {
     }
     // Main service conduits and copper coolant lines.
     for (let i = 0; i < 4; i++) {
+      // Keep the doorway wall clear of longitudinal coolant pipes.
+      if (side === 1) continue;
       const x = side * (6.75 + i * 0.19);
       const pipe = new THREE.Mesh(new THREE.CylinderGeometry(i === 0 ? 0.105 : 0.045, i === 0 ? 0.105 : 0.045, 37, 12), i === 1 ? materials.copper : materials.dark);
       pipe.position.set(x, 4.1 - i * 0.2, -5);
@@ -366,7 +370,9 @@ function buildEnvironment(): void {
   // not a flat slab with bars painted over it.
   const gateAssembly = new THREE.Group();
   gateAssembly.name = "exit-bulkhead";
-  gateAssembly.position.set(5.05, 0, -18.2);
+  // Mount the bulkhead in the right-hand wall, facing into the room.
+  gateAssembly.position.set(7.55, 0, -17.8);
+  gateAssembly.rotation.y = -Math.PI / 2;
   scene.add(gateAssembly);
 
   const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(4.25, 4.62, 0.5), materials.dark);
@@ -524,7 +530,7 @@ const maintenanceFans: THREE.Group[] = [];
 function buildMaintenanceSetDressing(): void {
   const screenPalette = ["#8fffd0", "#d9a7ff", "#ffc58c", "#8bd9ff"];
   for (const side of [-1, 1]) {
-    for (const [index, z] of [8, 1, -9, -15].entries()) {
+    for (const [index, z] of [8, 0, -8, -16].entries()) {
       const housing = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.02, 1.55), materials.dark);
       housing.position.set(side * 7.38, 2.82, z);
       housing.castShadow = true;
@@ -584,7 +590,7 @@ function buildMaintenanceSetDressing(): void {
     }
   }
 
-  for (const z of [7, -2, -11, -20]) {
+  for (const z of [8, -1, -10, -19]) {
     const fan = new THREE.Group();
     fan.name = "maintenance-fan";
     fan.position.set(0, 4.12, z);
@@ -631,7 +637,8 @@ const exitDark = new THREE.MeshStandardMaterial({
 });
 const exitSign = new THREE.Group();
 exitSign.name = "exit-sign";
-exitSign.position.set(5.05, 4.55, -17.55);
+exitSign.position.set(7.55, 4.55, -17.8);
+exitSign.rotation.y = -Math.PI / 2;
 scene.add(exitSign);
 const signBack = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.82, 0.16), materials.dark);
 signBack.castShadow = true;
@@ -670,20 +677,26 @@ for (const x of [-1.16, 1.16]) {
   exitSign.add(border);
 }
 const exitSignLight = new THREE.PointLight("#45ffb0", 7, 10, 1.8);
-exitSignLight.position.set(5.05, 4.55, -16.8);
+exitSignLight.position.set(6.85, 4.55, -17.8);
 scene.add(exitSignLight);
 
-// Tall luminous jambs outline the actual opening, so the exit reads as a doorway.
-for (const x of [3.28, 6.82]) {
+// The illuminated jambs and threshold share the door orientation, so all trim
+// sits on the actual wall opening rather than floating in the room.
+const exitTrim = new THREE.Group();
+exitTrim.name = "exit-trim";
+exitTrim.position.set(7.55, 0, -17.8);
+exitTrim.rotation.y = -Math.PI / 2;
+scene.add(exitTrim);
+for (const x of [-1.77, 1.77]) {
   const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.09, 4.25, 0.1), exitMint);
-  jamb.position.set(x, 2.12, -17.52);
+  jamb.position.set(x, 2.12, 0.12);
   jamb.name = "exit-jamb";
-  scene.add(jamb);
+  exitTrim.add(jamb);
 }
 const exitThreshold = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.045, 0.42), exitMint);
-exitThreshold.position.set(5.05, 0.045, -17.2);
+exitThreshold.position.set(0, 0.045, 0.12);
 exitThreshold.name = "exit-threshold";
-scene.add(exitThreshold);
+exitTrim.add(exitThreshold);
 
 // Repeating floor arrows point deeper into the foundry toward the exit.
 const exitArrowMaterial = new THREE.MeshBasicMaterial({
@@ -693,7 +706,7 @@ const exitArrowMaterial = new THREE.MeshBasicMaterial({
   toneMapped: false,
   side: THREE.DoubleSide
 });
-for (const z of [-12.2, -14.3, -16.2]) {
+for (const [x, z] of [[3.5, -8.8], [5.1, -12.1], [6.35, -15.0]] as Array<[number, number]>) {
   const arrowShape = new THREE.Shape();
   arrowShape.moveTo(-0.38, -0.28);
   arrowShape.lineTo(0.38, -0.28);
@@ -705,7 +718,8 @@ for (const z of [-12.2, -14.3, -16.2]) {
   arrowShape.closePath();
   const arrow = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), exitArrowMaterial);
   arrow.rotation.x = -Math.PI / 2;
-  arrow.position.set(2.0 + ((-z - 12.2) * 0.75), 0.055, z);
+  arrow.rotation.z = -Math.PI / 2;
+  arrow.position.set(x, 0.055, z);
   arrow.name = "exit-floor-arrow";
   scene.add(arrow);
 }
@@ -780,7 +794,7 @@ function loadFactoryAsset(file: string, placements: Array<[number, number, numbe
   );
 }
 // Use a restrained trio of real factory-kit GLB machines as recognizable set dressing; omit cranes and clutter.
-loadFactoryAsset("machine.glb", [[-5.8, -15.3, 0.05, 0], [5.8, -15.3, 0.05, Math.PI], [5.8, -10.5, 0.05, Math.PI]]);
+loadFactoryAsset("machine.glb", [[-5.8, -12.4, 0.05, 0], [5.8, -12.4, 0.05, Math.PI]]);
 
 // Additive architectural detail uses curved profiles, rings, cable runs and
 // inset panels to break the original hard-edged block rhythm.
@@ -808,7 +822,7 @@ function addSetDressing(): void {
   }
 }
 addSetDressing();
-const relays: Relay[] = [makeRelay("triangle", -4.2, -6.8), makeRelay("circle", 0, -6.8), makeRelay("diamond", 4.2, -6.8)];
+const relays: Relay[] = [makeRelay("triangle", -4.2, -5.3), makeRelay("circle", 0, -5.3), makeRelay("diamond", 4.2, -5.3)];
 const sequence: Relay["kind"][] = ["triangle", "diamond", "circle", "diamond", "triangle", "circle", "diamond", "triangle"];
 let nextRelay = 0;
 let gateOpen = false;
@@ -915,21 +929,21 @@ type Collider = { minX: number; maxX: number; minZ: number; maxZ: number };
 const colliders: Collider[] = [
   // Structural walls and end bulkhead frame
   { minX: -8.35, maxX: -7.45, minZ: -25, maxZ: 15 },
-  { minX: 7.45, maxX: 8.35, minZ: -25, maxZ: 15 },
+  // Split the right wall around the bulkhead so the doorway is physically cut through it.
+  { minX: 7.45, maxX: 8.35, minZ: -25, maxZ: -20.15 },
+  { minX: 7.45, maxX: 8.35, minZ: -15.45, maxZ: 15 },
   { minX: -8, maxX: 8, minZ: 12.9, maxZ: 13.8 },
   // The sealed bulkhead blocks the route until the relay sequence is solved.
-  { minX: 3.25, maxX: 6.85, minZ: -18.45, maxZ: -17.65 },
+  { minX: 6.6, maxX: 7.5, minZ: -20.15, maxZ: -15.45 },
   // Relay consoles
-  { minX: -4.95, maxX: -3.45, minZ: -7.55, maxZ: -6.05 },
-  { minX: -0.75, maxX: 0.75, minZ: -7.55, maxZ: -6.05 },
-  { minX: 3.45, maxX: 4.95, minZ: -7.55, maxZ: -6.05 },
+  { minX: -4.95, maxX: -3.45, minZ: -6.05, maxZ: -4.55 },
+  { minX: -0.75, maxX: 0.75, minZ: -6.05, maxZ: -4.55 },
+  { minX: 3.45, maxX: 4.95, minZ: -6.05, maxZ: -4.55 },
   // Side machinery and imported environmental props
-  { minX: -6.7, maxX: -4.1, minZ: -16.7, maxZ: -14.9 },
-  { minX: -6.9, maxX: -4.8, minZ: -5.0, maxZ: -3.0 },
-  { minX: 4.8, maxX: 6.9, minZ: -5.0, maxZ: -3.0 },
+  { minX: -6.7, maxX: -4.1, minZ: -13.8, maxZ: -11.0 },
   { minX: -6.9, maxX: -5.0, minZ: 4.0, maxZ: 6.2 },
   { minX: 5.0, maxX: 6.9, minZ: 4.0, maxZ: 6.2 },
-  { minX: 4.1, maxX: 6.7, minZ: -16.7, maxZ: -14.9 },
+  { minX: 4.1, maxX: 6.7, minZ: -13.8, maxZ: -11.0 },
   // Low floor-level equipment that the player must navigate around
   { minX: -3.95, maxX: -2.45, minZ: 7.4, maxZ: 8.6 },
   { minX: 2.45, maxX: 3.95, minZ: 5.9, maxZ: 7.1 },
@@ -978,7 +992,7 @@ function updateObjective(): void {
   sequenceTrack.classList.toggle("sequence-complete", gateOpen);
   if (gateOpen) {
     objectiveTitle.textContent = "The exit is unlocked";
-    objectiveCopy.textContent = "Head to the green EXIT gate in the back-right corner and press E at the bulkhead.";
+    objectiveCopy.textContent = "Head to the green EXIT gate mounted in the right-hand wall near the back and press E at the bulkhead.";
   } else {
     objectiveTitle.textContent = nextRelay === 0 ? "Decode the maintenance rhythm" : nextRelay < sequence.length ? "Hold the pattern in memory" : "Signal accepted";
     objectiveCopy.textContent = "Memorize each three-symbol window, then enter it from memory. Later beats are encrypted. One wrong signal resets all eight beats.";
@@ -1070,7 +1084,7 @@ function nearestTarget(): { relay?: Relay; gate: boolean; easterEgg?: boolean; d
     return { gate: false, easterEgg: true, distance: secretPortDistance };
   }
 
-  const gatePosition = new THREE.Vector3(5.05, 1.4, -17.2);
+  const gatePosition = new THREE.Vector3(6.65, 1.4, -17.8);
   const toGate = gatePosition.clone().sub(camera.position);
   const gateDistance = toGate.length();
   const gateFacing = toGate.normalize().dot(lookDirection);
@@ -1103,7 +1117,7 @@ function interact(): void {
   }
   const relay = target.relay;
   if (!relay) return;
-  // Relays may be selected more than once: this is a six-beat signal, not a one-touch checklist.
+  // Relays may be selected more than once: this is an eight-beat signal, not a one-touch checklist.
   if (relay.kind !== sequence[nextRelay]) {
     playSfx("denied");
     transferStartedAt = null;
@@ -1138,7 +1152,7 @@ function interact(): void {
   notify(`SIGNAL BEAT ${nextRelay} / ${sequence.length} ACCEPTED.`);
   if (nextRelay === sequence.length) {
     gateOpen = true;
-    const gateColliderIndex = colliders.findIndex((c) => c.minX === 3.25 && c.maxX === 6.85 && c.minZ === -18.45);
+    const gateColliderIndex = colliders.findIndex((c) => c.minX === 6.6 && c.maxX === 7.5 && c.minZ === -20.15);
     if (gateColliderIndex >= 0) colliders.splice(gateColliderIndex, 1);
     // Start a staged mechanical sequence. The actual door motion is driven by
     // elapsed time in animate(), not an instant position jump.
