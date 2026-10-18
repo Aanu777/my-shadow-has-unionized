@@ -103,7 +103,7 @@ export class ShiftFourScene extends Phaser.Scene {
     const right = this.cursors.right.isDown || this.keys.D.isDown;
     const target = left === right ? 0 : left ? -230 : 230;
     this.playerVx = Phaser.Math.Linear(this.playerVx, target, Math.min(1, dt * (target === 0 ? 14 : 19)));
-    const jump = Phaser.Input.Keyboard.JustDown(this.cursors.space) || Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.cursors.shift);
+    const jump = Phaser.Input.Keyboard.JustDown(this.cursors.space) || Phaser.Input.Keyboard.JustDown(this.cursors.up);
     if (jump && this.grounded) { this.playerVy = -445; this.grounded = false; }
     this.playerVy += 1050 * dt;
     let nextX = Phaser.Math.Clamp(this.player.x + this.playerVx * dt, 22, WORLD - 22);
@@ -350,7 +350,6 @@ export class ShiftFourScene extends Phaser.Scene {
     this.panelChoice = this.add.text(0, -3, "", { fontFamily: "monospace", fontSize: "15px", color: "#ffffff", fontStyle: "bold", align: "center" }).setOrigin(0.5);
     this.panelHint = this.add.text(-230, 84, "", { fontFamily: "monospace", fontSize: "9px", color: "#9d8ba8", wordWrap: { width: 455 } });
     this.interactionPanel.add([this.panelTitle, this.panelPrompt, this.panelChoice, this.panelHint]);
-    this.add.text(0, 0, "", { fontFamily: "monospace" });
   }
 
   private createFinalPanel(): void {
@@ -396,7 +395,6 @@ export class ShiftFourScene extends Phaser.Scene {
     this.panelPrompt.setText(t.prompt);
     this.panelChoice.setText("◀   " + t.options[t.chosen] + "   ▶");
     this.panelHint.setText(t.hint + "\nA/D CHANGE RECORD    E FILE CHANGE    R CLOSE");
-    this.cameras.main.setAlpha(1);
   }
 
   private updateInteractionPanel(): void {
