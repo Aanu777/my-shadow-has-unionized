@@ -133,3 +133,11 @@ button:hover::after{transform:translateX(110%)}
 .sequence-track.sequence-complete .sequence-beat{border-style:solid;color:#a6ffd8;border-color:rgba(117,255,196,.36)}
 @media(max-width:520px){.sequence-track{gap:3px}.sequence-beat{min-width:0;padding-inline:2px}}
 @media(prefers-reduced-motion:reduce){.sequence-beat{transition:none}}
+
+
+/* The memory lock previews a three-beat phrase, then obscures it for recall. */
+.beat-symbol{display:inline-block;transition:opacity .3s ease,filter .3s ease;min-width:1em}
+.sequence-track.memory-sealed .sequence-beat:not(.completed) .beat-symbol{opacity:.07;filter:blur(4px)}
+.sequence-track.memory-sealed .sequence-beat.current{border-style:dashed;border-color:rgba(255,195,124,.34)}
+.sequence-track.memory-sealed .sequence-beat.current i{color:rgba(255,195,124,.6)}
+@media(prefers-reduced-motion:reduce){.beat-symbol{transition:none}}
