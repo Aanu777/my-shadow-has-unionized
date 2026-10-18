@@ -209,9 +209,9 @@ function startSignalTransfer(from: Relay, nextBeat: number): void {
       return item.position.distanceTo(from.position) < best.position.distanceTo(from.position) ? item : best;
     }, null);
     if (target) transferTo.copy(target.position).add(new THREE.Vector3(0, 1.42, 0));
-    else transferTo.set(5.05, 2.2, -18.2);
+    else transferTo.set(6.65, 2.2, -17.8);
   } else {
-    transferTo.set(5.05, 2.2, -18.2);
+    transferTo.set(6.65, 2.2, -17.8);
   }
   transferStartedAt = clock.elapsedTime;
   transferDuration = nextBeat >= sequence.length - 1 ? 1.12 : 0.72;
@@ -698,7 +698,7 @@ exitThreshold.position.set(0, 0.045, 0.12);
 exitThreshold.name = "exit-threshold";
 exitTrim.add(exitThreshold);
 
-// Repeating floor arrows point deeper into the foundry toward the exit.
+// Floor chevrons lead diagonally from the relay lane toward the right-wall exit.
 const exitArrowMaterial = new THREE.MeshBasicMaterial({
   color: "#6dffc0",
   transparent: true,
