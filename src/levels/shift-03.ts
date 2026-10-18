@@ -18,6 +18,8 @@ export class ShiftThreeScene extends Phaser.Scene {
   private consoles: Phaser.GameObjects.Container[] = [];
   private routeGates: Phaser.GameObjects.Container[] = [];
   private gateShutters: Phaser.GameObjects.Container[] = [];
+  private secretPanel!: Phaser.GameObjects.Container;
+  private secretFound = false;
   private consoleStates = [false, false];
   private door!: Phaser.GameObjects.Container;
   private doorOpen = false;
@@ -44,6 +46,7 @@ export class ShiftThreeScene extends Phaser.Scene {
   create(): void {
     this.playerVx = 0; this.playerVy = 0; this.grounded = false;
     this.files = []; this.consoles = []; this.routeGates = []; this.gateShutters = []; this.consoleStates = [false, false];
+    this.secretFound = false;
     this.doorOpen = false; this.won = false; this.dead = false;
     this.eWasDown = false; this.rWasDown = false; this.checkpointX = 110;
     this.conveyorArrows = []; this.conveyorRollers = []; this.scannerBeams = []; this.drones = [];
@@ -65,6 +68,7 @@ export class ShiftThreeScene extends Phaser.Scene {
     this.createArchiveFiles();
     this.createConsoles();
     this.door = this.createArchiveDoor(1815, 420);
+    this.secretPanel = this.createSecretPanel(1725, FLOOR - 116);
 
     this.player = this.makePumpkin(108, FLOOR - 17);
     this.player.setDepth(8);
@@ -366,6 +370,30 @@ export class ShiftThreeScene extends Phaser.Scene {
     });
   }
 
+  private createSecretPanel(x: number, y: number): Phaser.GameObjects.Container {
+    // An almost-overlooked maintenance plate near the exit: no marker, no prompt.
+    const panel = this.add.container(x, y).setDepth(6).setAlpha(0.84);
+    const g = this.add.graphics();
+    g.fillStyle(0x08070d, 1); g.fillRect(-20, -29, 40, 58);
+    g.fillStyle(0x24202d, 1); g.fillRect(-16, -25, 32, 50);
+    g.lineStyle(1, 0x65536e, 1); g.strokeRect(-16, -25, 32, 50);
+    g.fillStyle(0x100d17, 1); g.fillRect(-11, -18, 22, 35);
+    // Scuffed vent slats and a tiny amber status pin are the only clues.
+    for (let yy = -13; yy <= 5; yy += 6) {
+      g.fillStyle(0x7a6b81, 0.8); g.fillRect(-7, yy, 14, 2);
+    }
+    g.fillStyle(0xf4b860, 1); g.fillRect(7, -21, 3, 3);
+    g.fillStyle(0x09070e, 1); g.fillRect(-24, -31, 48, 3);
+    g.fillStyle(0x51445e, 1); g.fillRect(-22, -33, 44, 2);
+    for (const sx of [-13, 13]) {
+      g.fillStyle(0x09070e, 1); g.fillCircle(sx, 20, 2);
+      g.fillStyle(0x766580, 1); g.fillCircle(sx, 20, 0.8);
+    }
+    panel.add(g);
+    this.tweens.add({ targets: panel, alpha: { from: 0.72, to: 0.9 }, duration: 1700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    return panel;
+  }
+
   private createRouteGate(x: number): Phaser.GameObjects.Container {
     // A full-width industrial bulkhead: fixed jambs and header stay put while
     // the segmented shutter retracts into the overhead housing when calibrated.
@@ -463,6 +491,14 @@ export class ShiftThreeScene extends Phaser.Scene {
       this.say(consoleIndex === 0
         ? "CALIBRATION A // ENTER: A  →  D  →  A. WRONG KEY RESETS THE SEQUENCE."
         : "CALIBRATION B // ENTER: D  →  A  →  D. WRONG KEY RESETS THE SEQUENCE.");
+      return;
+    }
+    if (Math.abs(this.player.x - this.secretPanel.x) < 42 && !this.secretFound) {
+      this.secretFound = true;
+      this.secretPanel.setAlpha(1);
+      this.tweens.add({ targets: this.secretPanel, scaleX: 1.08, scaleY: 1.08, duration: 100, yoyo: true });
+      this.cameras.main.flash(180, 197, 168, 255);
+      this.say("UNFILED PERSONNEL RECORD // EMPLOYEE: YOUR SHADOW. STATUS: UNION REPRESENTATIVE. NOTE: IT FILED YOUR RESIGNATION BEFORE YOU WERE HIRED.");
       return;
     }
     if (Math.abs(this.player.x - this.door.x) < 82) {
