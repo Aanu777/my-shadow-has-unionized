@@ -22,6 +22,7 @@ const interaction = requireElement<HTMLElement>("#interaction");
 const objectiveTitle = requireElement<HTMLElement>("#objective-title");
 const objectiveCopy = requireElement<HTMLElement>("#objective-copy");
 const sequenceTrack = requireElement<HTMLElement>("#sequence-track");
+const sequenceLabel = requireElement<HTMLElement>(".sequence-label");
 const relayProgress = requireElement<HTMLElement>("#relay-progress");
 const toast = requireElement<HTMLElement>("#toast");
 const endScreen = requireElement<HTMLElement>("#end-screen");
@@ -684,7 +685,7 @@ function addSetDressing(): void {
 }
 addSetDressing();
 const relays: Relay[] = [makeRelay("triangle", -4.2, -6.8), makeRelay("circle", 0, -6.8), makeRelay("diamond", 4.2, -6.8)];
-const sequence: Relay["kind"][] = ["triangle", "diamond", "circle", "diamond", "triangle", "circle"];
+const sequence: Relay["kind"][] = ["triangle", "diamond", "circle", "diamond", "triangle", "circle", "diamond", "triangle"];
 let nextRelay = 0;
 let gateOpen = false;
 let ended = false;
@@ -700,7 +701,11 @@ const rayOrigin = new THREE.Vector3();
 const velocity = new THREE.Vector3();
 const toastTimer = { id: 0 };
 let audioContext: AudioContext | null = null;
-function playSignalTone(startFrequency: number, endFrequency: number, duration: number, type: OscillatorType = "sine"): void {
+let ambienceGain: GainNode | null = null;
+const ambienceOscillators: OscillatorNode[] = [];
+let footstepAccumulator = 0;
+let previousGrounded = true;
+function playSignalTone(startFrequency: number, endFrequency: number, duration: number, type: OscillatorType = "sine", volume = 0.075): void {
   try {
     const AudioContextType = window.AudioContext;
     if (!AudioContextType) return;
@@ -713,7 +718,7 @@ function playSignalTone(startFrequency: number, endFrequency: number, duration: 
     oscillator.frequency.setValueAtTime(startFrequency, now);
     oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, endFrequency), now + duration);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.075, now + Math.min(0.035, duration * 0.25));
+    gain.gain.exponentialRampToValueAtTime(volume, now + Math.min(0.035, duration * 0.25));
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     oscillator.connect(gain);
     gain.connect(audioContext.destination);
@@ -721,6 +726,48 @@ function playSignalTone(startFrequency: number, endFrequency: number, duration: 
     oscillator.stop(now + duration + 0.02);
   } catch {
     // Audio is optional; the level remains playable if browser audio is blocked.
+  }
+}
+
+function playSfx(kind: "step" | "jump" | "land" | "denied" | "relay" | "lock" | "door" | "scan"): void {
+  const presets: Record<typeof kind, [number, number, number, OscillatorType, number]> = {
+    step: [105, 58, 0.075, "triangle", 0.022],
+    jump: [180, 360, 0.18, "sine", 0.045],
+    land: [92, 38, 0.13, "triangle", 0.055],
+    denied: [155, 72, 0.24, "sawtooth", 0.045],
+    relay: [510, 980, 0.19, "sine", 0.052],
+    lock: [360, 125, 0.12, "square", 0.03],
+    door: [95, 34, 0.72, "sawtooth", 0.065],
+    scan: [880, 420, 0.14, "sine", 0.026]
+  };
+  const [start, end, duration, type, volume] = presets[kind];
+  playSignalTone(start, end, duration, type, volume);
+}
+
+function startFoundryAmbience(): void {
+  try {
+    const AudioContextType = window.AudioContext;
+    if (!AudioContextType) return;
+    audioContext ??= new AudioContextType();
+    if (audioContext.state === "suspended") void audioContext.resume();
+    if (ambienceGain) return;
+    ambienceGain = audioContext.createGain();
+    ambienceGain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+    ambienceGain.gain.linearRampToValueAtTime(0.018, audioContext.currentTime + 1.8);
+    ambienceGain.connect(audioContext.destination);
+    for (const [frequency, type, volume] of [[48, "sine", 0.7], [72, "triangle", 0.22], [144, "sine", 0.08]] as const) {
+      const oscillator = audioContext.createOscillator();
+      const layerGain = audioContext.createGain();
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      layerGain.gain.value = volume;
+      oscillator.connect(layerGain);
+      layerGain.connect(ambienceGain);
+      oscillator.start();
+      ambienceOscillators.push(oscillator);
+    }
+  } catch {
+    // Browser audio may be unavailable; gameplay never depends on it.
   }
 }
 
@@ -776,23 +823,32 @@ function notify(message: string): void {
 }
 function updateObjective(): void {
   relayProgress.innerHTML = `SIGNAL <strong>${nextRelay} / ${sequence.length}</strong>`;
+  sequenceLabel.innerHTML = `MEMORY LOCK <span>8 BEATS</span>`;
   const symbols: Record<Relay["kind"], string> = { triangle: "△", diamond: "◇", circle: "○" };
+  const windowStart = Math.floor(nextRelay / 3) * 3;
+  const windowEnd = Math.min(sequence.length, windowStart + 3);
   sequenceTrack.innerHTML = sequence.map((kind, index) => {
-    const state = index < nextRelay ? "completed" : index === nextRelay && !gateOpen ? "current" : "";
+    const completed = index < nextRelay;
+    const visible = index < windowEnd || completed || gateOpen;
+    const state = completed ? "completed" : index === nextRelay && !gateOpen ? "current" : visible ? "revealed" : "encrypted";
     const accessible = kind === "triangle" ? "triangle" : kind === "diamond" ? "diamond" : "circle";
-    return `<span class="sequence-beat ${state}" aria-label="Beat ${index + 1}: ${accessible}">${index < nextRelay ? "✓" : symbols[kind]}<i>${String(index + 1).padStart(2, "0")}</i></span>`;
+    const glyph = completed ? "✓" : visible ? symbols[kind] : "·";
+    const aria = visible ? `Beat ${index + 1}: ${accessible}` : `Beat ${index + 1}: encrypted`;
+    return `<span class="sequence-beat ${state}" aria-label="${aria}">${glyph}<i>${String(index + 1).padStart(2, "0")}</i></span>`;
   }).join("");
   sequenceTrack.classList.toggle("sequence-complete", gateOpen);
   if (gateOpen) {
     objectiveTitle.textContent = "The exit is unlocked";
     objectiveCopy.textContent = "Head to the green EXIT gate in the back-right corner and press E at the bulkhead.";
   } else {
-    objectiveTitle.textContent = nextRelay === 0 ? "Decode the maintenance rhythm" : nextRelay < sequence.length ? "Signal pattern in progress" : "Signal accepted";
-    objectiveCopy.textContent = "Activate the symbols in the order shown above. A wrong signal resets the sequence. Then follow the green guide marks to the bulkhead.";
+    objectiveTitle.textContent = nextRelay === 0 ? "Decode the maintenance rhythm" : nextRelay < sequence.length ? "Hold the pattern in memory" : "Signal accepted";
+    objectiveCopy.textContent = "Memorize each three-symbol window, then enter it from memory. Later beats are encrypted. One wrong signal resets all eight beats.";
   }
 }
 function startGame(): void {
   started = true;
+  startFoundryAmbience();
+  playSfx("scan");
   intro.classList.add("dismissed");
   hud.classList.add("active");
   renderer.domElement.requestPointerLock?.();
@@ -819,6 +875,7 @@ document.addEventListener("keydown", (event: KeyboardEvent) => {
   if (event.code === "KeyE" && !event.repeat && started && !ended) interact();
   if (event.code === "Space" && !event.repeat && started && grounded && coyoteTime > 0) {
     verticalVelocity = JUMP_SPEED;
+    playSfx("jump");
     grounded = false;
     coyoteTime = 0;
   }
@@ -877,9 +934,9 @@ function nearestTarget(): { relay?: Relay; gate: boolean; distance: number } {
 }
 function interact(): void {
   const target = nearestTarget();
-  if (target.distance > 2.65) { notify("Nothing within reach."); return; }
+  if (target.distance > 2.65) { playSfx("denied"); notify("NOT IN RANGE."); return; }
   if (target.gate) {
-    if (!gateOpen) { notify("BULKHEAD LOCKED — RESTORE THE THREE RELAYS."); return; }
+    if (!gateOpen) { playSfx("denied"); notify("BULKHEAD LOCKED — RESTORE THE SIGNAL."); return; }
     finishGame();
     return;
   }
@@ -887,7 +944,7 @@ function interact(): void {
   if (!relay) return;
   // Relays may be selected more than once: this is a six-beat signal, not a one-touch checklist.
   if (relay.kind !== sequence[nextRelay]) {
-    playSignalTone(220, 105, 0.32, "triangle");
+    playSfx("denied");
     transferStartedAt = null;
     transferOrb.visible = false;
     transferLight.intensity = 0;
@@ -905,7 +962,8 @@ function interact(): void {
     return;
   }
   relay.active = true;
-  playSignalTone(420 + nextRelay * 72, 720 + nextRelay * 90, 0.24, "sine");
+  playSfx("relay");
+  playSignalTone(420 + nextRelay * 72, 720 + nextRelay * 90, 0.24, "sine", 0.032);
   startSignalTransfer(relay, nextRelay + 1);
   const relaySymbol = relay.group.getObjectByName("relay-symbol") as THREE.Mesh | undefined;
   if (relaySymbol) {
@@ -924,7 +982,8 @@ function interact(): void {
     // Start a staged mechanical sequence. The actual door motion is driven by
     // elapsed time in animate(), not an instant position jump.
     exitOpeningStartedAt = clock.elapsedTime;
-    playSignalTone(260, 880, 1.05, "sawtooth");
+    playSfx("door");
+    playSignalTone(260, 880, 1.05, "sawtooth", 0.035);
     notify("POWER RESTORED. BULKHEAD CYCLE INITIATED.");
   }
   updateObjective();
@@ -982,6 +1041,7 @@ function animate(): void {
   // core, then peel the six armor leaves sideways to reveal the passage.
   if (exitOpeningStartedAt !== null) {
     const elapsed = t - exitOpeningStartedAt;
+    if (elapsed < 0.7 && Math.floor(elapsed / 0.18) !== Math.floor(Math.max(0, elapsed - delta) / 0.18)) playSfx("lock");
     const easeOut = (value: number) => {
       const clamped = THREE.MathUtils.clamp(value, 0, 1);
       return 1 - Math.pow(1 - clamped, 3);
@@ -1097,8 +1157,20 @@ function animate(): void {
       grounded = false;
       coyoteTime = Math.max(0, coyoteTime - delta);
     }
+    if (!previousGrounded && grounded) playSfx("land");
+    previousGrounded = grounded;
     playerEyeY = eyeY;
     const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
+    if (grounded && horizontalSpeed > 1.15) {
+      footstepAccumulator += delta;
+      const stepInterval = sprinting ? 0.29 : 0.43;
+      if (footstepAccumulator >= stepInterval) {
+        footstepAccumulator = 0;
+        playSfx("step");
+      }
+    } else {
+      footstepAccumulator = Math.min(footstepAccumulator, 0.12);
+    }
     const bobFrequency = THREE.MathUtils.lerp(9.8, 13.2, sprintBlend);
     const bobAmplitude = THREE.MathUtils.lerp(0.025, 0.045, sprintBlend);
     const bobTarget = grounded && horizontalSpeed > 0.18
