@@ -60,6 +60,9 @@ class GameScene extends Phaser.Scene {
   private relaySequence: number[] = [2, 0, 1];
   private relayProgress = 0;
   private puzzleHintUntil = 0;
+  private interactionPrompt!: Phaser.GameObjects.Container;
+  private interactionPromptText!: Phaser.GameObjects.Text;
+  private objectiveProgress!: Phaser.GameObjects.Text;
 
   constructor() { super("GameScene"); }
   preload(): void { preloadShift01Background(this); this.load.svg("shift02-space", "/shift-02-space.svg", { width: W, height: H }); }
@@ -177,13 +180,29 @@ class GameScene extends Phaser.Scene {
       align: "center", wordWrap: { width: 820 }
     }).setOrigin(0.5).setDepth(8).setScrollFactor(0);
 
+    // A small diegetic-feeling prompt replaces guesswork about which object accepts E.
+    this.interactionPrompt = this.add.container(W / 2, 508).setScrollFactor(0).setDepth(12).setVisible(false);
+    const promptPlate = this.add.rectangle(0, 0, 250, 30, 0x100c19, 0.96).setStrokeStyle(1, 0x7055a5, 0.9);
+    this.interactionPromptText = this.add.text(0, 0, "", {
+      fontFamily: "monospace", fontSize: "10px", color: "#ffdfa0", fontStyle: "bold", letterSpacing: 1
+    }).setOrigin(0.5);
+    this.interactionPrompt.add([promptPlate, this.interactionPromptText]);
+    this.objectiveProgress = this.add.text(28, 101, "", {
+      fontFamily: "monospace", fontSize: "9px", color: "#9f8caf", letterSpacing: 1
+    }).setDepth(8).setScrollFactor(0);
+
     const controlsText = this.add.text(W - 26, 24,
       "MOVE  A/D OR ←/→\nJUMP  SPACE / W / ↑\nINTERACT  E   •   ENTER  EXIT\nRESTART  R", {
       fontFamily: "monospace", fontSize: "11px", color: "#d8cfe6",
       backgroundColor: "#21182f", padding: { x: 10, y: 8 },
       lineSpacing: 5, align: "right"
     }).setOrigin(1, 0).setDepth(8).setScrollFactor(0);
-    if (this.level === 2) { this.statusText.setVisible(false); this.demandText.setVisible(false); this.dialogueText.setVisible(false); controlsText.setVisible(false); }
+    if (this.level === 2) {
+      this.statusText.setVisible(false); this.demandText.setVisible(false); this.dialogueText.setVisible(false);
+      controlsText.setVisible(false); this.interactionPrompt.setVisible(false); this.objectiveProgress.setVisible(false);
+    } else {
+      this.objectiveProgress.setText("01  COFFEE  /  02  LANTERN ALIGNMENT  /  03  SWITCH  /  04  EXIT");
+    }
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -293,7 +312,9 @@ class GameScene extends Phaser.Scene {
     if (enterDown && !this.enterWasDown && this.switchOn && this.isAtExit()) this.handleExitEnter();
     this.enterWasDown = enterDown;
 
-    if (this.level === 1) { this.refreshShadow(); this.updateCoffee(); } else this.updateRelayHint();
+    if (this.level === 1) {
+      this.refreshShadow(); this.updateCoffee(); this.updateInteractionPrompt(); this.updateObjectiveProgress();
+    } else this.updateRelayHint();
     this.updateGate();
     if (this.time.now > this.messageUntil && this.messageUntil !== 0) {
       this.dialogueText.setText("A/D MOVE   SPACE JUMP   E INTERACT");
@@ -694,6 +715,56 @@ class GameScene extends Phaser.Scene {
     }
     route.fillStyle(routeColor, routeAlpha);
     route.fillCircle(this.switchObject.x - 20, 480, this.demandSatisfied ? 3 : 2);
+  }
+
+  private updateObjectiveProgress(): void {
+    if (this.level !== 1) return;
+    let step = "01  COFFEE  /  02  LANTERN ALIGNMENT  /  03  SWITCH  /  04  EXIT";
+    let color = "#9f8caf";
+    if (this.switchOn) {
+      step = "✓ COFFEE   ✓ LANTERN   ✓ SWITCH     //     REACH EXIT 01";
+      color = "#ffdfa0";
+    } else if (this.demandSatisfied && this.lanternX >= 350) {
+      step = "✓ COFFEE   ✓ LANTERN ALIGNED     //     ACTIVATE SWITCH";
+      color = "#ffdfa0";
+    } else if (this.demandSatisfied) {
+      step = "✓ COFFEE     //     MOVE LANTERN RIGHT TO ALIGN THE SHADOW";
+      color = "#e0d0ff";
+    }
+    this.objectiveProgress.setText(step).setColor(color);
+  }
+
+  private updateInteractionPrompt(): void {
+    if (this.level !== 1 || this.won || this.dead || this.transitioning) {
+      this.interactionPrompt.setVisible(false);
+      return;
+    }
+    const px = this.player.x;
+    const near = (x: number, y: number, range: number): boolean =>
+      Phaser.Math.Distance.Between(px, this.player.y, x, y) < range;
+    let label = "";
+    if (!this.hasCoffee && near(this.coffee.x, this.coffee.y, 62)) label = "E   OFFER THE SHADOW COFFEE";
+    else if (near(this.lanternX, 438, 78)) label = this.lanternX >= 350
+      ? "E   LANTERN ALIGNED  •  ADJUST"
+      : "E   MOVE LANTERN RIGHT";
+    else if (near(this.switchObject.x, this.switchObject.y, 72)) {
+      label = !this.demandSatisfied
+        ? "COFFEE FIRST  •  SHADOW'S CONTRACT"
+        : this.lanternX < 350
+          ? "ALIGN THE LANTERN FIRST"
+          : this.switchOn ? "SWITCH ONLINE  •  EXIT UNLOCKED" : "E   ACTIVATE THE SWITCH";
+    } else if (!this.demandSatisfied && near(this.shadow.x, this.shadow.y, 76)) {
+      label = "E   SPEAK TO THE UNION REPRESENTATIVE";
+    } else if (this.switchOn && near(this.gate.x, this.gate.y, 95)) {
+      label = "ENTER   BEGIN THE NIGHT SHIFT";
+    }
+    if (!label) {
+      this.interactionPrompt.setVisible(false);
+      return;
+    }
+    this.interactionPromptText.setText(label);
+    this.interactionPrompt.setVisible(true);
+    this.interactionPrompt.setAlpha(0.88 + Math.sin(this.time.now * 0.006) * 0.12);
   }
 
   private updateCoffee(): void {
