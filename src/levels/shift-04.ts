@@ -58,6 +58,7 @@ export class ShiftFourScene extends Phaser.Scene {
   private dashCooldown = 0;
   private pulseCooldown = 0;
   private bossActive = false;
+  private bossVulnerable = false;
   private bossHealth = 3;
   private boss!: Phaser.GameObjects.Container;
   private bossCore!: Phaser.GameObjects.Arc;
@@ -486,20 +487,21 @@ export class ShiftFourScene extends Phaser.Scene {
 
   private shadowPulse(): void {
     this.pulseCooldown=4.5;const ring=this.add.circle(this.player.x,this.player.y,18,0xc5a8ff,.15).setDepth(20);ring.setStrokeStyle(3,0xc5a8ff,1);this.tweens.add({targets:ring,scale:7,alpha:0,duration:420,onComplete:()=>ring.destroy()});
-    if(this.bossActive&&Math.abs(this.player.x-this.boss.x)<260){this.bossHealth--;this.bossBar.width=270*Math.max(0,this.bossHealth/3);this.boss.setAlpha(.25);this.time.delayedCall(130,()=>{if(this.bossActive)this.boss.setAlpha(1)});this.cameras.main.shake(180,.003);this.cameras.main.flash(120,197,168,255);if(this.bossHealth<=0)this.defeatBoss();else this.say("AUDITOR SEAL BROKEN. "+this.bossHealth+" REMAIN.");}
+    if(this.bossActive&&this.bossVulnerable&&Math.abs(this.player.x-this.boss.x)<260){this.bossVulnerable=false;this.bossHealth--;this.bossBar.width=270*Math.max(0,this.bossHealth/3);this.boss.setAlpha(.25);this.time.delayedCall(130,()=>{if(this.bossActive)this.boss.setAlpha(1)});this.cameras.main.shake(180,.003);this.cameras.main.flash(120,197,168,255);if(this.bossHealth<=0)this.defeatBoss();else this.say("AUDITOR SEAL BROKEN. "+this.bossHealth+" REMAIN.");}
+    else if(this.bossActive){this.say("CORE SHIELDED. BAIT THE AUDIT WAVE, THEN STRIKE DURING THE EXPOSED WINDOW.");}
     else {this.surveillanceBeam.setAlpha(.01);this.time.delayedCall(1100,()=>{if(this.stage>=2&&!this.bossActive)this.surveillanceBeam.setAlpha(.12)});this.say("SHADOW PULSE // SECURITY INTERRUPTED.");}
   }
 
   private startBoss(): void {
     if(this.bossActive)return;if(this.stage<3){this.say("AUDIT INCOMPLETE. RESTORE ALL THREE RECORDS FIRST.");return;}
-    this.bossActive=true;this.bossHealth=3;this.boss.setVisible(true).setAlpha(0);this.bossCore.setVisible(true);this.bossBar.setVisible(true).setSize(270,10);this.boss.x=1735;this.bossWave.setVisible(false);
+    this.bossActive=true;this.bossVulnerable=false;this.bossHealth=3;this.boss.setVisible(true).setAlpha(0);this.bossCore.setVisible(true);this.bossBar.setVisible(true).setSize(270,10);this.boss.x=1735;this.bossWave.setVisible(false);
     this.cameras.main.stopFollow();this.cameras.main.pan(1500,H/2,850,"Cubic.inOut");this.cameras.main.zoomTo(1.08,650);this.cameras.main.shake(260,.004);
     this.tweens.add({targets:this.boss,alpha:1,y:335,duration:850,ease:"Back.out"});this.bossTimer=1.4;this.say("FINAL REVIEW. DODGE THE RED AUDIT WAVE WITH Q. STRIKE THE CORE WITH F.");
   }
 
   private updateBoss(dt:number):void {
     this.boss.x=1735+Math.sin(this.time.now*.0012)*22;this.bossCore.setPosition(this.boss.x,this.boss.y-68);this.bossTimer-=dt;
-    if(this.bossTimer<=0){this.bossTimer=1.8-(3-this.bossHealth)*.2;this.bossWave.setPosition(this.player.x< this.boss.x?this.player.x-100:this.player.x+100,FLOOR-17).setVisible(true).setAlpha(.12);this.tweens.add({targets:this.bossWave,alpha:.95,duration:220,yoyo:true,hold:120,onComplete:()=>this.bossWave.setVisible(false)});this.cameras.main.shake(80,.0015);}
+    if(this.bossTimer<=0){this.bossTimer=1.8-(3-this.bossHealth)*.2;this.bossVulnerable=false;this.bossWave.setPosition(this.player.x< this.boss.x?this.player.x-100:this.player.x+100,FLOOR-17).setVisible(true).setAlpha(.12);this.tweens.add({targets:this.bossWave,alpha:.95,duration:220,yoyo:true,hold:120,onComplete:()=>{this.bossWave.setVisible(false);if(this.bossActive){this.bossVulnerable=true;this.bossCore.setAlpha(1);this.bossCore.setFillStyle(0xc5a8ff,1);this.time.delayedCall(760,()=>{this.bossVulnerable=false;if(this.bossActive)this.bossCore.setFillStyle(0xff5369,1);});}}});this.cameras.main.shake(80,.0015);}
     if(this.bossWave.visible&&Math.abs(this.player.x-this.bossWave.x)<this.bossWave.width/2&&this.player.y>FLOOR-45){this.playerVx=this.player.x<this.boss.x?-260:260;this.playerVy=-130;this.cameras.main.shake(100,.002);}
   }
 
