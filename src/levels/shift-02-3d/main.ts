@@ -329,7 +329,7 @@ function buildEnvironment(): void {
   entryStation.add(entryStatusLight);
 
   // Side walls are layered panel systems, not monolithic corridor cubes.
-  for (const side of [-1, 1) {
+  for (const side of [-1, 1]) {
     for (let panelIndex = 0, z = 13; z >= -23; z -= 3, panelIndex++) {
       // Leave a real opening in the right bulkhead wall for the exit door.
       if (side === 1 && (z === -17 || z === -20)) continue;
