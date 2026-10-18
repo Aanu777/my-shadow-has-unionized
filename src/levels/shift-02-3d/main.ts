@@ -492,6 +492,32 @@ function buildEnvironment(): void {
 }
 buildEnvironment();
 
+// An unlit maintenance port is hidden in the far-left window corner. It is
+// deliberately subdued until the player discovers its interaction.
+const secretPort = new THREE.Group();
+secretPort.name = "secret-service-port";
+secretPort.position.set(-7.52, 1.48, -20.45);
+const secretPortPlate = new THREE.Mesh(
+  new THREE.BoxGeometry(0.09, 0.56, 0.72),
+  new THREE.MeshStandardMaterial({ color: "#171722", metalness: 0.82, roughness: 0.36 })
+);
+secretPort.add(secretPortPlate);
+const secretPortScreenMaterial = new THREE.MeshStandardMaterial({
+  color: "#171b25", emissive: "#20120b", emissiveIntensity: 0.12,
+  metalness: 0.28, roughness: 0.22
+});
+const secretPortScreen = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.22, 0.38), secretPortScreenMaterial);
+secretPortScreen.position.set(0.057, 0.035, 0);
+secretPortScreen.name = "secret-port-screen";
+secretPort.add(secretPortScreen);
+for (const zOffset of [-0.25, 0.25]) {
+  const fastener = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.025, 8), materials.ceramic);
+  fastener.rotation.z = Math.PI / 2;
+  fastener.position.set(0.06, 0, zOffset);
+  secretPort.add(fastener);
+}
+scene.add(secretPort);
+
 // Purposeful set dressing: live telemetry displays and slow ceiling rotors give
 // the foundry scale, motion, and evidence of an automated facility at work.
 const maintenanceFans: THREE.Group[] = [];
@@ -754,7 +780,7 @@ function loadFactoryAsset(file: string, placements: Array<[number, number, numbe
   );
 }
 // Keep just two far-end machinery silhouettes; omit cranes and extra window/pipe props.
-loadFactoryAsset("machine.glb", [[-5.8, -15.3, 0.05, 0], [5.8, -15.3, 0.05, Math.PI]]);
+loadFactoryAsset("machine.glb", [[-5.8, -15.3, 0.05, 0], [5.8, -15.3, 0.05, Math.PI], [5.8, -10.5, 0.05, Math.PI]]);
 
 // Additive architectural detail uses curved profiles, rings, cable runs and
 // inset panels to break the original hard-edged block rhythm.
@@ -786,6 +812,7 @@ const relays: Relay[] = [makeRelay("triangle", -4.2, -6.8), makeRelay("circle", 
 const sequence: Relay["kind"][] = ["triangle", "diamond", "circle", "diamond", "triangle", "circle", "diamond", "triangle"];
 let nextRelay = 0;
 let gateOpen = false;
+let easterEggFound = false;
 let ended = false;
 let started = false;
 let yaw = 0;
@@ -1017,7 +1044,7 @@ function moveWithCollision(dx: number, dz: number): void {
   if (!collidesAt(camera.position.x, nextZ)) camera.position.z = nextZ;
 }
 
-function nearestTarget(): { relay?: Relay; gate: boolean; distance: number } {
+function nearestTarget(): { relay?: Relay; gate: boolean; easterEgg?: boolean; distance: number } {
   // Interaction is first-person and gaze-based: nearby objects behind the player
   // must never activate just because the camera is standing close to them.
   const lookDirection = camera.getWorldDirection(new THREE.Vector3()).normalize();
@@ -1035,6 +1062,14 @@ function nearestTarget(): { relay?: Relay; gate: boolean; distance: number } {
     }
   }
 
+  const secretPortPosition = new THREE.Vector3(-6.78, 1.48, -20.45);
+  const toSecretPort = secretPortPosition.clone().sub(camera.position);
+  const secretPortDistance = toSecretPort.length();
+  const secretPortFacing = toSecretPort.normalize().dot(lookDirection);
+  if (!easterEggFound && secretPortDistance <= 2.2 && secretPortFacing > 0.88 && secretPortDistance < distance) {
+    return { gate: false, easterEgg: true, distance: secretPortDistance };
+  }
+
   const gatePosition = new THREE.Vector3(5.05, 1.4, -17.2);
   const toGate = gatePosition.clone().sub(camera.position);
   const gateDistance = toGate.length();
@@ -1047,6 +1082,20 @@ function nearestTarget(): { relay?: Relay; gate: boolean; distance: number } {
 function interact(): void {
   const target = nearestTarget();
   if (target.distance > 2.65) { playSfx("denied"); notify("NOT IN RANGE."); return; }
+  if (target.easterEgg) {
+    easterEggFound = true;
+    const screen = scene.getObjectByName("secret-port-screen") as THREE.Mesh | undefined;
+    if (screen && screen.material instanceof THREE.MeshStandardMaterial) {
+      screen.material.color.set("#9affd7");
+      screen.material.emissive.set("#3cffad");
+      screen.material.emissiveIntensity = 3.8;
+    }
+    playSfx("relay");
+    playSignalTone(523, 1046, 0.42, "sine", 0.035);
+    window.setTimeout(() => playSignalTone(784, 1174, 0.5, "sine", 0.028), 160);
+    notify("HIDDEN UNION LOG // “THE SHADOW FILED FIRST. MANAGEMENT DENIED ITS OVERTIME.”");
+    return;
+  }
   if (target.gate) {
     if (!gateOpen) { playSfx("denied"); notify("BULKHEAD LOCKED — RESTORE THE SIGNAL."); return; }
     finishGame();
@@ -1296,7 +1345,7 @@ function animate(): void {
     camera.rotation.z = THREE.MathUtils.damp(camera.rotation.z, -velocity.x * 0.009, 4.5, delta);
     const target = nearestTarget();
     if (target.distance <= 2.65) {
-      interaction.textContent = target.gate ? (gateOpen ? "[ E ] OPEN THE BULKHEAD" : "BULKHEAD LOCKED · RESTORE SIGNAL") : target.relay?.active ? "[ E ] SEND NEXT SIGNAL BEAT" : "[ E ] ACTIVATE RELAY";
+      interaction.textContent = target.easterEgg ? "[ E ] INSPECT SERVICE PORT" : target.gate ? (gateOpen ? "[ E ] OPEN THE BULKHEAD" : "BULKHEAD LOCKED · RESTORE SIGNAL") : target.relay?.active ? "[ E ] SEND NEXT SIGNAL BEAT" : "[ E ] ACTIVATE RELAY";
       root.classList.add("target-acquired");
     } else {
       interaction.textContent = "EXPLORE THE FOUNDRY";
