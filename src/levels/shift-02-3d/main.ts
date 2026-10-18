@@ -1201,6 +1201,7 @@ riddleForm.addEventListener("submit", (event) => {
   const answer = riddleAnswer.value.trim().toLowerCase().replace(/[^a-z]/g, "");
   if (answer === riddleFragments[solvedRiddles].answer) {
     solvedRiddles += 1;
+    updateObjective();
     playSfx("relay");
     playSignalTone(520 + solvedRiddles * 90, 860 + solvedRiddles * 90, 0.28, "sine", 0.03);
     renderRiddleArchive();
@@ -1367,7 +1368,7 @@ function nearestTarget(): { relay?: Relay; gate: boolean; easterEgg?: boolean; r
 }
 function interact(): void {
   const target = nearestTarget();
-  if (target.distance > 2.65) { playSfx("denied"); notify("NOT IN RANGE."); return; }
+  if (target.distance > 2.8) { playSfx("denied"); notify("NOT IN RANGE."); return; }
   if (target.riddleTerminal) {
     openRiddleArchive();
     return;
