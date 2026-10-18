@@ -794,7 +794,17 @@ function loadFactoryAsset(file: string, placements: Array<[number, number, numbe
   );
 }
 // Use a restrained trio of real factory-kit GLB machines as recognizable set dressing; omit cranes and clutter.
-loadFactoryAsset("machine.glb", [[-5.8, -12.4, 0.05, 0], [5.8, -12.4, 0.05, Math.PI]]);
+loadFactoryAsset("machine.glb", [
+  // Entry bay: substantial factory machinery sits against the side lanes,
+  // leaving the central spawn-to-relay sightline open.
+  [-5.8, 7.2, 0.05, 0],
+  [5.8, 7.2, 0.05, Math.PI],
+  [-5.8, 1.4, 0.05, 0],
+  [5.8, 1.4, 0.05, Math.PI],
+  // Rear service bay: retain the pair flanking the deeper machinery zone.
+  [-5.8, -12.4, 0.05, 0],
+  [5.8, -12.4, 0.05, Math.PI]
+]);
 
 // Additive architectural detail uses curved profiles, rings, cable runs and
 // inset panels to break the original hard-edged block rhythm.
