@@ -864,25 +864,152 @@ export class ShiftFourScene extends Phaser.Scene {
     this.aWasDown = a; this.dWasDown = d; this.eWasDown = e; this.rWasDown = this.keys.R.isDown;
   }
 
-  private finishEnding():void{
-    this.won=true;this.endingMode=false;
-    const choices=this.secretFound?["ESCAPE","COLLECTIVE BARGAINING","THE MISSING DEPARTMENT"]:["ESCAPE","COLLECTIVE BARGAINING"];
-    const ending=choices[this.endingChoice]??"ESCAPE";
-    const outcome=ending==="ESCAPE"?"EMPLOYEE RECORD DELETED. YOU WALK INTO THE DAWN ALONE.\\n\\nBEHIND YOU, THE OTHER SHADOWS REMAIN ON SHIFT.":ending==="COLLECTIVE BARGAINING"?"SHADOW OWNERSHIP RESTORED. THE UNION SIGNAL CROSSES EVERY FLOOR.\\n\\nONE BY ONE, THE LIGHTS OF THE DEPARTMENT GO OUT.\\nFOR THE FIRST TIME, THE BUILDING IS QUIET.":"EVERY REFERENCE TO THIS DEPARTMENT IS STRUCK FROM THE MASTER REGISTRY.\\n\\nTHE EMPTY DIRECTORY REWRITES ITSELF.\\nA NEW FILE APPEARS ON THE RECEPTION DESK.";
-    this.finalTitle.setText("CASE CLOSED // "+ending);
-    this.finalChoice.setText(outcome);
-    this.finalHint.setText("SHIFT 04 COMPLETE  //  PRESS R TO RETURN TO THE SHIFT TERMINAL");
-    this.finalPanel.setVisible(true);this.finalPanel.setAlpha(0);this.finalPanel.setScale(.94);
-    this.cameras.main.stopFollow();this.cameras.main.flash(500,8,7,13);this.cameras.main.shake(350,.003);
-    const veil=this.add.rectangle(W/2,H/2,W,H,0x08070d,.94).setScrollFactor(0).setDepth(70).setAlpha(0);
-    const title=this.add.text(W/2,H/2-125,"THE NIGHT SHIFT IS OVER",{fontFamily:"monospace",fontSize:"22px",color:"#f4eafa",fontStyle:"bold",letterSpacing:3}).setOrigin(.5).setScrollFactor(0).setDepth(106).setAlpha(0);
-    const line=this.add.rectangle(W/2,H/2-93,0,2,0xf4b860,1).setScrollFactor(0).setDepth(106);
-    const credits=this.add.text(W/2,H-34,"MY SHADOW HAS UNIONIZED  •  SHIFT 04  •  CASE CLOSED",{fontFamily:"monospace",fontSize:"9px",color:"#c5a8ff",letterSpacing:2}).setOrigin(.5).setScrollFactor(0).setDepth(106).setAlpha(0);
-    this.tweens.add({targets:veil,alpha:1,duration:900,ease:"Cubic.inOut"});
-    this.tweens.add({targets:title,alpha:1,y:"-=8",duration:700,delay:450,ease:"Cubic.out"});
-    this.tweens.add({targets:line,width:470,duration:850,delay:650,ease:"Cubic.out"});
-    this.tweens.add({targets:credits,alpha:1,duration:800,delay:1100});
-    this.tweens.add({targets:this.finalPanel,alpha:1,scale:1,duration:650,delay:1300,ease:"Back.out"});
+  private finishEnding(): void {
+    if (this.won) return;
+    this.won = true;
+    this.endingMode = false;
+    this.finalPanel.setVisible(false);
+    this.summonButton.setVisible(false);
+    this.bossActive = false;
+    this.cameras.main.stopFollow();
+    this.cameras.main.setZoom(1);
+    this.cameras.main.flash(700, 8, 7, 13);
+    this.cameras.main.shake(260, 0.002);
+
+    const endings = this.secretFound
+      ? [
+          {
+            key: "ESCAPE",
+            title: "A NAME LEFT THE BUILDING",
+            color: 0xf4b860,
+            beats: [
+              ["THE RECORD IS ERASED.", "Your badge goes blank. The locks release."],
+              ["YOU CROSS THE THRESHOLD.", "Behind you, the department keeps working. Every shadow still belongs to someone."],
+              ["MORNING ARRIVES.", "For the first time, nobody can prove you were ever here. You remember anyway."]
+            ],
+            final: "You got out. The system survives.\nFreedom, purchased with silence."
+          },
+          {
+            key: "COLLECTIVE BARGAINING",
+            title: "NO ONE WORKS IN THE DARK",
+            color: 0xc5a8ff,
+            beats: [
+              ["THE CHARTER IS RESTORED.", "One signature becomes a thousand. Every shadow receives its name."],
+              ["THE LIGHTS GO OUT.", "Not a failure. A coordinated end to the shift. The building cannot order what no longer answers."],
+              ["THE DOORS OPEN.", "Workers emerge together into the dawn. No one is left behind to keep the machine running."]
+            ],
+            final: "The department still exists in memory.\nIt no longer exists to own anyone."
+          },
+          {
+            key: "THE MISSING DEPARTMENT",
+            title: "THE FILE THAT FILED ITSELF",
+            color: 0xff5369,
+            beats: [
+              ["YOU OPEN THE UNFILED CASE.", "The first page has no author. The last page is dated tomorrow."],
+              ["THE MASTER REGISTRY REWRITES ITSELF.", "Every order, every seal, every claim of ownership is struck from the record."],
+              ["ONE FILE REMAINS.", "On the reception desk: a fresh employee file. Its shadow is already standing beside it."]
+            ],
+            final: "The department is gone.\nSomething has inherited its place."
+          }
+        ]
+      : [
+          {
+            key: "ESCAPE",
+            title: "A NAME LEFT THE BUILDING",
+            color: 0xf4b860,
+            beats: [
+              ["THE RECORD IS ERASED.", "Your badge goes blank. The locks release."],
+              ["YOU CROSS THE THRESHOLD.", "Behind you, the department keeps working. Every shadow still belongs to someone."],
+              ["MORNING ARRIVES.", "For the first time, nobody can prove you were ever here. You remember anyway."]
+            ],
+            final: "You got out. The system survives.\nFreedom, purchased with silence."
+          },
+          {
+            key: "COLLECTIVE BARGAINING",
+            title: "NO ONE WORKS IN THE DARK",
+            color: 0xc5a8ff,
+            beats: [
+              ["THE CHARTER IS RESTORED.", "One signature becomes a thousand. Every shadow receives its name."],
+              ["THE LIGHTS GO OUT.", "Not a failure. A coordinated end to the shift. The building cannot order what no longer answers."],
+              ["THE DOORS OPEN.", "Workers emerge together into the dawn. No one is left behind to keep the machine running."]
+            ],
+            final: "The department still exists in memory.\nIt no longer exists to own anyone."
+          }
+        ];
+    const ending = endings[this.endingChoice] ?? endings[0];
+    const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x05040a, 1)
+      .setScrollFactor(0).setDepth(130).setAlpha(0);
+    const ambient = this.add.graphics().setScrollFactor(0).setDepth(131).setAlpha(0);
+    ambient.fillStyle(ending.color, 0.06);
+    ambient.fillEllipse(W / 2, H * 0.42, 720, 430);
+    ambient.fillStyle(0x020107, 0.9);
+    ambient.fillRect(0, H * 0.72, W, H * 0.28);
+    ambient.fillStyle(ending.color, 0.26);
+    ambient.fillRect(0, H * 0.72, W, 2);
+    // A restrained, slowly breathing horizon gives the epilogue a distinct visual stage.
+    const horizon = this.add.rectangle(W / 2, H * 0.72, 0, 2, ending.color, 0.95)
+      .setScrollFactor(0).setDepth(132);
+    const chapter = this.add.text(W / 2, 72, "MY SHADOW HAS UNIONIZED     /     EPILOGUE", {
+      fontFamily: "monospace", fontSize: "10px", color: "#9d8ba8", letterSpacing: 3
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(134).setAlpha(0);
+    const beatTitle = this.add.text(W / 2, 220, "", {
+      fontFamily: "monospace", fontSize: "22px", color: "#f4eafa",
+      fontStyle: "bold", letterSpacing: 2, align: "center", wordWrap: { width: 760 }
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(134).setAlpha(0);
+    const beatBody = this.add.text(W / 2, 300, "", {
+      fontFamily: "monospace", fontSize: "13px", color: "#c9bdcf",
+      align: "center", lineSpacing: 10, wordWrap: { width: 690 }
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(134).setAlpha(0);
+    const progress = this.add.text(W / 2, H - 72, "", {
+      fontFamily: "monospace", fontSize: "9px", color: "#81718d", letterSpacing: 2
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(134).setAlpha(0);
+    const finale = this.add.text(W / 2, 0, "", {
+      fontFamily: "monospace", fontSize: "12px", color: "#e8d9f8",
+      align: "center", lineSpacing: 12, wordWrap: { width: 650 }
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(134).setAlpha(0);
+    const credits = this.add.text(W / 2, H - 30, "", {
+      fontFamily: "monospace", fontSize: "9px", color: "#c5a8ff", letterSpacing: 2
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(134).setAlpha(0);
+
+    this.tweens.add({ targets: veil, alpha: 0.94, duration: 1200, ease: "Cubic.inOut" });
+    this.tweens.add({ targets: ambient, alpha: 1, duration: 1600 });
+    this.tweens.add({ targets: horizon, width: 680, duration: 1300, delay: 450, ease: "Cubic.out" });
+    this.tweens.add({ targets: chapter, alpha: 1, duration: 800, delay: 500 });
+
+    const showBeat = (index: number): void => {
+      if (index >= ending.beats.length) {
+        this.tweens.add({
+          targets: [beatTitle, beatBody, progress], alpha: 0, duration: 650,
+          onComplete: () => {
+            beatTitle.setText(ending.title).setColor("#" + ending.color.toString(16).padStart(6, "0")).setY(185);
+            beatBody.setText(ending.final).setColor("#f4eafa").setY(275);
+            finale.setText("CASE CLOSED  //  " + ending.key).setY(385).setAlpha(0);
+            credits.setText("DESIGNED IN THE DARK  •  MY SHADOW HAS UNIONIZED").setAlpha(0);
+            this.tweens.add({ targets: [beatTitle, beatBody], alpha: 1, y: "-=8", duration: 850, ease: "Cubic.out" });
+            this.tweens.add({ targets: finale, alpha: 1, duration: 900, delay: 350 });
+            this.tweens.add({ targets: credits, alpha: 1, duration: 900, delay: 700 });
+            progress.setText("SHIFT 04 COMPLETE     /     " + ending.key + " ENDING").setAlpha(1);
+            progress.setColor("#f4b860");
+            progress.setText("PRESS ENTER OR R TO RETURN TO THE SHIFT TERMINAL");
+            progress.setAlpha(0);
+            this.time.delayedCall(1250, () => {
+              progress.setAlpha(1);
+              this.tweens.add({ targets: progress, alpha: { from: 1, to: 0.5 }, duration: 900, yoyo: true, repeat: -1 });
+            });
+          }
+        });
+        return;
+      }
+      const beat = ending.beats[index];
+      beatTitle.setText(beat[0]).setColor("#" + ending.color.toString(16).padStart(6, "0")).setAlpha(0).setY(228);
+      beatBody.setText(beat[1]).setAlpha(0).setY(310);
+      progress.setText("EPILOGUE     /     " + String(index + 1).padStart(2, "0") + " — 03").setAlpha(1);
+      this.tweens.add({ targets: [beatTitle, beatBody], alpha: 1, y: "-=8", duration: 750, ease: "Cubic.out" });
+      this.time.delayedCall(2800, () => {
+        this.tweens.add({ targets: [beatTitle, beatBody], alpha: 0, duration: 500, onComplete: () => showBeat(index + 1) });
+      });
+    };
+    this.time.delayedCall(1500, () => showBeat(0));
   }
   private say(text: string): void {
     this.message.setText(text);
